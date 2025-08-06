@@ -1,0 +1,54 @@
+name = "construction-management-api"
+main = "src/index.js"
+compatibility_date = "2024-11-06"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+API_BASE_URL = "https://fx-d1-rest-api.lai-jameslai.workers.dev"
+CRUD_API_URL = "https://fx-crm-sync.lai-jameslai.workers.dev/api"
+REST_API_TOKEN = "fx-crm-api-secret-2025"
+JWT_SECRET = "your-jwt-secret-key-change-in-production"
+FRONTEND_BASE_URL = "https://manage.yes-ceramics.com"
+
+# KV Namespaces for session management
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "sessions_kv_namespace_id"
+preview_id = "sessions_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "users_kv_namespace_id"
+preview_id = "users_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "FILES_KV"
+id = "files_kv_namespace_id"
+preview_id = "files_kv_preview_id"
+
+# R2 Bucket for construction photos
+[[r2_buckets]]
+binding = "CONSTRUCTION_PHOTOS"
+bucket_name = "construction-photos"
+preview_bucket_name = "construction-photos-preview"
+
+# D1 Database (optional for future use)
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "engineering-management"
+# database_id = "your-d1-database-id"
+
+# Environment-specific configurations
+[env.staging]
+name = "construction-management-api-staging"
+vars = { ENVIRONMENT = "staging", API_BASE_URL = "https://staging-api.com" }
+
+[env.production]
+name = "construction-management-api-prod"
+vars = { ENVIRONMENT = "production", API_BASE_URL = "https://production-api.com" }
+
+# Development configuration
+[env.development]
+vars = { ENVIRONMENT = "development", API_BASE_URL = "http://localhost:3000" }

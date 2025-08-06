@@ -1,0 +1,1850 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建立工程專案頁面 - 元心建材管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+
+        .breadcrumb {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Steps Progress */
+        .steps-progress {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step.active .step-number {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step-title {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .step.active .step-title {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* Progress Line */
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 1;
+        }
+
+        /* Form Sections */
+        .form-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title .icon {
+            width: 24px;
+            height: 24px;
+            background: #e0e7ff;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #4f46e5;
+        }
+
+        /* Form Grid */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label .required {
+            color: #ef4444;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* CRM Selection */
+        .crm-selection {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            background: #f9fafb;
+        }
+
+        .crm-selection.selected {
+            border-color: #4f46e5;
+            background: #e0e7ff;
+        }
+
+        .select-crm-btn {
+            background: #4f46e5;
+            color: white;
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .select-crm-btn:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .selected-crm-info {
+            text-align: left;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+        }
+
+        /* URL Preview */
+        .url-preview {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .url-preview .copy-btn {
+            background: #6b7280;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Permission Settings */
+        .permission-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .permission-row {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            align-items: center;
+        }
+
+        .permission-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .permission-options {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .permission-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .permission-option input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Action Buttons */
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-primary {
+            background: #4f46e5;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        /* Success Message */
+        .success-message {
+            display: none;
+            background: #d1fae5;
+            border: 1px solid #34d399;
+            color: #065f46;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        /* Modal for CRM Selection */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .crm-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .crm-item {
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .crm-item:hover {
+            border-color: #4f46e5;
+            background: #f3f4f6;
+        }
+
+        .crm-item.selected {
+            border-color: #4f46e5;
+            background: #e0e7ff;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <h1>建立新工程專案頁面</h1>
+        <div class="breadcrumb">管理後台 / 專案管理 / 建立新專案</div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Steps Progress -->
+        <div class="steps-progress">
+            <div class="steps">
+                <div class="step active">
+                    <div class="step-number">1</div>
+                    <div class="step-title">選擇商機</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-title">基本設定</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-title">權限配置</div>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-title">確認建立</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <div class="success-message" id="successMessage">
+            ✅ 工程專案頁面已成功建立！URL已複製到剪貼板。
+            <div style="margin-top: 1rem;">
+                <button class="btn btn-primary" onclick="window.location.href='/'">
+                    🏠 回主頁面
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 1: CRM Selection -->
+        <div class="form-section" id="step1">
+            <h2 class="section-title">
+                <div class="icon">🏢</div>
+                選擇 CRM 商機
+            </h2>
+            
+            <div class="crm-selection" id="crmSelection">
+                <p style="margin-bottom: 1rem; color: #6b7280;">請從 Fxiaoke CRM 選擇要建立工程頁面的商機</p>
+                <button class="select-crm-btn" onclick="showCRMModal()">選擇商機</button>
+                
+                <div class="selected-crm-info" style="display: none;" id="selectedCRM">
+                    <div style="display: grid; gap: 0.5rem;">
+                        <div><strong>商機名稱：</strong><span id="crmName">勝興-興安西-2024</span></div>
+                        <div><strong>商機 ID：</strong><span id="crmId">OPP2024001</span></div>
+                        <div><strong>客戶名稱：</strong><span id="crmCustomer">王先生</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Basic Settings -->
+        <div class="form-section" id="step2" style="display: none;">
+            <h2 class="section-title">
+                <div class="icon">⚙️</div>
+                基本設定
+            </h2>
+
+            <div class="form-grid">
+                <div class="form-group" style="display: none;">
+                    <label class="form-label">URL 識別碼</label>
+                    <input type="text" class="form-input" id="projectSlug" readonly>
+                    <small style="color: #6b7280; margin-top: 0.25rem;">使用商機 ID 作為唯一識別碼</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">專案顯示名稱 <span class="required">*</span></label>
+                    <input type="text" class="form-input" id="projectName" value="興安西工程" placeholder="例如：興安西工程">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">建築棟數</label>
+                    <div class="form-input" id="buildingCount" style="background: #f9fafb; color: #6b7280;">
+                        載入中...
+                    </div>
+                    <small style="color: #6b7280; margin-top: 0.25rem;">根據案場資料自動計算</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">總戶數</label>
+                    <div class="form-input" id="totalUnits" style="background: #f9fafb; color: #6b7280;">
+                        載入中...
+                    </div>
+                    <small style="color: #6b7280; margin-top: 0.25rem;">根據案場資料自動計算</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">樓層數</label>
+                    <div class="form-input" id="floorCount" style="background: #f9fafb; color: #6b7280;">
+                        載入中...
+                    </div>
+                    <small style="color: #6b7280; margin-top: 0.25rem;">根據案場資料自動計算（最高樓層）</small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">建築配置</label>
+                    <div class="building-info" id="buildingInfo" style="padding: 1rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;">
+                        <div>正在載入案場資料...</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">案場統計</label>
+                    <div class="site-statistics" id="siteStatistics" style="padding: 1rem; background: #f0f9ff; border: 1px solid #0ea5e9; border-radius: 8px;">
+                        <div>正在分析案場資料...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label">專案描述</label>
+                <textarea class="form-textarea" id="projectDescription" placeholder="輸入專案的詳細描述..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">專案網址預覽</label>
+                <div class="url-preview">
+                    <span id="urlPreview">progress.yes-ceramics.com/[選擇商機後自動生成]/</span>
+                    <button class="copy-btn" onclick="copyURL()">複製</button>
+                </div>
+                <small style="color: #6b7280; margin-top: 0.25rem;">將使用商機唯一ID作為網址識別碼</small>
+            </div>
+
+            <!-- 資料庫視圖 -->
+            <div style="margin-top: 2rem;">
+                <h3 style="margin-bottom: 1rem; color: #1f2937;">📊 相關資料統計</h3>
+                
+                <!-- 統計卡片 -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #4f46e5;" id="statsOpportunities">-</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">商機</div>
+                    </div>
+                    <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #059669;" id="statsSites">-</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">案場</div>
+                    </div>
+                    <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #dc2626;" id="statsMaintenance">-</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">維修單</div>
+                    </div>
+                    <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 1.5rem; font-weight: 600; color: #7c2d12;" id="statsSales">-</div>
+                        <div style="font-size: 0.9rem; color: #6b7280;">銷售記錄</div>
+                    </div>
+                </div>
+
+                <!-- 資料表格 -->
+                <div style="background: #f9fafb; border-radius: 8px; overflow: hidden;">
+                    <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb; background: white;">
+                        <h4 style="margin: 0; color: #374151;">📋 詳細資料列表</h4>
+                    </div>
+                    
+                    <!-- 案場資料 -->
+                    <div style="padding: 1rem;">
+                        <h5 style="margin: 0 0 0.5rem 0; color: #059669;">🏢 案場資料</h5>
+                        <div id="sitesTable" style="max-height: 300px; overflow-y: auto;">
+                            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                                請先選擇商機以載入相關案場資料
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 維修單資料 -->
+                    <div style="padding: 1rem; border-top: 1px solid #e5e7eb;">
+                        <h5 style="margin: 0 0 0.5rem 0; color: #dc2626;">🔧 維修單資料</h5>
+                        <div id="maintenanceTable" style="max-height: 200px; overflow-y: auto;">
+                            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                                請先選擇商機以載入相關維修單資料
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 銷售記錄資料 -->
+                    <div style="padding: 1rem; border-top: 1px solid #e5e7eb;">
+                        <h5 style="margin: 0 0 0.5rem 0; color: #7c2d12;">💰 銷售記錄資料</h5>
+                        <div id="salesTable" style="max-height: 200px; overflow-y: auto;">
+                            <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                                請先選擇商機以載入相關銷售記錄資料
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Step 3: Permission Settings -->
+        <div class="form-section" id="step3" style="display: none;">
+            <h2 class="section-title">
+                <div class="icon">🔐</div>
+                權限配置
+            </h2>
+
+            <div style="margin-bottom: 1.5rem;">
+                <p style="color: #6b7280;">設定不同使用者角色的預設權限</p>
+            </div>
+
+            <div class="permission-grid">
+                <div class="permission-row">
+                    <div class="permission-label">業主 (Owner)</div>
+                    <div class="permission-options">
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>查看進度</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>查看施工照片</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>查看財務資訊</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="permission-row">
+                    <div class="permission-label">工班負責人</div>
+                    <div class="permission-options">
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>更新進度</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>上傳照片</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>管理工班成員</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked>
+                            <span>查看其他工班進度</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="permission-row">
+                    <div class="permission-label">工班成員</div>
+                    <div class="permission-options">
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>更新個人進度</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked disabled>
+                            <span>上傳施工照片</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked>
+                            <span>查看同工班其他成員進度</span>
+                        </label>
+                        <label class="permission-option">
+                            <input type="checkbox" checked>
+                            <span>查看其他工班進度</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Step 4: Confirmation -->
+        <div class="form-section" id="step4" style="display: none;">
+            <h2 class="section-title">
+                <div class="icon">✅</div>
+                確認建立
+            </h2>
+
+            <div style="background: #f9fafb; padding: 1.5rem; border-radius: 8px;">
+                <h3 style="margin-bottom: 1rem;">請確認以下設定：</h3>
+                <div style="display: grid; gap: 0.75rem;" id="confirmationDetails">
+                    <div><strong>CRM 商機：</strong><span id="confirmCrmName">請先選擇商機</span></div>
+                    <div><strong>客戶名稱：</strong><span id="confirmCustomer">-</span></div>
+                    <div><strong>專案名稱：</strong><span id="confirmProjectName">請填寫專案名稱</span></div>
+                    <div><strong>建築配置：</strong><span id="confirmBuildingInfo">載入中...</span></div>
+                    <div><strong>權限設定：</strong><span id="confirmPermissions">已設定</span></div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding: 1rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 8px;">
+                <p style="color: #92400e;">
+                    <strong>注意：</strong>建立後，專案 URL 將無法更改。請確認所有設定正確。
+                </p>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions">
+            <button class="btn btn-secondary" onclick="previousStep()" id="prevBtn" style="display: none;">
+                ← 上一步
+            </button>
+            <div>
+                <button class="btn btn-secondary" onclick="saveDraft()">
+                    儲存草稿
+                </button>
+                <button class="btn btn-primary" onclick="nextStep()" id="nextBtn">
+                    下一步 →
+                </button>
+                <button class="btn btn-success" onclick="createProject()" id="createBtn" style="display: none;">
+                    建立專案
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CRM Selection Modal -->
+    <div class="modal" id="crmModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>選擇 CRM 商機</h3>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <input type="text" id="searchInput" class="form-input" placeholder="輸入商機名稱或客戶名稱..." style="flex: 1;">
+                    <button type="button" onclick="performSearch()" style="padding: 0.5rem 1rem; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                        🔍 搜尋
+                    </button>
+                    <button type="button" onclick="clearSearch()" style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                        清除
+                    </button>
+                </div>
+                <div class="crm-list">
+                    <!-- 商機列表將由 JavaScript 動態載入 -->
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="margin-bottom: 1rem; font-size: 2rem;">📋</div>
+                        <div>點擊「選擇商機」按鈕載入 CRM 商機列表</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Modal -->
+    <div class="modal" id="progressModal" style="z-index: 9999;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>🚀 建立專案中</h3>
+            </div>
+            <div class="modal-body">
+                <!-- Progress Bar -->
+                <div style="margin-bottom: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span>整體進度</span>
+                        <span id="progressPercentage">0%</span>
+                    </div>
+                    <div style="width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;">
+                        <div id="progressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #4f46e5, #7c3aed); transition: width 0.3s ease;"></div>
+                    </div>
+                </div>
+
+                <!-- Current Task -->
+                <div style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border-left: 4px solid #4f46e5;">
+                    <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">目前執行：</div>
+                    <div id="currentTask" style="color: #64748b;">準備開始...</div>
+                </div>
+
+                <!-- Log Container -->
+                <div style="margin-bottom: 1rem;">
+                    <div style="font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;">執行日誌：</div>
+                    <div id="logContainer" style="
+                        height: 200px; 
+                        overflow-y: auto; 
+                        background: #0f172a; 
+                        color: #e2e8f0; 
+                        font-family: 'Courier New', monospace; 
+                        font-size: 0.85rem; 
+                        padding: 1rem; 
+                        border-radius: 6px;
+                        white-space: pre-line;
+                    "></div>
+                </div>
+
+                <!-- Cancel Button (hidden during critical phases) -->
+                <div style="text-align: right;">
+                    <button id="cancelBtn" class="btn btn-secondary" onclick="cancelProjectCreation()" style="display: none;">
+                        取消建立
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+
+        async function showCRMModal() {
+            const modal = document.getElementById('crmModal');
+            modal.classList.add('show');
+            
+            // 載入 CRM 商機數據
+            await loadCRMOpportunities();
+        }
+
+        // 載入 CRM 商機數據
+        async function loadCRMOpportunities() {
+            const crmList = document.querySelector('.crm-list');
+            const searchInput = document.querySelector('#crmModal input[type="text"]');
+            
+            try {
+                // 顯示載入狀態
+                crmList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="margin-bottom: 1rem; font-size: 2rem;">⏳</div>
+                        <div>正在載入 CRM 商機...</div>
+                    </div>
+                `;
+                
+                console.log('開始載入 CRM 商機...');
+                
+                // 調用後端 API
+                const response = await fetch('/api/crm/opportunities', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                console.log('API 響應狀態:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('CRM API 響應:', result);
+                
+                if (!result.success) {
+                    throw new Error(result.message || '載入商機失敗');
+                }
+                
+                const opportunities = result.data || [];
+                
+                if (opportunities.length === 0) {
+                    crmList.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <div style="margin-bottom: 1rem; font-size: 2rem;">📭</div>
+                            <div>沒有找到可用的商機</div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 顯示演示數據提示
+                if (result.isDemo) {
+                    const modalHeader = document.querySelector('#crmModal .modal-header');
+                    const existingNotice = modalHeader.querySelector('.demo-notice');
+                    if (!existingNotice) {
+                        const demoNotice = document.createElement('div');
+                        demoNotice.className = 'demo-notice';
+                        demoNotice.style.cssText = 'margin-top: 0.5rem; padding: 0.5rem; background: #fef3c7; border: 1px solid #fbbf24; border-radius: 4px; font-size: 0.9rem; color: #92400e;';
+                        demoNotice.innerHTML = `<strong>演示模式：</strong> ${result.message || '目前顯示演示數據'}`;
+                        modalHeader.appendChild(demoNotice);
+                    }
+                }
+                
+                // 渲染商機列表
+                renderOpportunities(opportunities);
+                
+                // 設置搜尋功能
+                setupOpportunitySearch(opportunities);
+                
+                console.log(`✅ 成功載入 ${opportunities.length} 個商機 ${result.isDemo ? '(演示數據)' : '(真實數據)'}`);
+                
+            } catch (error) {
+                console.error('載入 CRM 商機失敗:', error);
+                crmList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                        <div style="margin-bottom: 1rem; font-size: 2rem;">❌</div>
+                        <div>載入商機失敗</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem; color: #6b7280;">
+                            ${error.message}
+                        </div>
+                        <button onclick="loadCRMOpportunities()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #4f46e5; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            重新載入
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染商機列表
+        function renderOpportunities(opportunities) {
+            const crmList = document.querySelector('.crm-list');
+            
+            // 調試：檢查商機數據結構
+            console.log('🔍 渲染商機列表，前3個商機數據:');
+            opportunities.slice(0, 3).forEach((opp, i) => {
+                console.log(`  ${i + 1}. ID: ${opp.id}, 名稱: ${opp.name}, 客戶: ${opp.customer}`);
+            });
+            
+            crmList.innerHTML = opportunities.map(opp => {
+                const customerName = opp.customer || '未知客戶';
+                return `
+                <div class="crm-item" onclick="selectCRM('${opp.id}', '${escapeHtml(opp.name)}', '${escapeHtml(customerName)}')">
+                    <div style="font-weight: 600;">${escapeHtml(opp.name)}</div>
+                    <div style="font-size: 0.9rem; color: #6b7280;">
+                        客戶：${escapeHtml(customerName)}
+                    </div>
+                    ${opp.stage ? `<div style="font-size: 0.8rem; color: #8b5cf6;">階段：${escapeHtml(opp.stage)}</div>` : ''}
+                </div>
+                `;
+            }).join('');
+        }
+
+        // 設置商機搜尋功能 - 手動觸發搜尋
+        let currentOpportunities = []; // 存儲目前的商機列表
+        
+        function setupOpportunitySearch(allOpportunities) {
+            currentOpportunities = allOpportunities; // 儲存完整商機列表
+            console.log('🔧 設置 CRM 搜尋功能（手動觸發模式）');
+            
+            // 設置 Enter 鍵觸發搜尋
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+            
+            console.log('✅ CRM 搜尋功能已設置完成');
+        }
+        
+        // 執行搜尋
+        async function performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const crmList = document.querySelector('.crm-list');
+            
+            if (!searchInput) {
+                console.error('❌ 找不到搜尋輸入框');
+                return;
+            }
+            
+            const searchTerm = searchInput.value.trim();
+            console.log('🔍 手動搜尋關鍵字:', searchTerm);
+            
+            // 如果搜尋框為空，顯示所有商機
+            if (searchTerm === '') {
+                renderOpportunities(currentOpportunities);
+                console.log('🔄 搜尋框為空，顯示所有商機');
+                return;
+            }
+            
+            try {
+                // 顯示搜尋中狀態
+                crmList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="margin-bottom: 1rem; font-size: 2rem;">🔍</div>
+                        <div>正在搜尋...</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem;">正在 CRM 系統中查找 "${searchTerm}"</div>
+                    </div>
+                `;
+                
+                console.log('🌐 向後端發送搜尋請求:', searchTerm);
+                
+                // 向後端發送搜尋請求
+                const response = await fetch(`/api/crm/opportunities/search?q=${encodeURIComponent(searchTerm)}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`搜尋請求失敗: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('🎯 CRM 搜尋結果:', result);
+                
+                if (!result.success) {
+                    throw new Error(result.message || '搜尋失敗');
+                }
+                
+                const searchResults = result.data || [];
+                
+                if (searchResults.length === 0) {
+                    crmList.innerHTML = `
+                        <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <div style="margin-bottom: 1rem; font-size: 2rem;">🔍</div>
+                            <div>沒有找到符合 "${searchTerm}" 的商機</div>
+                            <div style="font-size: 0.9rem; margin-top: 0.5rem; color: #9ca3af;">
+                                請嘗試使用其他關鍵字，或點擊「清除」查看所有商機
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // 渲染搜尋結果
+                renderOpportunities(searchResults);
+                console.log(`✅ 搜尋完成，找到 ${searchResults.length} 個商機`);
+                
+            } catch (error) {
+                console.error('❌ CRM 搜尋錯誤:', error);
+                crmList.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                        <div style="margin-bottom: 1rem; font-size: 2rem;">❌</div>
+                        <div>搜尋失敗</div>
+                        <div style="font-size: 0.9rem; margin-top: 0.5rem; color: #6b7280;">
+                            ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        // 清除搜尋
+        function clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.value = '';
+            }
+            
+            // 顯示所有商機
+            renderOpportunities(currentOpportunities);
+            console.log('🔄 已清除搜尋，顯示所有商機');
+        }
+
+        // HTML 轉義函數
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function selectCRM(id, name, customer) {
+            // 調試日誌
+            console.log('🔍 selectCRM 被調用:', { id, name, customer });
+            
+            document.getElementById('crmId').textContent = id;
+            document.getElementById('crmName').textContent = name;
+            document.getElementById('crmCustomer').textContent = customer || '未提供客戶資訊';
+            
+            document.getElementById('crmSelection').classList.add('selected');
+            document.getElementById('selectedCRM').style.display = 'block';
+            document.getElementById('crmModal').classList.remove('show');
+            
+            // Auto-fill project name
+            const projectName = name.split('-')[1] || name;
+            document.getElementById('projectName').value = projectName + '工程';
+            
+            // 使用商機ID作為URL識別碼
+            document.getElementById('projectSlug').value = id;
+            updateURLPreview();
+            
+            // 載入商機相關統計資料
+            await loadOpportunityStats(id);
+            
+            // 查詢相關案場資料
+            await loadSitesForOpportunity(id);
+        }
+
+        // 載入商機相關統計資料
+        async function loadOpportunityStats(opportunityId) {
+            console.log('🔍 載入商機統計資料:', opportunityId);
+            
+            try {
+                // 顯示載入狀態
+                document.getElementById('buildingCount').textContent = '載入中...';
+                document.getElementById('totalUnits').textContent = '載入中...';
+                document.getElementById('floorCount').textContent = '載入中...';
+                
+                document.getElementById('statsOpportunities').textContent = '-';
+                document.getElementById('statsSites').textContent = '-';
+                document.getElementById('statsMaintenance').textContent = '-';
+                document.getElementById('statsSales').textContent = '-';
+                
+                // 清空表格
+                document.getElementById('sitesTable').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">載入中...</div>';
+                document.getElementById('maintenanceTable').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">載入中...</div>';
+                document.getElementById('salesTable').innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">載入中...</div>';
+                
+                // 調用 API
+                const response = await fetch(`/api/crm/opportunity-stats/${opportunityId}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ 商機統計資料:', result);
+                
+                if (!result.success) {
+                    throw new Error(result.error || '載入統計失敗');
+                }
+                
+                const stats = result.data;
+                
+                // 更新基本設定欄位
+                const buildingText = stats.opportunity.buildingCount > 0 
+                    ? `${stats.opportunity.buildingCount}棟 (${stats.opportunity.buildingTypes.join('/')})`
+                    : '無建築資料';
+                document.getElementById('buildingCount').textContent = buildingText;
+                
+                document.getElementById('totalUnits').textContent = stats.opportunity.totalUnits > 0 
+                    ? `${stats.opportunity.totalUnits}戶`
+                    : '無戶數資料';
+                    
+                document.getElementById('floorCount').textContent = stats.opportunity.floorCount > 0 
+                    ? `${stats.opportunity.floorCount}層`
+                    : '無樓層資料';
+                
+                // 更新統計卡片
+                document.getElementById('statsOpportunities').textContent = stats.counts.opportunities;
+                document.getElementById('statsSites').textContent = stats.counts.sites;
+                document.getElementById('statsMaintenance').textContent = stats.counts.maintenanceOrders;
+                document.getElementById('statsSales').textContent = stats.counts.salesRecords;
+                
+                // 更新資料表格
+                renderSitesTable(stats.data.sites);
+                renderMaintenanceTable(stats.data.maintenanceOrders);
+                renderSalesTable(stats.data.salesRecords);
+                
+                console.log('✅ 商機統計資料載入完成');
+                
+            } catch (error) {
+                console.error('❌ 載入商機統計失敗:', error);
+                
+                // 顯示錯誤狀態
+                document.getElementById('buildingCount').textContent = '載入失敗';
+                document.getElementById('totalUnits').textContent = '載入失敗';
+                document.getElementById('floorCount').textContent = '載入失敗';
+                
+                document.getElementById('sitesTable').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                        <div style="margin-bottom: 0.5rem;">❌ 載入失敗</div>
+                        <div style="font-size: 0.9rem;">${error.message}</div>
+                    </div>
+                `;
+                document.getElementById('maintenanceTable').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                        載入失敗: ${error.message}
+                    </div>
+                `;
+                document.getElementById('salesTable').innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #ef4444;">
+                        載入失敗: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染案場表格
+        function renderSitesTable(sites) {
+            const sitesTable = document.getElementById('sitesTable');
+            
+            if (sites.length === 0) {
+                sitesTable.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">沒有相關案場資料</div>';
+                return;
+            }
+            
+            const table = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #f3f4f6;">
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">案場名稱</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">棟別</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">樓層</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">戶別</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">狀態</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sites.map(site => `
+                            <tr>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">${escapeHtml(site.name)}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">${escapeHtml(site.buildingType || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">${escapeHtml(site.floorInfo || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">${escapeHtml(site.roomInfo || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">
+                                    <span style="padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; background: #d1fae5; color: #065f46;">
+                                        ${escapeHtml(site.status || '未知')}
+                                    </span>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            sitesTable.innerHTML = table;
+        }
+        
+        // 渲染維修單表格
+        function renderMaintenanceTable(maintenanceOrders) {
+            const maintenanceTable = document.getElementById('maintenanceTable');
+            
+            if (maintenanceOrders.length === 0) {
+                maintenanceTable.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">沒有相關維修單資料</div>';
+                return;
+            }
+            
+            const table = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #f3f4f6;">
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">維修單名稱</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">類型</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">內容</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">建立時間</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${maintenanceOrders.map(order => `
+                            <tr>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">${escapeHtml(order.name || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">${escapeHtml(order.recordType || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(order.content || '')}">${escapeHtml(order.content || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center; font-size: 0.8rem;">${formatDate(order.createTime)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            maintenanceTable.innerHTML = table;
+        }
+        
+        // 渲染銷售記錄表格
+        function renderSalesTable(salesRecords) {
+            const salesTable = document.getElementById('salesTable');
+            
+            if (salesRecords.length === 0) {
+                salesTable.innerHTML = '<div style="text-align: center; padding: 2rem; color: #6b7280;">沒有相關銷售記錄資料</div>';
+                return;
+            }
+            
+            const table = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr style="background: #f3f4f6;">
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">記錄名稱</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">類型</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: left;">內容</th>
+                            <th style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center;">建立時間</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${salesRecords.map(record => `
+                            <tr>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">${escapeHtml(record.name || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">${escapeHtml(record.recordType || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(record.content || '')}">${escapeHtml(record.content || '-')}</td>
+                                <td style="padding: 0.5rem; border: 1px solid #e5e7eb; text-align: center; font-size: 0.8rem;">${formatDate(record.createTime)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            salesTable.innerHTML = table;
+        }
+        
+        // 格式化日期
+        function formatDate(timestamp) {
+            if (!timestamp) return '-';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('zh-TW') + ' ' + date.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function updateURLPreview() {
+            const opportunityId = document.getElementById('projectSlug').value || 'project';
+            // 直接使用商機ID作為URL
+            document.getElementById('urlPreview').textContent = `progress.yes-ceramics.com/${opportunityId}/`;
+        }
+
+        // 查詢商機相關的案場資料
+        async function loadSitesForOpportunity(opportunityId) {
+            console.log('🏗️ 查詢商機相關案場:', opportunityId);
+            
+            try {
+                // 查詢案場資料
+                const response = await fetch(`/api/crm/sites?opportunityId=${opportunityId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.message || '查詢案場失敗');
+                }
+                
+                const sites = result.data || [];
+                console.log(`✅ 找到 ${sites.length} 個相關案場`);
+                
+                // 分析案場資料
+                analyzeSiteData(sites);
+                
+                // 載入工班資料
+                await loadTeamsData(sites);
+                
+            } catch (error) {
+                console.error('❌ 查詢案場失敗:', error);
+                // 查詢失敗，顯示錯誤信息
+                document.getElementById('buildingInfo').innerHTML = '<div style="color: #dc2626;">無法載入案場資料</div>';
+                document.getElementById('siteStatistics').innerHTML = '<div style="color: #dc2626;">無法分析案場統計</div>';
+            }
+        }
+        
+        // 分析案場資料，顯示實際建築配置
+        function analyzeSiteData(sites) {
+            console.log('📊 分析案場資料:', sites.length, '筆');
+            
+            // 建築統計
+            const buildingStats = {};
+            const floorStats = {};
+            let totalUnits = 0;
+            
+            sites.forEach(site => {
+                const building = site.field_2t01i__c || site.building || '未知建築';
+                const floor = site.field_w001t__c || site.floor || '未知樓層';
+                
+                if (!buildingStats[building]) {
+                    buildingStats[building] = { units: 0, floors: new Set() };
+                }
+                buildingStats[building].units++;
+                buildingStats[building].floors.add(floor);
+                totalUnits++;
+                
+                if (!floorStats[floor]) {
+                    floorStats[floor] = 0;
+                }
+                floorStats[floor]++;
+            });
+            
+            // 顯示建築配置
+            let buildingInfoHTML = '';
+            let statisticsHTML = '';
+            
+            const buildingCount = Object.keys(buildingStats).length;
+            
+            if (buildingCount > 0) {
+                buildingInfoHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <strong style="color: #1f2937;">建築配置：</strong>
+                    </div>
+                `;
+                
+                Object.entries(buildingStats).forEach(([building, stats]) => {
+                    const floorList = Array.from(stats.floors).sort().join(', ');
+                    buildingInfoHTML += `
+                        <div style="margin-bottom: 0.5rem; padding: 0.5rem; background: white; border-radius: 4px; border-left: 3px solid #059669;">
+                            <div style="font-weight: 600; color: #059669;">${building}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">${stats.units} 戶，樓層：${floorList}</div>
+                        </div>
+                    `;
+                });
+                
+                statisticsHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; text-align: center;">
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #059669;">${buildingCount}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">建築棟數</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #0ea5e9;">${totalUnits}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">總戶數</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: #7c2d12;">${Object.keys(floorStats).length}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">樓層數</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                buildingInfoHTML = '<div style="color: #dc2626;">未找到案場資料或資料格式異常</div>';
+                statisticsHTML = '<div style="color: #dc2626;">無法分析建築統計</div>';
+            }
+            
+            document.getElementById('buildingInfo').innerHTML = buildingInfoHTML;
+            document.getElementById('siteStatistics').innerHTML = statisticsHTML;
+        }
+        
+        // 載入工班資料
+        async function loadTeamsData(sites) {
+            console.log('👷 載入工班資料');
+            
+            // 從案場資料中提取工班信息
+            const teams = new Set();
+            sites.forEach(site => {
+                if (site.field_contractor__c) {
+                    teams.add(site.field_contractor__c);
+                }
+            });
+            
+            if (teams.size > 0) {
+                console.log(`✅ 找到 ${teams.size} 個工班:`, Array.from(teams));
+                
+                // 自動填充工班選項
+                const teamSelect = document.getElementById('teamSelection');
+                if (teamSelect) {
+                    teamSelect.innerHTML = '<option value="">選擇工班...</option>' + 
+                        Array.from(teams).map(team => `<option value="${team}">${team}</option>`).join('');
+                }
+            } else {
+                console.log('⚠️ 未找到工班資料');
+            }
+        }
+
+        function copyURL(url) {
+            const urlToCopy = url || document.getElementById('urlPreview').textContent;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(urlToCopy).then(() => {
+                    alert('網址已複製到剪貼板');
+                }).catch(err => {
+                    console.error('複製失敗:', err);
+                    fallbackCopyText(urlToCopy);
+                });
+            } else {
+                fallbackCopyText(urlToCopy);
+            }
+        }
+
+        function fallbackCopyText(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                alert('網址已複製到剪貼板');
+            } catch (err) {
+                console.error('複製失敗:', err);
+                alert('複製失敗，請手動複製網址');
+            }
+            document.body.removeChild(textArea);
+        }
+
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                // Validation
+                if (currentStep === 1 && !document.getElementById('crmSelection').classList.contains('selected')) {
+                    alert('請先選擇 CRM 商機');
+                    return;
+                }
+                
+                document.getElementById(`step${currentStep}`).style.display = 'none';
+                currentStep++;
+                document.getElementById(`step${currentStep}`).style.display = 'block';
+                updateStepIndicators();
+                updateButtons();
+                
+                // 如果到達第四步（確認建立），更新確認資訊
+                if (currentStep === 4) {
+                    updateConfirmationInfo();
+                }
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                document.getElementById(`step${currentStep}`).style.display = 'none';
+                currentStep--;
+                document.getElementById(`step${currentStep}`).style.display = 'block';
+                updateStepIndicators();
+                updateButtons();
+            }
+        }
+
+        function updateStepIndicators() {
+            const steps = document.querySelectorAll('.step');
+            steps.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index + 1 === currentStep) {
+                    step.classList.add('active');
+                } else if (index + 1 < currentStep) {
+                    step.classList.add('completed');
+                }
+            });
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').style.display = currentStep > 1 ? 'inline-flex' : 'none';
+            document.getElementById('nextBtn').style.display = currentStep < totalSteps ? 'inline-flex' : 'none';
+            document.getElementById('createBtn').style.display = currentStep === totalSteps ? 'inline-flex' : 'none';
+        }
+
+        function saveDraft() {
+            alert('草稿已儲存');
+        }
+
+        // 進度條和日誌管理
+        let progressSteps = [
+            { id: 'validate', name: '驗證資料', progress: 10 },
+            { id: 'structure', name: '建立專案結構', progress: 30 },
+            { id: 'database', name: '初始化資料庫', progress: 50 },
+            { id: 'permissions', name: '設定權限系統', progress: 70 },
+            { id: 'finalize', name: '完成配置', progress: 90 },
+            { id: 'complete', name: '建立完成', progress: 100 }
+        ];
+
+        let currentStepIndex = 0;
+        let isCreating = false;
+
+        function showProgressModal() {
+            document.getElementById('progressModal').classList.add('show');
+            currentStepIndex = 0;
+            updateProgress(0, '準備開始...', '');
+            clearLog();
+        }
+
+        function hideProgressModal() {
+            document.getElementById('progressModal').classList.remove('show');
+            currentStepIndex = 0;
+            isCreating = false;
+        }
+
+        function updateProgress(percentage, currentTask, logMessage) {
+            document.getElementById('progressPercentage').textContent = `${percentage}%`;
+            document.getElementById('progressBar').style.width = `${percentage}%`;
+            document.getElementById('currentTask').textContent = currentTask;
+            
+            if (logMessage) {
+                addLog(logMessage);
+            }
+        }
+
+        function addLog(message) {
+            const logContainer = document.getElementById('logContainer');
+            const timestamp = new Date().toLocaleTimeString();
+            const formattedMessage = `[${timestamp}] ${message}`;
+            
+            if (logContainer.textContent) {
+                logContainer.textContent += '\n' + formattedMessage;
+            } else {
+                logContainer.textContent = formattedMessage;
+            }
+            
+            // 自動滾動到底部
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('logContainer').textContent = '';
+        }
+
+        function cancelProjectCreation() {
+            if (isCreating && currentStepIndex < 3) { // 只能在前3步取消
+                isCreating = false;
+                hideProgressModal();
+                addLog('❌ 用戶取消了專案建立');
+                
+                // 恢復建立按鈕
+                const createBtn = document.getElementById('createBtn');
+                createBtn.textContent = '建立專案';
+                createBtn.disabled = false;
+            }
+        }
+
+        // 模擬進度步驟
+        async function simulateStep(stepIndex) {
+            if (!isCreating || stepIndex >= progressSteps.length) return;
+            
+            const step = progressSteps[stepIndex];
+            updateProgress(step.progress, step.name, `🔄 開始執行: ${step.name}`);
+            
+            // 模擬處理時間
+            const delay = stepIndex === 0 ? 500 : (stepIndex === progressSteps.length - 1 ? 800 : 1000);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            
+            if (isCreating) {
+                addLog(`✅ 完成: ${step.name}`);
+                currentStepIndex++;
+                
+                if (stepIndex < progressSteps.length - 1) {
+                    await simulateStep(stepIndex + 1);
+                }
+            }
+        }
+
+        async function createProject() {
+            // 收集表單資料
+            const crmId = document.getElementById('crmId').textContent;
+            const projectData = {
+                projectName: document.getElementById('projectName').value,
+                projectSlug: crmId, // 使用商機ID作為 projectSlug
+                buildingCount: document.getElementById('buildingCount').textContent,
+                totalUnits: document.getElementById('totalUnits').textContent,
+                floorCount: document.getElementById('floorCount').textContent,
+                projectDescription: document.getElementById('projectDescription').value,
+                crmInfo: {
+                    id: crmId,
+                    name: document.getElementById('crmName').textContent,
+                    customer: document.getElementById('crmCustomer').textContent
+                },
+                permissions: collectPermissions()
+            };
+
+            // 驗證資料
+            if (!projectData.projectName) {
+                alert('請填寫必要欄位');
+                return;
+            }
+
+            // 顯示載入狀態和進度模態框
+            const createBtn = document.getElementById('createBtn');
+            const originalText = createBtn.textContent;
+            createBtn.textContent = '建立中...';
+            createBtn.disabled = true;
+            isCreating = true;
+
+            // 顯示進度模態框
+            showProgressModal();
+
+            try {
+                addLog(`📋 收集專案資料: ${projectData.projectName}`);
+                addLog(`🔗 商機ID: ${crmId}`);
+                
+                // 開始進度模擬
+                await simulateStep(0);
+
+                if (!isCreating) return; // 用戶取消了
+
+                addLog('📤 發送建立專案請求...');
+                console.log('發送專案資料:', projectData);
+                
+                const response = await fetch('/api/projects', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(projectData)
+                });
+
+                console.log('API響應狀態:', response.status);
+                console.log('響應頭:', response.headers);
+                
+                let result;
+                const responseText = await response.text();
+                console.log('原始響應內容:', responseText);
+                
+                try {
+                    result = JSON.parse(responseText);
+                } catch (parseError) {
+                    console.error('JSON解析錯誤:', parseError);
+                    throw new Error(`無法解析響應: ${responseText.substring(0, 100)}`);
+                }
+
+                console.log('解析後結果:', result);
+
+                if (response.ok && result.success) {
+                    // 完成最後的進度
+                    updateProgress(100, '建立完成', '🎉 專案建立成功！');
+                    
+                    // 稍等一下讓用戶看到完成狀態
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // 隱藏進度模態框
+                    hideProgressModal();
+                    
+                    // 建立成功
+                    setTimeout(() => {
+                        document.getElementById('successMessage').classList.add('show');
+                        document.getElementById('step4').style.display = 'none';
+                        document.querySelector('.actions').style.display = 'none';
+                        
+                        // 更新成功訊息中的URL
+                        const successMsg = document.getElementById('successMessage');
+                        successMsg.innerHTML = `
+                            ✅ 工程專案頁面已成功建立！
+                            <div style="margin: 1rem 0; padding: 1rem; background: #f3f4f6; border-radius: 8px; font-family: monospace;">
+                                ${result.url}
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <button class="btn btn-primary" onclick="copyURL('${result.url}')">
+                                    📋 複製連結
+                                </button>
+                                <button class="btn btn-primary" onclick="window.location.href='/'">
+                                    🏠 回主頁面
+                                </button>
+                            </div>
+                        `;
+                        
+                        // 複製URL到剪貼板
+                        if (navigator.clipboard) {
+                            navigator.clipboard.writeText(result.url);
+                        }
+                    }, 100);
+                } else {
+                    // 建立失敗
+                    const errorMsg = result.error || `HTTP ${response.status}`;
+                    addLog(`❌ 建立失敗: ${errorMsg}`);
+                    updateProgress(currentStepIndex > 0 ? progressSteps[currentStepIndex-1].progress : 0, '建立失敗', '');
+                    
+                    console.error('建立專案失敗:', result.error || '未知錯誤');
+                    alert(`建立專案失敗: ${errorMsg}`);
+                    
+                    hideProgressModal();
+                    createBtn.textContent = originalText;
+                    createBtn.disabled = false;
+                }
+            } catch (error) {
+                addLog(`❌ 發生錯誤: ${error.message}`);
+                updateProgress(currentStepIndex > 0 ? progressSteps[currentStepIndex-1].progress : 0, '發生錯誤', '');
+                
+                console.error('API調用失敗:', error);
+                alert(`建立專案時發生錯誤: ${error.message}`);
+                
+                hideProgressModal();
+                createBtn.textContent = originalText;
+                createBtn.disabled = false;
+            } finally {
+                isCreating = false;
+            }
+        }
+
+        // 收集權限設定
+        function collectPermissions() {
+            const permissions = {
+                owner: {},
+                contractorLeader: {},
+                member: {}
+            };
+
+            // 收集各角色權限
+            document.querySelectorAll('.permission-row').forEach(row => {
+                const role = row.querySelector('.permission-label').textContent.trim();
+                const options = {};
+                
+                row.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                    const optionName = checkbox.nextElementSibling.textContent.trim();
+                    options[optionName] = checkbox.checked;
+                });
+
+                if (role.includes('業主')) {
+                    permissions.owner = options;
+                } else if (role.includes('工班負責人')) {
+                    permissions.contractorLeader = options;
+                } else if (role.includes('工班成員')) {
+                    permissions.member = options;
+                }
+            });
+
+            return permissions;
+        }
+
+        // 更新確認頁面的資訊
+        function updateConfirmationInfo() {
+            // 更新 CRM 商機資訊
+            const crmName = document.getElementById('crmName').textContent;
+            const crmCustomer = document.getElementById('crmCustomer').textContent;
+            document.getElementById('confirmCrmName').textContent = crmName || '請先選擇商機';
+            document.getElementById('confirmCustomer').textContent = crmCustomer || '-';
+
+            // 更新專案名稱
+            const projectName = document.getElementById('projectName').value;
+            document.getElementById('confirmProjectName').textContent = projectName || '請填寫專案名稱';
+
+            // 更新建築配置資訊
+            const buildingCount = document.getElementById('buildingCount').textContent;
+            const totalUnits = document.getElementById('totalUnits').textContent;
+            const floorCount = document.getElementById('floorCount').textContent;
+            
+            let buildingInfo = '無資料';
+            if (buildingCount && buildingCount !== '載入中...') {
+                buildingInfo = buildingCount;
+                if (totalUnits && totalUnits !== '載入中...') {
+                    buildingInfo += ` • 總戶數：${totalUnits}`;
+                }
+                if (floorCount && floorCount !== '載入中...') {
+                    buildingInfo += ` • 樓層數：${floorCount}`;
+                }
+            }
+            document.getElementById('confirmBuildingInfo').textContent = buildingInfo;
+
+            // 更新權限設定摘要
+            const permissions = collectPermissions();
+            let permissionSummary = [];
+            
+            // 工班負責人可選權限
+            if (permissions.contractorLeader['查看其他工班進度']) {
+                permissionSummary.push('工班負責人可查看其他工班進度');
+            }
+            
+            // 工班成員可選權限
+            if (permissions.member['查看同工班其他成員進度']) {
+                permissionSummary.push('工班成員可查看同工班進度');
+            }
+            if (permissions.member['查看其他工班進度']) {
+                permissionSummary.push('工班成員可查看其他工班進度');
+            }
+
+            const permissionText = permissionSummary.length > 0 
+                ? permissionSummary.join('、') 
+                : '使用預設權限設定';
+            document.getElementById('confirmPermissions').textContent = permissionText;
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('crmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('show');
+            }
+        });
+
+        // 檢查 URL 參數，如果有 opportunityId 則自動載入
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const opportunityId = urlParams.get('opportunityId');
+            if (opportunityId) {
+                console.log('🔗 檢測到 URL 參數 opportunityId:', opportunityId);
+                loadOpportunityStats(opportunityId);
+            }
+        });
+    </script>
+</body>
+</html>

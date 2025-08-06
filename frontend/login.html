@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 工程進度管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #1e3c72;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .logo p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #1e3c72;
+        }
+
+        .password-hint {
+            margin-top: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .success-message {
+            color: #27ae60;
+            font-size: 14px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>工程進度管理系統</h1>
+            <p>元心建材 Construction Management</p>
+        </div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="phone">手機號碼</label>
+                <input 
+                    type="tel" 
+                    id="phone" 
+                    name="phone" 
+                    placeholder="請輸入手機號碼" 
+                    pattern="[0-9]{10}"
+                    maxlength="10"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="password">密碼</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="請輸入密碼" 
+                    required
+                >
+                <div class="password-hint">預設密碼為手機號碼後3碼</div>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <button type="submit" id="submitButton">
+                <span id="buttonText">登入系統</span>
+            </button>
+        </form>
+
+        <div class="footer">
+            <p>© 2024 元心建材. All rights reserved.</p>
+        </div>
+    </div>
+
+    <script src="js/api-client.js"></script>
+    <script>
+        // Initialize API client
+        const apiClient = new ApiClient(
+            window.location.hostname === 'localhost' 
+                ? 'http://localhost:8787' 
+                : 'https://construction-management-api.workers.dev',
+            'yes-ceramics' // Tenant ID
+        );
+
+        const form = document.getElementById('loginForm');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const submitButton = document.getElementById('submitButton');
+        const buttonText = document.getElementById('buttonText');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Clear messages
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            
+            // Get form data
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            
+            // Disable button and show loading
+            submitButton.disabled = true;
+            buttonText.innerHTML = '<span class="loading"></span>登入中...';
+            
+            try {
+                // Attempt login
+                const result = await apiClient.login(phone, password);
+                
+                if (result.success) {
+                    successMessage.textContent = '登入成功！正在跳轉...';
+                    successMessage.style.display = 'block';
+                    
+                    // Store user info
+                    localStorage.setItem('userInfo', JSON.stringify(result.data.user));
+                    
+                    // Redirect to project list
+                    setTimeout(() => {
+                        window.location.href = 'project list.html';
+                    }, 1000);
+                } else {
+                    throw new Error(result.message || '登入失敗');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message || '登入失敗，請檢查手機號碼和密碼';
+                errorMessage.style.display = 'block';
+                
+                // Re-enable button
+                submitButton.disabled = false;
+                buttonText.textContent = '登入系統';
+            }
+        });
+
+        // Auto-fill password hint
+        document.getElementById('phone').addEventListener('input', (e) => {
+            const phone = e.target.value;
+            if (phone.length === 10) {
+                const hint = document.querySelector('.password-hint');
+                hint.textContent = `預設密碼為手機號碼後3碼 (${phone.slice(-3)})`;
+            }
+        });
+
+        // Check if already logged in
+        if (apiClient.sessionToken) {
+            // Verify session
+            apiClient.getProfile().then(result => {
+                if (result.success) {
+                    window.location.href = 'project list.html';
+                }
+            }).catch(() => {
+                // Session invalid, clear it
+                apiClient.clearSession();
+            });
+        }
+    </script>
+</body>
+</html>

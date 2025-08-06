@@ -1,0 +1,39 @@
+{
+  "name": "construction-management-workers",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers backend for construction management system",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:production": "wrangler deploy --env production",
+    "tail": "wrangler tail",
+    "setup": "bash scripts/setup.sh",
+    "test": "vitest",
+    "test:api": "node scripts/test-api.js",
+    "test:api:prod": "API_URL=https://construction-management-api.workers.dev node scripts/test-api.js",
+    "format": "prettier --write .",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "cloudflare-workers",
+    "construction-management",
+    "api"
+  ],
+  "author": "Construction Management Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241106.0",
+    "@types/node": "^20.10.5",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.0",
+    "wrangler": "^3.78.12"
+  },
+  "dependencies": {
+    "itty-router": "^4.2.1",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
