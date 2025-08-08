@@ -9,10 +9,16 @@
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
     "tail": "wrangler tail",
+    "logs": "wrangler tail --format pretty",
     "setup": "bash scripts/setup.sh",
     "test": "vitest",
+    "test:watch": "vitest watch",
+    "test:coverage": "vitest run --coverage",
     "test:api": "node scripts/test-api.js",
     "test:api:prod": "API_URL=https://construction-management-api.workers.dev node scripts/test-api.js",
+    "migrate": "node scripts/migrate.js",
+    "migrate:status": "node scripts/migrate.js status",
+    "migrate:rollback": "node scripts/migrate.js down",
     "format": "prettier --write .",
     "lint": "eslint src/"
   },
@@ -26,6 +32,7 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20241106.0",
     "@types/node": "^20.10.5",
+    "@vitest/coverage-v8": "^1.1.0",
     "eslint": "^8.56.0",
     "prettier": "^3.1.1",
     "typescript": "^5.3.3",
@@ -34,6 +41,7 @@
   },
   "dependencies": {
     "itty-router": "^4.2.1",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.1"
   }
 }
