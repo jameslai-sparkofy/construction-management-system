@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>建立工程專案 - 元心建材管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+
+        .breadcrumb {
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Steps Progress */
+        .steps-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+        }
+
+        .steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 50px;
+            right: 50px;
+            height: 2px;
+            background: #e5e7eb;
+            z-index: 1;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-number {
+            background: #4f46e5;
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step.completed .step-number {
+            background: #10b981;
+            color: white;
+        }
+
+        .step.completed .step-number::after {
+            content: '✓';
+            position: absolute;
+            font-size: 1.2rem;
+        }
+
+        .step.completed .step-number span {
+            display: none;
+        }
+
+        .step-title {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        .step.active .step-title {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* Content Area */
+        .content-area {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            min-height: 400px;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Step 1: Select Opportunity */
+        .opportunity-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .opportunity-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .opportunity-card:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        }
+
+        .opportunity-card.selected {
+            border-color: #4f46e5;
+            background: #f0f4ff;
+        }
+
+        .opportunity-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .opportunity-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .opportunity-status {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .status-won {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pending {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        /* Step 2: Select Engineering Type */
+        .engineering-types {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .engineering-type-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .engineering-type-card:hover {
+            border-color: #4f46e5;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .engineering-type-card.selected {
+            border-color: #4f46e5;
+            background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
+        }
+
+        .engineering-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1rem;
+            background: #4f46e5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .engineering-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .engineering-desc {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        /* Step 3: Statistics */
+        .statistics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .stat-card {
+            background: #f9fafb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #4f46e5;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .details-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .details-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .details-list {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .detail-icon {
+            width: 30px;
+            height: 30px;
+            background: #e0e7ff;
+            color: #4f46e5;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Step 4: Permissions */
+        .permission-section {
+            margin-bottom: 2rem;
+        }
+
+        .permission-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        .user-select {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-item:hover {
+            background: #f3f4f6;
+        }
+
+        .user-item.selected {
+            background: #e0e7ff;
+            border-color: #4f46e5;
+        }
+
+        .user-checkbox {
+            margin-right: 1rem;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .user-role {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+
+        .cross-view-toggle {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #cbd5e1;
+            border-radius: 12px;
+            margin-right: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: #4f46e5;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(26px);
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .btn {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            color: #6b7280;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #86efac;
+        }
+
+        .alert-warning {
+            background: #fed7aa;
+            color: #92400e;
+            border: 1px solid #fdba74;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>建立工程專案</h1>
+        <div class="breadcrumb">
+            首頁 / 專案管理 / 建立專案
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Steps Progress -->
+        <div class="steps-container">
+            <div class="steps">
+                <div class="step active" id="step1">
+                    <div class="step-number"><span>1</span></div>
+                    <div class="step-title">選擇商機</div>
+                </div>
+                <div class="step" id="step2">
+                    <div class="step-number"><span>2</span></div>
+                    <div class="step-title">選擇工程類型</div>
+                </div>
+                <div class="step" id="step3">
+                    <div class="step-number"><span>3</span></div>
+                    <div class="step-title">顯示統計</div>
+                </div>
+                <div class="step" id="step4">
+                    <div class="step-number"><span>4</span></div>
+                    <div class="step-title">設定權限</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Step 1: Select Opportunity -->
+            <div class="step-content active" id="step1-content">
+                <h2 style="margin-bottom: 1rem;">選擇商機</h2>
+                <div class="alert alert-info">
+                    請選擇要創建專案的商機，只顯示「贏單」狀態的商機。
+                </div>
+                
+                <div class="loading" id="opportunities-loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">載入商機資料中...</div>
+                </div>
+
+                <div class="opportunity-list" id="opportunity-list">
+                    <!-- 動態載入商機卡片 -->
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="window.location.href='project-list.html'">取消</button>
+                    <button class="btn btn-primary" onclick="nextStep()" id="step1-next" disabled>下一步</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Select Engineering Type -->
+            <div class="step-content" id="step2-content">
+                <h2 style="margin-bottom: 1rem;">選擇工程類型</h2>
+                <div class="alert alert-info">
+                    請選擇此專案要包含的工程類型，可以多選。
+                </div>
+
+                <div class="engineering-types">
+                    <div class="engineering-type-card" data-type="SPC">
+                        <div class="engineering-icon">🏗️</div>
+                        <div class="engineering-name">SPC 石塑地板</div>
+                        <div class="engineering-desc">石塑複合地板工程</div>
+                    </div>
+                    <div class="engineering-type-card" data-type="CABINET">
+                        <div class="engineering-icon">🚿</div>
+                        <div class="engineering-name">浴櫃工程</div>
+                        <div class="engineering-desc">浴室櫃體安裝工程</div>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="nextStep()" id="step2-next" disabled>下一步</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Show Statistics -->
+            <div class="step-content" id="step3-content">
+                <h2 style="margin-bottom: 1rem;">工程統計資料</h2>
+                
+                <div class="loading" id="statistics-loading">
+                    <div class="spinner"></div>
+                    <div class="loading-text">載入統計資料中...</div>
+                </div>
+
+                <div id="statistics-container">
+                    <!-- 動態載入統計資料 -->
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="nextStep()">下一步</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Set Permissions -->
+            <div class="step-content" id="step4-content">
+                <h2 style="margin-bottom: 1rem;">設定權限</h2>
+                
+                <div class="permission-section">
+                    <div class="permission-title">工班負責人</div>
+                    <div class="user-select" id="leaders-list">
+                        <!-- 動態載入工地師父列表 -->
+                    </div>
+                </div>
+
+                <div class="permission-section">
+                    <div class="permission-title">工班成員</div>
+                    <div class="user-select" id="members-list">
+                        <!-- 動態載入工地師父列表 -->
+                    </div>
+                </div>
+
+                <div class="permission-section">
+                    <div class="permission-title">業主（商機連絡人）</div>
+                    <div class="user-select" id="owners-list">
+                        <!-- 動態載入商機連絡人 -->
+                    </div>
+                </div>
+
+                <div class="permission-section">
+                    <div class="permission-title">其他設定</div>
+                    <div class="cross-view-toggle">
+                        <div class="toggle-switch" id="cross-view-toggle"></div>
+                        <div>
+                            <div style="font-weight: 500; color: #1f2937;">工班可以查看其他工班進度</div>
+                            <div style="font-size: 0.85rem; color: #6b7280;">開啟後，不同工班可以互相查看施工進度</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="nav-buttons">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-success" onclick="createProject()">建立專案</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentStep = 1;
+        let selectedOpportunity = null;
+        let selectedEngineering = [];
+        let selectedLeaders = [];
+        let selectedMembers = [];
+        let selectedOwners = [];
+        let crossViewEnabled = false;
+
+        // API configuration
+        const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
+        const API_TOKEN = 'fx-crm-api-secret-2025';
+        const WORKER_API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8787' 
+            : 'https://construction-management-api.workers.dev';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOpportunities();
+            setupEngineeringTypeSelection();
+            setupToggleSwitch();
+        });
+
+        // Load opportunities from CRM
+        async function loadOpportunities() {
+            const loadingEl = document.getElementById('opportunities-loading');
+            const listEl = document.getElementById('opportunity-list');
+            
+            loadingEl.style.display = 'block';
+            listEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/rest/newopportunityobj?sales_stage__r=贏單&limit=50`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load opportunities');
+
+                const data = await response.json();
+                const opportunities = data.results || [];
+
+                opportunities.forEach(opp => {
+                    const card = createOpportunityCard(opp);
+                    listEl.appendChild(card);
+                });
+
+                if (opportunities.length === 0) {
+                    listEl.innerHTML = '<div class="alert alert-warning">沒有找到贏單狀態的商機</div>';
+                }
+            } catch (error) {
+                console.error('Error loading opportunities:', error);
+                listEl.innerHTML = '<div class="alert alert-warning">載入商機失敗，請稍後再試</div>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Create opportunity card
+        function createOpportunityCard(opp) {
+            const card = document.createElement('div');
+            card.className = 'opportunity-card';
+            card.dataset.oppId = opp.id || opp._id;
+            
+            card.innerHTML = `
+                <div class="opportunity-name">${opp.opportunity_name || opp.name}</div>
+                <div class="opportunity-info">
+                    <div>公司：${opp.company_name || opp.account_id__r || '未設定'}</div>
+                    <div>金額：NT$ ${(opp.amount || 0).toLocaleString()}</div>
+                    <div>預計結案：${opp.expected_close_date || '未設定'}</div>
+                </div>
+                <span class="opportunity-status status-won">贏單</span>
+            `;
+
+            card.addEventListener('click', function() {
+                // Remove previous selection
+                document.querySelectorAll('.opportunity-card').forEach(c => c.classList.remove('selected'));
+                // Add selection
+                card.classList.add('selected');
+                selectedOpportunity = opp;
+                document.getElementById('step1-next').disabled = false;
+            });
+
+            return card;
+        }
+
+        // Setup engineering type selection
+        function setupEngineeringTypeSelection() {
+            document.querySelectorAll('.engineering-type-card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const type = card.dataset.type;
+                    
+                    if (card.classList.contains('selected')) {
+                        card.classList.remove('selected');
+                        selectedEngineering = selectedEngineering.filter(t => t !== type);
+                    } else {
+                        card.classList.add('selected');
+                        selectedEngineering.push(type);
+                    }
+
+                    document.getElementById('step2-next').disabled = selectedEngineering.length === 0;
+                });
+            });
+        }
+
+        // Setup toggle switch
+        function setupToggleSwitch() {
+            const toggle = document.getElementById('cross-view-toggle');
+            toggle.addEventListener('click', function() {
+                toggle.classList.toggle('active');
+                crossViewEnabled = toggle.classList.contains('active');
+            });
+        }
+
+        // Load statistics for selected engineering types
+        async function loadStatistics() {
+            const loadingEl = document.getElementById('statistics-loading');
+            const containerEl = document.getElementById('statistics-container');
+            
+            loadingEl.style.display = 'block';
+            containerEl.innerHTML = '';
+
+            try {
+                // Load sites for each engineering type
+                const statsPromises = selectedEngineering.map(async (type) => {
+                    const table = type === 'CABINET' ? 'site_cabinet_c' : 'object_8w9cb__c';
+                    const response = await fetch(
+                        `${API_BASE_URL}/rest/${table}?field_8eM2Z__c=${selectedOpportunity.id}&limit=100`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+
+                    if (!response.ok) throw new Error(`Failed to load ${type} sites`);
+
+                    const data = await response.json();
+                    return {
+                        type,
+                        sites: data.results || []
+                    };
+                });
+
+                const results = await Promise.all(statsPromises);
+
+                // Display statistics
+                results.forEach(result => {
+                    const section = document.createElement('div');
+                    section.innerHTML = `
+                        <h3 style="margin: 2rem 0 1rem; color: #1f2937;">
+                            ${result.type === 'SPC' ? 'SPC 石塑地板' : '浴櫃工程'}
+                        </h3>
+                        <div class="statistics-grid">
+                            <div class="stat-card">
+                                <div class="stat-value">${result.sites.length}</div>
+                                <div class="stat-label">案場總數</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">工班數量</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">維修單數</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">0</div>
+                                <div class="stat-label">進度公告</div>
+                            </div>
+                        </div>
+                        <div class="details-section">
+                            <div class="details-title">案場清單（前10筆）</div>
+                            <div class="details-list">
+                                ${result.sites.slice(0, 10).map(site => `
+                                    <div class="detail-item">
+                                        <div class="detail-icon">📍</div>
+                                        <div>
+                                            <div style="font-weight: 500;">${site.name || '未命名'}</div>
+                                            <div style="font-size: 0.85rem; color: #6b7280;">
+                                                ${site.building || 'A'}棟 ${site.floor || ''}樓 ${site.unit || ''}戶
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                    containerEl.appendChild(section);
+                });
+
+            } catch (error) {
+                console.error('Error loading statistics:', error);
+                containerEl.innerHTML = '<div class="alert alert-warning">載入統計資料失敗</div>';
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        // Load users for permission setting
+        async function loadUsers() {
+            try {
+                // Load workers from CRM
+                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?limit=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+
+                if (!response.ok) throw new Error('Failed to load workers');
+
+                const data = await response.json();
+                const workers = data.results || [];
+
+                // Populate leaders list
+                const leadersEl = document.getElementById('leaders-list');
+                leadersEl.innerHTML = workers.map(worker => `
+                    <div class="user-item" data-user-id="${worker.id}">
+                        <input type="checkbox" class="user-checkbox" id="leader-${worker.id}">
+                        <div class="user-info">
+                            <div class="user-name">${worker.name || '未命名'}</div>
+                            <div class="user-role">工地師父</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Populate members list
+                const membersEl = document.getElementById('members-list');
+                membersEl.innerHTML = workers.map(worker => `
+                    <div class="user-item" data-user-id="${worker.id}">
+                        <input type="checkbox" class="user-checkbox" id="member-${worker.id}">
+                        <div class="user-info">
+                            <div class="user-name">${worker.name || '未命名'}</div>
+                            <div class="user-role">工地師父</div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Add opportunity contact as owner
+                const ownersEl = document.getElementById('owners-list');
+                ownersEl.innerHTML = `
+                    <div class="user-item selected">
+                        <input type="checkbox" class="user-checkbox" checked disabled>
+                        <div class="user-info">
+                            <div class="user-name">${selectedOpportunity.contact_name || '商機連絡人'}</div>
+                            <div class="user-role">業主</div>
+                        </div>
+                    </div>
+                `;
+
+                // Setup user selection
+                setupUserSelection();
+
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // Setup user selection handlers
+        function setupUserSelection() {
+            document.querySelectorAll('.user-item').forEach(item => {
+                const checkbox = item.querySelector('.user-checkbox');
+                if (checkbox && !checkbox.disabled) {
+                    item.addEventListener('click', function() {
+                        checkbox.checked = !checkbox.checked;
+                        item.classList.toggle('selected');
+                        updateSelectedUsers();
+                    });
+                }
+            });
+        }
+
+        // Update selected users arrays
+        function updateSelectedUsers() {
+            selectedLeaders = Array.from(document.querySelectorAll('#leaders-list .user-checkbox:checked'))
+                .map(cb => cb.closest('.user-item').dataset.userId);
+            
+            selectedMembers = Array.from(document.querySelectorAll('#members-list .user-checkbox:checked'))
+                .map(cb => cb.closest('.user-item').dataset.userId);
+            
+            selectedOwners = [selectedOpportunity.contact_id || selectedOpportunity.contact];
+        }
+
+        // Navigation functions
+        function nextStep() {
+            if (currentStep === 1 && selectedOpportunity) {
+                moveToStep(2);
+            } else if (currentStep === 2 && selectedEngineering.length > 0) {
+                loadStatistics();
+                moveToStep(3);
+            } else if (currentStep === 3) {
+                loadUsers();
+                moveToStep(4);
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                moveToStep(currentStep - 1);
+            }
+        }
+
+        function moveToStep(step) {
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((s, index) => {
+                if (index < step - 1) {
+                    s.classList.add('completed');
+                    s.classList.remove('active');
+                } else if (index === step - 1) {
+                    s.classList.add('active');
+                    s.classList.remove('completed');
+                } else {
+                    s.classList.remove('active', 'completed');
+                }
+            });
+
+            // Update content
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`step${step}-content`).classList.add('active');
+
+            currentStep = step;
+        }
+
+        // Create project
+        async function createProject() {
+            if (!confirm('確定要建立此專案嗎？')) return;
+
+            updateSelectedUsers();
+
+            const projectData = {
+                opportunityId: selectedOpportunity.id,
+                name: selectedOpportunity.opportunity_name,
+                spcEngineering: selectedEngineering.includes('SPC') ? { enabled: true } : { enabled: false },
+                cabinetEngineering: selectedEngineering.includes('CABINET') ? { enabled: true } : { enabled: false },
+                permissions: {
+                    leaders: selectedLeaders,
+                    members: selectedMembers,
+                    owners: selectedOwners,
+                    canCrossView: crossViewEnabled
+                }
+            };
+
+            try {
+                // Get auth token (simplified for demo)
+                const token = localStorage.getItem('auth_token') || 'demo-token';
+
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(projectData)
+                });
+
+                if (!response.ok) throw new Error('Failed to create project');
+
+                const result = await response.json();
+                
+                alert('專案建立成功！');
+                window.location.href = `project-details.html?id=${result.data.id}`;
+
+            } catch (error) {
+                console.error('Error creating project:', error);
+                alert('建立專案失敗，請稍後再試');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 
 import { Router } from 'itty-router';
 import { FileService } from '../services/fileService.js';
-import { success, error } from '../utils/response.js';
+import { ResponseHelper } from '../utils/response.js';
 
 export function createFileRoutes(env) {
   const router = Router({ base: '/files' });
@@ -20,11 +20,11 @@ export function createFileRoutes(env) {
       
       // Validate required parameters
       if (!projectId || !siteId || !type) {
-        return error('Missing required parameters: projectId, siteId, type', 400);
+        return ResponseHelper.error('Missing required parameters: projectId, siteId, type', 400);
       }
 
       if (!['before', 'after'].includes(type)) {
-        return error('Type must be either "before" or "after"', 400);
+        return ResponseHelper.error('Type must be either "before" or "after"', 400);
       }
 
       const metadata = {
@@ -47,10 +47,10 @@ export function createFileRoutes(env) {
         { expirationTtl: 365 * 24 * 60 * 60 } // 1 year
       );
 
-      return success(result);
+      return ResponseHelper.success(result);
     } catch (err) {
       console.error('Upload error:', err);
-      return error(err.message || 'File upload failed', 500);
+      return ResponseHelper.error(err.message || 'File upload failed', 500);
     }
   });
 
@@ -65,14 +65,14 @@ export function createFileRoutes(env) {
       // Get file metadata from KV
       const fileData = await env.FILES_KV.get(`file:${fileId}`, 'json');
       if (!fileData) {
-        return error('File not found', 404);
+        return ResponseHelper.error('File not found', 404);
       }
 
       // Return file from R2
       return await fileService.getFile(fileData.path);
     } catch (err) {
       console.error('File retrieval error:', err);
-      return error(err.message || 'File retrieval failed', 500);
+      return ResponseHelper.error(err.message || 'File retrieval failed', 500);
     }
   });
 
@@ -86,13 +86,13 @@ export function createFileRoutes(env) {
       
       // Check permissions
       if (!request.permissions.includes('delete')) {
-        return error('Insufficient permissions', 403);
+        return ResponseHelper.error('Insufficient permissions', 403);
       }
 
       // Get file metadata from KV
       const fileData = await env.FILES_KV.get(`file:${fileId}`, 'json');
       if (!fileData) {
-        return error('File not found', 404);
+        return ResponseHelper.error('File not found', 404);
       }
 
       // Delete from R2
@@ -101,10 +101,10 @@ export function createFileRoutes(env) {
       // Delete from KV
       await env.FILES_KV.delete(`file:${fileId}`);
 
-      return success({ message: 'File deleted successfully' });
+      return ResponseHelper.success({ message: 'File deleted successfully' });
     } catch (err) {
       console.error('File deletion error:', err);
-      return error(err.message || 'File deletion failed', 500);
+      return ResponseHelper.error(err.message || 'File deletion failed', 500);
     }
   });
 
@@ -118,18 +118,18 @@ export function createFileRoutes(env) {
       const { projectId } = request.query;
       
       if (!projectId) {
-        return error('Missing required parameter: projectId', 400);
+        return ResponseHelper.error('Missing required parameter: projectId', 400);
       }
 
       const files = await fileService.listSiteFiles(projectId, siteId);
       
-      return success({
+      return ResponseHelper.success({
         files,
         count: files.length,
       });
     } catch (err) {
       console.error('File listing error:', err);
-      return error(err.message || 'File listing failed', 500);
+      return ResponseHelper.error(err.message || 'File listing failed', 500);
     }
   });
 
@@ -142,14 +142,14 @@ export function createFileRoutes(env) {
       const { projectId, siteId, type } = request.query;
       
       if (!projectId || !siteId || !type) {
-        return error('Missing required parameters', 400);
+        return ResponseHelper.error('Missing required parameters', 400);
       }
 
       const formData = await request.formData();
       const files = formData.getAll('files');
       
       if (!files || files.length === 0) {
-        return error('No files provided', 400);
+        return ResponseHelper.error('No files provided', 400);
       }
 
       const results = [];
@@ -198,7 +198,7 @@ export function createFileRoutes(env) {
         }
       }
 
-      return success({
+      return ResponseHelper.success({
         uploaded: results,
         failed: errors,
         total: files.length,
@@ -206,7 +206,7 @@ export function createFileRoutes(env) {
       });
     } catch (err) {
       console.error('Batch upload error:', err);
-      return error(err.message || 'Batch upload failed', 500);
+      return ResponseHelper.error(err.message || 'Batch upload failed', 500);
     }
   });
 

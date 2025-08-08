@@ -34,11 +34,18 @@ binding = "CONSTRUCTION_PHOTOS"
 bucket_name = "construction-photos"
 preview_bucket_name = "construction-photos-preview"
 
-# D1 Database (optional for future use)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "engineering-management"
-# database_id = "your-d1-database-id"
+# D1 Databases
+# CRM 資料庫 (綠色區塊 - 從紛享銷客同步的資料)
+[[d1_databases]]
+binding = "DB_CRM"
+database_name = "fx-crm-database"
+database_id = "332221d8-61cb-4084-88dc-394e208ae8b4"
+
+# 工程管理資料庫 (白色區塊 - 專案自己的資料)
+[[d1_databases]]
+binding = "DB_ENGINEERING"
+database_name = "engineering-management"
+database_id = "21fce5cd-8364-4dc2-be7f-6d68cbd6fca9"
 
 # Environment-specific configurations
 [env.staging]

@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案列表 - 元心建材管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-name {
+            font-size: 0.95rem;
+        }
+
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        /* Filters and Actions */
+        .controls {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            width: 300px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .filter-select {
+            padding: 0.75rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #4f46e5;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .stat-change {
+            display: inline-block;
+            margin-top: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .stat-up {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .stat-down {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Project Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .project-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .project-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        }
+
+        .project-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .project-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .project-company {
+            color: #6b7280;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .project-body {
+            padding: 1.5rem;
+        }
+
+        .project-info {
+            display: grid;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .engineering-tags {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .engineering-tag {
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .tag-spc {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .tag-cabinet {
+            background: #fce7f3;
+            color: #9f1239;
+        }
+
+        .progress-section {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .progress-value {
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5 0%, #6366f1 100%);
+            transition: width 0.5s ease;
+        }
+
+        .project-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            color: #4b5563;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: #f9fafb;
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+
+        /* Role Badge */
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+
+        .role-admin {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .role-owner {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .role-leader {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-member {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 1rem;
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+        }
+
+        .empty-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-desc {
+            color: #6b7280;
+            margin-bottom: 2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .search-input {
+                width: 100%;
+            }
+
+            .projects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <h1>專案管理系統</h1>
+            <div class="user-info">
+                <span class="user-name" id="userName">載入中...</span>
+                <button class="logout-btn" onclick="logout()">登出</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalProjects">0</div>
+                <div class="stat-label">總專案數</div>
+                <span class="stat-change stat-up">+12% 本月</span>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="activeProjects">0</div>
+                <div class="stat-label">進行中專案</div>
+                <span class="stat-change stat-up">+5% 本週</span>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedProjects">0</div>
+                <div class="stat-label">已完成專案</div>
+                <span class="stat-change stat-up">+3 本月</span>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="avgProgress">0%</div>
+                <div class="stat-label">平均進度</div>
+                <span class="stat-change stat-up">+8% 本週</span>
+            </div>
+        </div>
+
+        <!-- Filters and Actions -->
+        <div class="controls">
+            <div class="filters">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" class="search-input" placeholder="搜尋專案名稱或公司..." id="searchInput">
+                </div>
+                <select class="filter-select" id="statusFilter">
+                    <option value="">所有狀態</option>
+                    <option value="active">進行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="pending">待開始</option>
+                </select>
+                <select class="filter-select" id="roleFilter">
+                    <option value="">我的角色</option>
+                    <option value="admin">管理員</option>
+                    <option value="owner">業主</option>
+                    <option value="leader">工班負責人</option>
+                    <option value="member">工班成員</option>
+                </select>
+            </div>
+            <button class="btn-primary" onclick="window.location.href='project-create-v2.html'">
+                <span>➕</span> 建立新專案
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">載入專案中...</div>
+        </div>
+
+        <!-- Projects Grid -->
+        <div class="projects-grid" id="projectsGrid" style="display: none;">
+            <!-- 動態載入專案卡片 -->
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">尚無專案</div>
+            <div class="empty-desc">目前沒有任何專案，點擊上方按鈕建立新專案</div>
+            <button class="btn-primary" onclick="window.location.href='project-create-v2.html'">
+                建立第一個專案
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
+        const API_TOKEN = 'fx-crm-api-secret-2025';
+        const WORKER_API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8787' 
+            : 'https://construction-management-api.workers.dev';
+
+        // User context
+        let currentUser = null;
+        let allProjects = [];
+        let filteredProjects = [];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserInfo();
+            loadProjects();
+            setupFilters();
+        });
+
+        // Load user info
+        function loadUserInfo() {
+            // 從 localStorage 或 session 獲取用戶資訊
+            const token = localStorage.getItem('auth_token');
+            const userInfo = localStorage.getItem('user_info');
+            
+            if (userInfo) {
+                currentUser = JSON.parse(userInfo);
+                document.getElementById('userName').textContent = currentUser.name || currentUser.phone;
+            } else {
+                // 如果沒有登入資訊，導向登入頁
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Load projects
+        async function loadProjects() {
+            const loadingEl = document.getElementById('loading');
+            const gridEl = document.getElementById('projectsGrid');
+            const emptyEl = document.getElementById('emptyState');
+            
+            loadingEl.style.display = 'block';
+            gridEl.style.display = 'none';
+            emptyEl.style.display = 'none';
+
+            try {
+                const token = localStorage.getItem('auth_token') || 'demo-token';
+                
+                // 從 Worker API 獲取專案列表
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    // 如果 API 還未實作，使用模擬資料
+                    throw new Error('API not ready, using mock data');
+                }
+
+                const data = await response.json();
+                allProjects = data.projects || [];
+            } catch (error) {
+                console.log('Using mock data:', error);
+                // 使用模擬資料
+                allProjects = await loadMockProjects();
+            }
+
+            // 顯示專案
+            displayProjects(allProjects);
+            updateStats(allProjects);
+
+            loadingEl.style.display = 'none';
+            
+            if (allProjects.length === 0) {
+                emptyEl.style.display = 'block';
+            } else {
+                gridEl.style.display = 'grid';
+            }
+        }
+
+        // Load mock projects for demo
+        async function loadMockProjects() {
+            return [
+                {
+                    id: 'proj_001',
+                    name: '台北信義區豪宅專案',
+                    company: '遠東建設',
+                    status: 'active',
+                    engineeringTypes: ['SPC', 'CABINET'],
+                    progress: 65,
+                    userRole: 'admin',
+                    stats: {
+                        totalSites: 120,
+                        completedSites: 78,
+                        pendingSites: 42
+                    },
+                    lastUpdate: '2025-01-08'
+                },
+                {
+                    id: 'proj_002',
+                    name: '新竹科學園區辦公大樓',
+                    company: '台積電',
+                    status: 'active',
+                    engineeringTypes: ['SPC'],
+                    progress: 35,
+                    userRole: 'leader',
+                    stats: {
+                        totalSites: 80,
+                        completedSites: 28,
+                        pendingSites: 52
+                    },
+                    lastUpdate: '2025-01-07'
+                },
+                {
+                    id: 'proj_003',
+                    name: '台中七期住宅',
+                    company: '寶成建設',
+                    status: 'completed',
+                    engineeringTypes: ['CABINET'],
+                    progress: 100,
+                    userRole: 'member',
+                    stats: {
+                        totalSites: 60,
+                        completedSites: 60,
+                        pendingSites: 0
+                    },
+                    lastUpdate: '2025-01-06'
+                }
+            ];
+        }
+
+        // Display projects
+        function displayProjects(projects) {
+            const gridEl = document.getElementById('projectsGrid');
+            gridEl.innerHTML = '';
+
+            projects.forEach(project => {
+                const card = createProjectCard(project);
+                gridEl.appendChild(card);
+            });
+        }
+
+        // Create project card
+        function createProjectCard(project) {
+            const card = document.createElement('div');
+            card.className = 'project-card';
+            card.onclick = () => window.location.href = `project-details.html?id=${project.id}`;
+
+            const engineeringTags = project.engineeringTypes.map(type => {
+                const className = type === 'SPC' ? 'tag-spc' : 'tag-cabinet';
+                const label = type === 'SPC' ? 'SPC地板' : '浴櫃';
+                return `<span class="engineering-tag ${className}">${label}</span>`;
+            }).join('');
+
+            const roleClass = `role-${project.userRole}`;
+            const roleLabel = {
+                admin: '管理員',
+                owner: '業主',
+                leader: '負責人',
+                member: '成員'
+            }[project.userRole];
+
+            card.innerHTML = `
+                <div class="project-header">
+                    <div class="project-title">${project.name}</div>
+                    <div class="project-company">
+                        <span>🏢</span> ${project.company}
+                    </div>
+                </div>
+                <div class="project-body">
+                    <div class="engineering-tags">
+                        ${engineeringTags}
+                    </div>
+                    <div class="project-info">
+                        <div class="info-item">
+                            <span class="info-label">總案場數</span>
+                            <span class="info-value">${project.stats.totalSites}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">已完成</span>
+                            <span class="info-value">${project.stats.completedSites}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">最後更新</span>
+                            <span class="info-value">${project.lastUpdate}</span>
+                        </div>
+                    </div>
+                    <div class="progress-section">
+                        <div class="progress-header">
+                            <span class="progress-label">整體進度</span>
+                            <span class="progress-value">${project.progress}%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${project.progress}%"></div>
+                        </div>
+                    </div>
+                    <span class="role-badge ${roleClass}">${roleLabel}</span>
+                    <div class="project-actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); viewDetails('${project.id}')">
+                            查看詳情
+                        </button>
+                        <button class="action-btn" onclick="event.stopPropagation(); viewProgress('${project.id}')">
+                            施工進度
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // Update statistics
+        function updateStats(projects) {
+            const totalProjects = projects.length;
+            const activeProjects = projects.filter(p => p.status === 'active').length;
+            const completedProjects = projects.filter(p => p.status === 'completed').length;
+            
+            const totalProgress = projects.reduce((sum, p) => sum + p.progress, 0);
+            const avgProgress = totalProjects > 0 ? Math.round(totalProgress / totalProjects) : 0;
+
+            document.getElementById('totalProjects').textContent = totalProjects;
+            document.getElementById('activeProjects').textContent = activeProjects;
+            document.getElementById('completedProjects').textContent = completedProjects;
+            document.getElementById('avgProgress').textContent = avgProgress + '%';
+        }
+
+        // Setup filters
+        function setupFilters() {
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const roleFilter = document.getElementById('roleFilter');
+
+            searchInput.addEventListener('input', filterProjects);
+            statusFilter.addEventListener('change', filterProjects);
+            roleFilter.addEventListener('change', filterProjects);
+        }
+
+        // Filter projects
+        function filterProjects() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusValue = document.getElementById('statusFilter').value;
+            const roleValue = document.getElementById('roleFilter').value;
+
+            filteredProjects = allProjects.filter(project => {
+                const matchSearch = !searchTerm || 
+                    project.name.toLowerCase().includes(searchTerm) ||
+                    project.company.toLowerCase().includes(searchTerm);
+                
+                const matchStatus = !statusValue || project.status === statusValue;
+                const matchRole = !roleValue || project.userRole === roleValue;
+
+                return matchSearch && matchStatus && matchRole;
+            });
+
+            displayProjects(filteredProjects);
+            updateStats(filteredProjects);
+        }
+
+        // View project details
+        function viewDetails(projectId) {
+            window.location.href = `project-details.html?id=${projectId}`;
+        }
+
+        // View project progress
+        function viewProgress(projectId) {
+            window.location.href = `project-progress.html?id=${projectId}`;
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('確定要登出嗎？')) {
+                localStorage.removeItem('auth_token');
+                localStorage.removeItem('user_info');
+                window.location.href = 'login.html';
+            }
+        }
+    </script>
+</body>
+</html>
