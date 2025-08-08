@@ -15,18 +15,26 @@ FRONTEND_BASE_URL = "https://manage.yes-ceramics.com"
 # KV Namespaces for session management
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "sessions_kv_namespace_id"
+id = "3d3356dca3684619bea5750829dbcaa5"
 preview_id = "sessions_kv_preview_id"
 
 [[kv_namespaces]]
 binding = "USERS"
-id = "users_kv_namespace_id"
+id = "55484742a0dd4410b548aaa506c8c0bc"
 preview_id = "users_kv_preview_id"
 
 [[kv_namespaces]]
 binding = "FILES_KV"
-id = "files_kv_namespace_id"
+id = "1e62bab6fb30404e9b753dd0b1f1ee6a"
 preview_id = "files_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "SESSION_STORE"
+id = "8c8b7ae9df6b43f18a457a0cea0affc2"
+
+[[kv_namespaces]]
+binding = "SYNC_STATE"
+id = "4f55c6c04ae74847a9339c0bf2584c4a"
 
 # R2 Bucket for construction photos
 [[r2_buckets]]

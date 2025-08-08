@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 測試 - 工程管理系統</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .api-info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4f46e5;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #4338ca;
+        }
+        .result {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+            border: 1px solid #e5e7eb;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+        .error {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin-right: 10px;
+            width: 200px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        .status.online {
+            background: #10b981;
+            color: white;
+        }
+        .status.offline {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 工程管理系統 API 測試</h1>
+    
+    <div class="api-info">
+        <h2>API 資訊</h2>
+        <p><strong>Base URL:</strong> <code id="apiUrl">https://construction-management-api.lai-jameslai.workers.dev</code></p>
+        <p><strong>狀態:</strong> <span id="apiStatus" class="status">檢測中...</span></p>
+        <p><strong>版本:</strong> <span id="apiVersion">-</span></p>
+        <p><strong>環境:</strong> <span id="apiEnv">-</span></p>
+    </div>
+
+    <div class="test-section">
+        <h2>1. 健康檢查</h2>
+        <button onclick="testHealth()">測試 Health Endpoint</button>
+        <div id="healthResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 登入測試</h2>
+        <div>
+            <input type="text" id="phone" placeholder="手機號碼" value="0912345678">
+            <input type="password" id="password" placeholder="密碼" value="678">
+            <button onclick="testLogin()">測試登入</button>
+        </div>
+        <div id="loginResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 獲取當前用戶</h2>
+        <button onclick="testGetMe()" id="getMeBtn" disabled>測試 Get Me (需先登入)</button>
+        <div id="getMeResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 專案列表</h2>
+        <button onclick="testProjects()" id="projectsBtn" disabled>獲取專案列表 (需先登入)</button>
+        <div id="projectsResult" class="result" style="display:none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>5. CRM 商機列表</h2>
+        <button onclick="testOpportunities()" id="opportunitiesBtn" disabled>獲取商機列表 (需先登入)</button>
+        <div id="opportunitiesResult" class="result" style="display:none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://construction-management-api.lai-jameslai.workers.dev';
+        let authToken = '';
+
+        // Check API status on load
+        window.onload = async () => {
+            await checkApiStatus();
+        };
+
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                
+                document.getElementById('apiStatus').className = 'status online';
+                document.getElementById('apiStatus').textContent = '在線';
+                document.getElementById('apiVersion').textContent = data.data?.version || '1.0.0';
+                document.getElementById('apiEnv').textContent = data.data?.environment || 'production';
+            } catch (error) {
+                document.getElementById('apiStatus').className = 'status offline';
+                document.getElementById('apiStatus').textContent = '離線';
+            }
+        }
+
+        function showResult(elementId, data, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.className = `result ${isSuccess ? 'success' : 'error'}`;
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testHealth() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+                showResult('healthResult', data, response.ok);
+            } catch (error) {
+                showResult('healthResult', { error: error.message }, false);
+            }
+        }
+
+        async function testLogin() {
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ phone, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.data?.token) {
+                    authToken = data.data.token;
+                    document.getElementById('getMeBtn').disabled = false;
+                    document.getElementById('projectsBtn').disabled = false;
+                    document.getElementById('opportunitiesBtn').disabled = false;
+                    showResult('loginResult', { ...data, token: '***已儲存***' }, true);
+                } else {
+                    showResult('loginResult', data, false);
+                }
+            } catch (error) {
+                showResult('loginResult', { error: error.message }, false);
+            }
+        }
+
+        async function testGetMe() {
+            if (!authToken) {
+                showResult('getMeResult', { error: '請先登入' }, false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/auth/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                showResult('getMeResult', data, response.ok);
+            } catch (error) {
+                showResult('getMeResult', { error: error.message }, false);
+            }
+        }
+
+        async function testProjects() {
+            if (!authToken) {
+                showResult('projectsResult', { error: '請先登入' }, false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/projects`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                showResult('projectsResult', data, response.ok);
+            } catch (error) {
+                showResult('projectsResult', { error: error.message }, false);
+            }
+        }
+
+        async function testOpportunities() {
+            if (!authToken) {
+                showResult('opportunitiesResult', { error: '請先登入' }, false);
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/crm/opportunities`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                const data = await response.json();
+                showResult('opportunitiesResult', data, response.ok);
+            } catch (error) {
+                showResult('opportunitiesResult', { error: error.message }, false);
+            }
+        }
+    </script>
+</body>
+</html>
