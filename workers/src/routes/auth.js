@@ -16,10 +16,13 @@ export class AuthRoutes {
    */
   async login(request) {
     try {
-      // Validate tenant
+      // Try to validate tenant, but use default if not provided
       const tenantValidation = await this.tenantMiddleware.validateTenant(request);
-      if (tenantValidation.error) {
-        return tenantValidation.error;
+      
+      // Use default tenant if no tenant ID is provided
+      let tenantId = 'yes-ceramics'; // Default tenant
+      if (!tenantValidation.error && tenantValidation.tenantId) {
+        tenantId = tenantValidation.tenantId;
       }
 
       // Parse request body
@@ -37,7 +40,7 @@ export class AuthRoutes {
       return await this.authService.login(
         phone,
         password,
-        tenantValidation.tenantId,
+        tenantId,
         clientIp
       );
 

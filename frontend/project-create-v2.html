@@ -38,7 +38,7 @@
 
         /* Container */
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 2rem auto;
             padding: 0 2rem;
         }
@@ -146,54 +146,137 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Step 1: Select Opportunity */
-        .opportunity-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        /* Search Box */
+        .search-section {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
             gap: 1rem;
-            margin-top: 1rem;
+            align-items: center;
         }
 
-        .opportunity-card {
-            border: 2px solid #e5e7eb;
+        .search-box {
+            position: relative;
+            flex: 1;
+            max-width: 500px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 1px solid #e5e7eb;
             border-radius: 8px;
-            padding: 1.5rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .search-btn {
+            padding: 0.75rem 1.5rem;
+            background: #4f46e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.3s ease;
         }
 
-        .opportunity-card:hover {
-            border-color: #4f46e5;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1);
+        .search-btn:hover {
+            background: #3730a3;
         }
 
-        .opportunity-card.selected {
-            border-color: #4f46e5;
-            background: #f0f4ff;
+        /* Table Container */
+        .table-container {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        /* Opportunity Table */
+        .opportunity-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .opportunity-table thead {
+            background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .opportunity-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .opportunity-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .opportunity-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .opportunity-table tbody tr.selected {
+            background: #e0e7ff;
+            border-left: 3px solid #4f46e5;
+        }
+
+        .opportunity-table td {
+            padding: 1rem;
+            color: #1f2937;
+            font-size: 0.95rem;
+        }
+
+        .radio-cell {
+            width: 50px;
+            text-align: center;
         }
 
         .opportunity-name {
-            font-size: 1.1rem;
             font-weight: 600;
             color: #1f2937;
-            margin-bottom: 0.5rem;
         }
 
-        .opportunity-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.3rem;
+        .company-name {
+            font-size: 0.85rem;
             color: #6b7280;
-            font-size: 0.9rem;
+            margin-top: 0.25rem;
         }
 
-        .opportunity-status {
+        .amount {
+            font-weight: 600;
+            color: #059669;
+        }
+
+        .status-badge {
             display: inline-block;
-            padding: 0.2rem 0.6rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
             font-weight: 500;
-            margin-top: 0.5rem;
         }
 
         .status-won {
@@ -259,117 +342,71 @@
             font-size: 0.9rem;
         }
 
-        /* Step 3: Statistics */
-        .statistics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
+        /* Step 3: Statistics Table */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
         }
 
-        .stat-card {
+        .stats-table thead {
             background: #f9fafb;
-            border-radius: 8px;
-            padding: 1.5rem;
-            text-align: center;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .stats-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .stats-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            color: #1f2937;
         }
 
         .stat-value {
-            font-size: 2rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: #4f46e5;
-            margin-bottom: 0.5rem;
         }
 
-        .stat-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-
-        .details-section {
-            margin-top: 2rem;
-            padding-top: 2rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .details-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 1rem;
-        }
-
-        .details-list {
-            display: grid;
-            gap: 0.5rem;
-        }
-
-        .detail-item {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            background: white;
-            border-radius: 6px;
-            border: 1px solid #e5e7eb;
-        }
-
-        .detail-icon {
-            width: 30px;
-            height: 30px;
-            background: #e0e7ff;
-            color: #4f46e5;
-            border-radius: 6px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            font-size: 0.9rem;
-        }
-
-        /* Step 4: Permissions */
-        .permission-section {
+        /* Step 4: Permissions Table */
+        .permission-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-bottom: 2rem;
         }
 
-        .permission-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #1f2937;
-            margin-bottom: 1rem;
-        }
-
-        .user-select {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
-
-        .user-item {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
+        .permission-table thead {
             background: #f9fafb;
-            border-radius: 8px;
-            border: 1px solid #e5e7eb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .permission-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .permission-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .permission-checkbox {
+            width: 20px;
+            height: 20px;
             cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-item:hover {
-            background: #f3f4f6;
-        }
-
-        .user-item.selected {
-            background: #e0e7ff;
-            border-color: #4f46e5;
-        }
-
-        .user-checkbox {
-            margin-right: 1rem;
-        }
-
-        .user-info {
-            flex: 1;
         }
 
         .user-name {
@@ -382,13 +419,15 @@
             color: #6b7280;
         }
 
-        .cross-view-toggle {
+        /* Cross View Toggle */
+        .cross-view-section {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 2rem;
             display: flex;
             align-items: center;
-            padding: 1rem;
-            background: #f9fafb;
-            border-radius: 8px;
-            margin-top: 1rem;
+            gap: 1rem;
         }
 
         .toggle-switch {
@@ -397,7 +436,6 @@
             height: 24px;
             background: #cbd5e1;
             border-radius: 12px;
-            margin-right: 1rem;
             cursor: pointer;
             transition: background 0.3s ease;
         }
@@ -526,6 +564,139 @@
             color: #92400e;
             border: 1px solid #fdba74;
         }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Field Permissions Section */
+        .field-permissions-section {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .field-permissions-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .permission-tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 1rem;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .permission-tab:hover {
+            color: #4f46e5;
+        }
+
+        .permission-tab.active {
+            color: #4f46e5;
+            font-weight: 600;
+        }
+
+        .permission-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #4f46e5;
+        }
+
+        .field-permissions-content {
+            display: none;
+        }
+
+        .field-permissions-content.active {
+            display: block;
+        }
+
+        .fields-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .fields-table thead {
+            background: #f9fafb;
+        }
+
+        .fields-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+        }
+
+        .fields-table td {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .field-name {
+            font-weight: 500;
+            color: #1f2937;
+        }
+
+        .field-api-name {
+            font-size: 0.8rem;
+            color: #6b7280;
+            margin-top: 0.2rem;
+        }
+
+        .field-type-badge {
+            display: inline-block;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .quick-action-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            color: #4b5563;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action-btn:hover {
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
     </style>
 </head>
 <body>
@@ -570,13 +741,43 @@
                     請選擇要創建專案的商機，只顯示「贏單」狀態的商機。
                 </div>
                 
+                <!-- Search Section -->
+                <div class="search-section">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-input" id="opportunitySearch" 
+                               placeholder="搜尋商機名稱或公司名稱...">
+                    </div>
+                    <button class="search-btn" onclick="searchOpportunities()">搜尋</button>
+                </div>
+
                 <div class="loading" id="opportunities-loading">
                     <div class="spinner"></div>
                     <div class="loading-text">載入商機資料中...</div>
                 </div>
 
-                <div class="opportunity-list" id="opportunity-list">
-                    <!-- 動態載入商機卡片 -->
+                <!-- Opportunities Table -->
+                <div class="table-container" id="opportunities-container" style="display: none;">
+                    <table class="opportunity-table">
+                        <thead>
+                            <tr>
+                                <th class="radio-cell">選擇</th>
+                                <th>商機名稱</th>
+                                <th>公司</th>
+                                <th>金額</th>
+                                <th>預計結案日</th>
+                                <th>狀態</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opportunity-tbody">
+                            <!-- 動態載入商機列表 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="empty-state" id="opportunity-empty" style="display: none;">
+                    <div class="empty-icon">📋</div>
+                    <div>沒有找到符合條件的商機</div>
                 </div>
 
                 <div class="nav-buttons">
@@ -621,7 +822,7 @@
                 </div>
 
                 <div id="statistics-container">
-                    <!-- 動態載入統計資料 -->
+                    <!-- 動態載入統計資料表格 -->
                 </div>
 
                 <div class="nav-buttons">
@@ -634,35 +835,102 @@
             <div class="step-content" id="step4-content">
                 <h2 style="margin-bottom: 1rem;">設定權限</h2>
                 
+                <!-- Teams Section -->
                 <div class="permission-section">
-                    <div class="permission-title">工班負責人</div>
-                    <div class="user-select" id="leaders-list">
-                        <!-- 動態載入工地師父列表 -->
+                    <h3 style="margin-bottom: 1rem;">工班權限設定</h3>
+                    <div class="alert alert-info" style="margin-bottom: 1rem;">
+                        設定每個工班的負責人和成員。一個案場可能會有多個工班負責。
+                    </div>
+                    <div id="teams-container">
+                        <!-- 動態載入工班列表 -->
                     </div>
                 </div>
 
+                <!-- Owners Section -->
                 <div class="permission-section">
-                    <div class="permission-title">工班成員</div>
-                    <div class="user-select" id="members-list">
-                        <!-- 動態載入工地師父列表 -->
+                    <h3 style="margin-bottom: 1rem;">業主設定</h3>
+                    <table class="permission-table">
+                        <thead>
+                            <tr>
+                                <th class="checkbox-cell">選擇</th>
+                                <th>姓名</th>
+                                <th>公司</th>
+                                <th>電話</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody id="owners-tbody">
+                            <!-- 動態載入業主列表 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Cross View Setting -->
+                <div class="cross-view-section">
+                    <div class="toggle-switch" id="cross-view-toggle"></div>
+                    <div>
+                        <div style="font-weight: 500; color: #1f2937;">工班可以查看其他工班進度</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">開啟後，不同工班可以互相查看施工進度</div>
                     </div>
                 </div>
 
-                <div class="permission-section">
-                    <div class="permission-title">業主（商機連絡人）</div>
-                    <div class="user-select" id="owners-list">
-                        <!-- 動態載入商機連絡人 -->
+                <!-- Field Permissions Section -->
+                <div class="field-permissions-section">
+                    <h3 style="margin-bottom: 1rem;">欄位編輯權限設定</h3>
+                    <div class="alert alert-info">
+                        設定每個欄位可以被哪些角色編輯。未設定的欄位預設只有管理員可以編輯。
                     </div>
-                </div>
+                    
+                    <!-- Tabs for different objects -->
+                    <div class="field-permissions-tabs">
+                        <button class="permission-tab active" data-object="object_8W9cb__c">案場（SPC）</button>
+                        <button class="permission-tab" data-object="site_cabinet__c">案場（浴櫃）</button>
+                    </div>
 
-                <div class="permission-section">
-                    <div class="permission-title">其他設定</div>
-                    <div class="cross-view-toggle">
-                        <div class="toggle-switch" id="cross-view-toggle"></div>
-                        <div>
-                            <div style="font-weight: 500; color: #1f2937;">工班可以查看其他工班進度</div>
-                            <div style="font-size: 0.85rem; color: #6b7280;">開啟後，不同工班可以互相查看施工進度</div>
+                    <!-- SPC Fields -->
+                    <div class="field-permissions-content active" id="permissions-object_8W9cb__c">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="selectAllPermissions('object_8W9cb__c', 'worker')">全選工班</button>
+                            <button class="quick-action-btn" onclick="selectAllPermissions('object_8W9cb__c', 'owner')">全選業主</button>
+                            <button class="quick-action-btn" onclick="clearAllPermissions('object_8W9cb__c')">清除全部</button>
                         </div>
+                        <table class="fields-table">
+                            <thead>
+                                <tr>
+                                    <th>欄位名稱</th>
+                                    <th>類型</th>
+                                    <th style="text-align: center;">工班可編輯</th>
+                                    <th style="text-align: center;">業主可編輯</th>
+                                    <th style="text-align: center;">管理員可編輯</th>
+                                </tr>
+                            </thead>
+                            <tbody id="spc-fields-tbody">
+                                <!-- 動態載入欄位 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Cabinet Fields -->
+                    <div class="field-permissions-content" id="permissions-site_cabinet__c">
+                        <div class="quick-actions">
+                            <button class="quick-action-btn" onclick="selectAllPermissions('site_cabinet__c', 'worker')">全選工班</button>
+                            <button class="quick-action-btn" onclick="selectAllPermissions('site_cabinet__c', 'owner')">全選業主</button>
+                            <button class="quick-action-btn" onclick="clearAllPermissions('site_cabinet__c')">清除全部</button>
+                        </div>
+                        <table class="fields-table">
+                            <thead>
+                                <tr>
+                                    <th>欄位名稱</th>
+                                    <th>類型</th>
+                                    <th style="text-align: center;">工班可編輯</th>
+                                    <th style="text-align: center;">業主可編輯</th>
+                                    <th style="text-align: center;">管理員可編輯</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cabinet-fields-tbody">
+                                <!-- 動態載入欄位 -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -683,31 +951,50 @@
         let selectedMembers = [];
         let selectedOwners = [];
         let crossViewEnabled = false;
+        let allOpportunities = [];
+        let filteredOpportunities = [];
+        let fieldPermissions = {
+            'object_8W9cb__c': {},
+            'site_cabinet__c': {}
+        };
 
         // API configuration
         const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
         const API_TOKEN = 'fx-crm-api-secret-2025';
+        
         const WORKER_API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8787' 
-            : 'https://construction-management-api.workers.dev';
+            : 'https://construction-management-api.lai-jameslai.workers.dev';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
             loadOpportunities();
             setupEngineeringTypeSelection();
             setupToggleSwitch();
+            setupFieldPermissionsTabs();
+            setupSearchInput();
         });
+
+        // Setup search input
+        function setupSearchInput() {
+            const searchInput = document.getElementById('opportunitySearch');
+            searchInput.addEventListener('input', function() {
+                filterOpportunities();
+            });
+        }
 
         // Load opportunities from CRM
         async function loadOpportunities() {
             const loadingEl = document.getElementById('opportunities-loading');
-            const listEl = document.getElementById('opportunity-list');
+            const containerEl = document.getElementById('opportunities-container');
+            const emptyEl = document.getElementById('opportunity-empty');
             
             loadingEl.style.display = 'block';
-            listEl.innerHTML = '';
+            containerEl.style.display = 'none';
+            emptyEl.style.display = 'none';
 
             try {
-                const response = await fetch(`${API_BASE_URL}/rest/newopportunityobj?sales_stage__r=贏單&limit=50`, {
+                const response = await fetch(`${API_BASE_URL}/rest/newopportunityobj?sales_stage__r=${encodeURIComponent('贏單')}&limit=100`, {
                     headers: {
                         'Authorization': `Bearer ${API_TOKEN}`
                     }
@@ -716,50 +1003,110 @@
                 if (!response.ok) throw new Error('Failed to load opportunities');
 
                 const data = await response.json();
-                const opportunities = data.results || [];
+                allOpportunities = data.results || [];
+                filteredOpportunities = allOpportunities;
 
-                opportunities.forEach(opp => {
-                    const card = createOpportunityCard(opp);
-                    listEl.appendChild(card);
-                });
+                displayOpportunities(allOpportunities);
 
-                if (opportunities.length === 0) {
-                    listEl.innerHTML = '<div class="alert alert-warning">沒有找到贏單狀態的商機</div>';
-                }
             } catch (error) {
                 console.error('Error loading opportunities:', error);
-                listEl.innerHTML = '<div class="alert alert-warning">載入商機失敗，請稍後再試</div>';
+                emptyEl.innerHTML = '<div class="empty-icon">❌</div><div>載入商機失敗，請稍後再試</div>';
+                emptyEl.style.display = 'block';
             } finally {
                 loadingEl.style.display = 'none';
             }
         }
 
-        // Create opportunity card
-        function createOpportunityCard(opp) {
-            const card = document.createElement('div');
-            card.className = 'opportunity-card';
-            card.dataset.oppId = opp.id || opp._id;
+        // Display opportunities in table
+        function displayOpportunities(opportunities) {
+            const tbody = document.getElementById('opportunity-tbody');
+            const containerEl = document.getElementById('opportunities-container');
+            const emptyEl = document.getElementById('opportunity-empty');
+
+            tbody.innerHTML = '';
+
+            if (opportunities.length === 0) {
+                containerEl.style.display = 'none';
+                emptyEl.style.display = 'block';
+                return;
+            }
+
+            containerEl.style.display = 'block';
+            emptyEl.style.display = 'none';
+
+            opportunities.forEach(opp => {
+                const row = createOpportunityRow(opp);
+                tbody.appendChild(row);
+            });
+        }
+
+        // Create opportunity row
+        function createOpportunityRow(opp) {
+            const row = document.createElement('tr');
+            row.dataset.oppId = opp.id || opp._id;
             
-            card.innerHTML = `
-                <div class="opportunity-name">${opp.opportunity_name || opp.name}</div>
-                <div class="opportunity-info">
-                    <div>公司：${opp.company_name || opp.account_id__r || '未設定'}</div>
-                    <div>金額：NT$ ${(opp.amount || 0).toLocaleString()}</div>
-                    <div>預計結案：${opp.expected_close_date || '未設定'}</div>
-                </div>
-                <span class="opportunity-status status-won">贏單</span>
+            row.innerHTML = `
+                <td class="radio-cell">
+                    <input type="radio" name="opportunity" value="${opp.id || opp._id}" 
+                           class="opportunity-radio">
+                </td>
+                <td>
+                    <div class="opportunity-name">${opp.opportunity_name || opp.name}</div>
+                    <div class="company-name">${opp.company_name || opp.account_id__r || '未設定公司'}</div>
+                </td>
+                <td>${opp.company_name || opp.account_id__r || '未設定'}</td>
+                <td class="amount">NT$ ${(opp.amount || 0).toLocaleString()}</td>
+                <td>${opp.expected_close_date || '未設定'}</td>
+                <td><span class="status-badge status-won">贏單</span></td>
             `;
 
-            card.addEventListener('click', function() {
-                // Remove previous selection
-                document.querySelectorAll('.opportunity-card').forEach(c => c.classList.remove('selected'));
-                // Add selection
-                card.classList.add('selected');
-                selectedOpportunity = opp;
-                document.getElementById('step1-next').disabled = false;
+            row.addEventListener('click', function() {
+                selectOpportunity(opp, row);
             });
 
-            return card;
+            const radio = row.querySelector('.opportunity-radio');
+            radio.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectOpportunity(opp, row);
+            });
+
+            return row;
+        }
+
+        // Select opportunity
+        function selectOpportunity(opp, row) {
+            // Remove previous selection
+            document.querySelectorAll('.opportunity-table tbody tr').forEach(r => {
+                r.classList.remove('selected');
+            });
+            
+            // Add selection
+            row.classList.add('selected');
+            row.querySelector('.opportunity-radio').checked = true;
+            selectedOpportunity = opp;
+            document.getElementById('step1-next').disabled = false;
+        }
+
+        // Search opportunities
+        function searchOpportunities() {
+            filterOpportunities();
+        }
+
+        // Filter opportunities
+        function filterOpportunities() {
+            const searchTerm = document.getElementById('opportunitySearch').value.toLowerCase();
+            
+            if (!searchTerm) {
+                filteredOpportunities = allOpportunities;
+            } else {
+                filteredOpportunities = allOpportunities.filter(opp => {
+                    const name = (opp.opportunity_name || opp.name || '').toLowerCase();
+                    const company = (opp.company_name || opp.account_id__r || '').toLowerCase();
+                    return name.includes(searchTerm) || company.includes(searchTerm);
+                });
+            }
+
+            displayOpportunities(filteredOpportunities);
         }
 
         // Setup engineering type selection
@@ -790,6 +1137,229 @@
             });
         }
 
+        // Setup field permissions tabs
+        function setupFieldPermissionsTabs() {
+            const tabs = document.querySelectorAll('.permission-tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const objectName = tab.dataset.object;
+                    
+                    // Update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Update active content
+                    document.querySelectorAll('.field-permissions-content').forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById('permissions-' + objectName).classList.add('active');
+                });
+            });
+        }
+
+        // Load field permissions from API
+        async function loadFieldPermissions() {
+            try {
+                // Hide/show tabs based on selected engineering types
+                const spcTab = document.querySelector('[data-object="object_8W9cb__c"]');
+                const cabinetTab = document.querySelector('[data-object="site_cabinet__c"]');
+                const spcContent = document.getElementById('permissions-object_8W9cb__c');
+                const cabinetContent = document.getElementById('permissions-site_cabinet__c');
+                
+                // Reset visibility
+                spcTab.style.display = 'none';
+                cabinetTab.style.display = 'none';
+                spcContent.classList.remove('active');
+                cabinetContent.classList.remove('active');
+                
+                let firstVisible = null;
+                
+                // Load SPC fields permissions
+                if (selectedEngineering.includes('SPC')) {
+                    spcTab.style.display = 'block';
+                    if (!firstVisible) {
+                        firstVisible = 'spc';
+                        spcTab.classList.add('active');
+                        spcContent.classList.add('active');
+                    }
+                    await loadObjectFieldPermissions('object_8W9cb__c', 'spc-fields-tbody');
+                }
+                
+                // Load Cabinet fields permissions
+                if (selectedEngineering.includes('CABINET')) {
+                    cabinetTab.style.display = 'block';
+                    if (!firstVisible) {
+                        firstVisible = 'cabinet';
+                        cabinetTab.classList.add('active');
+                        cabinetContent.classList.add('active');
+                    } else {
+                        cabinetTab.classList.remove('active');
+                    }
+                    await loadObjectFieldPermissions('site_cabinet__c', 'cabinet-fields-tbody');
+                }
+            } catch (error) {
+                console.error('Error loading field permissions:', error);
+            }
+        }
+
+        // Load permissions for a specific object
+        async function loadObjectFieldPermissions(objectApiName, tbodyId) {
+            try {
+                // First get the schema to know all fields
+                const schemaResponse = await fetch(`${API_BASE_URL}/api/schema/${objectApiName}`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (!schemaResponse.ok) throw new Error('Failed to load schema');
+                
+                const schemaData = await schemaResponse.json();
+                const fields = schemaData.data?.fields || [];
+                
+                let existingPermissions = {};
+                
+                // Render fields table
+                const tbody = document.getElementById(tbodyId);
+                tbody.innerHTML = '';
+                
+                // Filter out system fields and sensitive fields
+                const editableFields = fields.filter(field => {
+                    // Skip system fields
+                    if (['_id', 'created_at', 'updated_at', 'modification_record__c'].includes(field.api_name)) {
+                        return false;
+                    }
+                    // Skip non-editable field types
+                    if (['formula', 'auto_number'].includes(field.type)) {
+                        return false;
+                    }
+                    return true;
+                });
+                
+                editableFields.forEach(field => {
+                    const permissions = existingPermissions[field.api_name] || {
+                        canEditByWorker: false,
+                        canEditByOwner: false,
+                        canEditByAdmin: true
+                    };
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>
+                            <div class="field-name">${field.label || field.api_name}</div>
+                            <div class="field-api-name">${field.api_name}</div>
+                        </td>
+                        <td>
+                            <span class="field-type-badge">${getFieldTypeLabel(field.type)}</span>
+                        </td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="permission-checkbox" 
+                                   data-object="${objectApiName}" 
+                                   data-field="${field.api_name}" 
+                                   data-role="worker"
+                                   ${permissions.canEditByWorker ? 'checked' : ''}>
+                        </td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="permission-checkbox" 
+                                   data-object="${objectApiName}" 
+                                   data-field="${field.api_name}" 
+                                   data-role="owner"
+                                   ${permissions.canEditByOwner ? 'checked' : ''}>
+                        </td>
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="permission-checkbox" 
+                                   data-object="${objectApiName}" 
+                                   data-field="${field.api_name}" 
+                                   data-role="admin"
+                                   checked disabled>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                    
+                    // Initialize field permissions
+                    if (!fieldPermissions[objectApiName][field.api_name]) {
+                        fieldPermissions[objectApiName][field.api_name] = {
+                            fieldDisplayName: field.label || field.api_name,
+                            fieldType: field.type,
+                            canEditByWorker: permissions.canEditByWorker,
+                            canEditByOwner: permissions.canEditByOwner,
+                            canEditByAdmin: true
+                        };
+                    }
+                });
+                
+                // Setup checkbox handlers
+                setupPermissionCheckboxes();
+                
+            } catch (error) {
+                console.error('Error loading object field permissions:', error);
+                const tbody = document.getElementById(tbodyId);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">無法載入欄位權限設定</td></tr>';
+            }
+        }
+
+        // Get field type label in Chinese
+        function getFieldTypeLabel(type) {
+            const typeLabels = {
+                'text': '文字',
+                'number': '數字',
+                'date': '日期',
+                'datetime': '日期時間',
+                'select': '單選',
+                'multiselect': '多選',
+                'boolean': '布林值',
+                'reference': '關聯',
+                'big_text': '長文本',
+                'email': '電子郵件',
+                'phone': '電話',
+                'url': '網址',
+                'currency': '貨幣',
+                'percent': '百分比'
+            };
+            return typeLabels[type] || type;
+        }
+
+        // Setup permission checkbox handlers
+        function setupPermissionCheckboxes() {
+            document.querySelectorAll('.permission-checkbox:not([disabled])').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const objectName = this.dataset.object;
+                    const fieldName = this.dataset.field;
+                    const role = this.dataset.role;
+                    
+                    if (!fieldPermissions[objectName][fieldName]) {
+                        fieldPermissions[objectName][fieldName] = {
+                            canEditByWorker: false,
+                            canEditByOwner: false,
+                            canEditByAdmin: true
+                        };
+                    }
+                    
+                    if (role === 'worker') {
+                        fieldPermissions[objectName][fieldName].canEditByWorker = this.checked;
+                    } else if (role === 'owner') {
+                        fieldPermissions[objectName][fieldName].canEditByOwner = this.checked;
+                    }
+                });
+            });
+        }
+
+        // Select all permissions for a role
+        function selectAllPermissions(objectName, role) {
+            document.querySelectorAll(`#permissions-${objectName} .permission-checkbox[data-role="${role}"]`).forEach(checkbox => {
+                checkbox.checked = true;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+        }
+
+        // Clear all permissions
+        function clearAllPermissions(objectName) {
+            document.querySelectorAll(`#permissions-${objectName} .permission-checkbox:not([disabled])`).forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.dispatchEvent(new Event('change'));
+            });
+        }
+
         // Load statistics for selected engineering types
         async function loadStatistics() {
             const loadingEl = document.getElementById('statistics-loading');
@@ -799,11 +1369,33 @@
             containerEl.innerHTML = '';
 
             try {
+                console.log('Loading statistics for:', selectedEngineering);
+                
+                // Create statistics table
+                const statsTable = document.createElement('table');
+                statsTable.className = 'stats-table';
+                statsTable.innerHTML = `
+                    <thead>
+                        <tr>
+                            <th>工程類型</th>
+                            <th>案場總數</th>
+                            <th>工班數量</th>
+                            <th>維修單數</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-tbody"></tbody>
+                `;
+                containerEl.appendChild(statsTable);
+                
+                const tbody = document.getElementById('stats-tbody');
+                
                 // Load sites for each engineering type
                 const statsPromises = selectedEngineering.map(async (type) => {
-                    const table = type === 'CABINET' ? 'site_cabinet_c' : 'object_8w9cb__c';
+                    const table = type === 'CABINET' ? 'site_cabinet__c' : 'object_8w9cb__c';
+                    // Use opportunity ID to fetch related sites
+                    const opportunityId = selectedOpportunity.id || selectedOpportunity._id;
                     const response = await fetch(
-                        `${API_BASE_URL}/rest/${table}?field_8eM2Z__c=${selectedOpportunity.id}&limit=100`,
+                        `${API_BASE_URL}/rest/${table}?field_1P96q__c=${opportunityId}&limit=500`,
                         {
                             headers: {
                                 'Authorization': `Bearer ${API_TOKEN}`
@@ -821,50 +1413,84 @@
                 });
 
                 const results = await Promise.all(statsPromises);
-
-                // Display statistics
+                
+                // Fetch maintenance orders for this opportunity
+                const opportunityId = selectedOpportunity.id || selectedOpportunity._id;
+                let maintenanceOrderCount = 0;
+                
+                try {
+                    const maintenanceResponse = await fetch(
+                        `${API_BASE_URL}/rest/object_k1XqG__c?field_mrnhE__c=${opportunityId}&limit=500`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+                    
+                    if (maintenanceResponse.ok) {
+                        const maintenanceData = await maintenanceResponse.json();
+                        maintenanceOrderCount = maintenanceData.results ? maintenanceData.results.length : 0;
+                    }
+                } catch (error) {
+                    console.error('Error fetching maintenance orders:', error);
+                }
+                
                 results.forEach(result => {
-                    const section = document.createElement('div');
-                    section.innerHTML = `
-                        <h3 style="margin: 2rem 0 1rem; color: #1f2937;">
-                            ${result.type === 'SPC' ? 'SPC 石塑地板' : '浴櫃工程'}
-                        </h3>
-                        <div class="statistics-grid">
-                            <div class="stat-card">
-                                <div class="stat-value">${result.sites.length}</div>
-                                <div class="stat-label">案場總數</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">工班數量</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">維修單數</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="stat-value">0</div>
-                                <div class="stat-label">進度公告</div>
-                            </div>
-                        </div>
-                        <div class="details-section">
-                            <div class="details-title">案場清單（前10筆）</div>
-                            <div class="details-list">
-                                ${result.sites.slice(0, 10).map(site => `
-                                    <div class="detail-item">
-                                        <div class="detail-icon">📍</div>
-                                        <div>
-                                            <div style="font-weight: 500;">${site.name || '未命名'}</div>
-                                            <div style="font-size: 0.85rem; color: #6b7280;">
-                                                ${site.building || 'A'}棟 ${site.floor || ''}樓 ${site.unit || ''}戶
-                                            </div>
-                                        </div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
+                    // Calculate unique construction teams (工班公司)
+                    const uniqueTeams = new Set();
+                    
+                    result.sites.forEach(site => {
+                        // Count unique construction teams from shift_time__c field
+                        if (site.shift_time__c) {
+                            uniqueTeams.add(site.shift_time__c);
+                        }
+                    });
+                    
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${result.type === 'SPC' ? 'SPC 石塑地板' : '浴櫃工程'}</td>
+                        <td><span class="stat-value">${result.sites.length}</span></td>
+                        <td><span class="stat-value">${uniqueTeams.size}</span></td>
+                        <td><span class="stat-value">${maintenanceOrderCount}</span></td>
                     `;
-                    containerEl.appendChild(section);
+                    tbody.appendChild(row);
+                });
+
+                // Add sites details
+                results.forEach(result => {
+                    if (result.sites.length > 0) {
+                        const detailsSection = document.createElement('div');
+                        detailsSection.style.marginTop = '2rem';
+                        detailsSection.innerHTML = `
+                            <h3 style="margin-bottom: 1rem; color: #1f2937;">
+                                ${result.type === 'SPC' ? 'SPC 石塑地板' : '浴櫃工程'} - 案場清單（前10筆）
+                            </h3>
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>編號</th>
+                                        <th>棟別</th>
+                                        <th>樓層</th>
+                                        <th>戶別</th>
+                                        <th>狀態</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${result.sites.slice(0, 10).map(site => `
+                                        <tr>
+                                            <td>${site.name || '未命名'}</td>
+                                            <td>${site.field_WD7k1__c || 'A'}棟</td>
+                                            <td>${site.field_Q6Svh__c || ''}樓</td>
+                                            <td>${site.field_XuJP2__c || ''}</td>
+                                            <td>${site.construction_completed__c ? '已完工' : '未完工'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        `;
+                        containerEl.appendChild(detailsSection);
+                    }
                 });
 
             } catch (error) {
@@ -878,85 +1504,207 @@
         // Load users for permission setting
         async function loadUsers() {
             try {
+                // Get unique teams from the selected opportunity's sites
+                const uniqueTeams = new Set();
+                const opportunityId = selectedOpportunity.id || selectedOpportunity._id;
+                
+                // Fetch sites to get teams
+                for (const type of selectedEngineering) {
+                    const table = type === 'CABINET' ? 'site_cabinet__c' : 'object_8w9cb__c';
+                    const response = await fetch(
+                        `${API_BASE_URL}/rest/${table}?field_1P96q__c=${opportunityId}&limit=500`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        const sites = data.results || [];
+                        sites.forEach(site => {
+                            if (site.shift_time__c) {
+                                uniqueTeams.add(site.shift_time__c);
+                            }
+                        });
+                    }
+                }
+                
                 // Load workers from CRM
-                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?limit=100`, {
+                const workersResponse = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?limit=500`, {
                     headers: {
                         'Authorization': `Bearer ${API_TOKEN}`
                     }
                 });
 
-                if (!response.ok) throw new Error('Failed to load workers');
-
-                const data = await response.json();
-                const workers = data.results || [];
-
-                // Populate leaders list
-                const leadersEl = document.getElementById('leaders-list');
-                leadersEl.innerHTML = workers.map(worker => `
-                    <div class="user-item" data-user-id="${worker.id}">
-                        <input type="checkbox" class="user-checkbox" id="leader-${worker.id}">
-                        <div class="user-info">
-                            <div class="user-name">${worker.name || '未命名'}</div>
-                            <div class="user-role">工地師父</div>
+                const workersData = await workersResponse.json();
+                const workers = workersData.results || [];
+                
+                // Load opportunity contacts
+                const contactsResponse = await fetch(
+                    `${API_BASE_URL}/rest/NewOpportunityContactsObj?field_AX0vJ__c=${opportunityId}&limit=100`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+                
+                const contactsData = await contactsResponse.json();
+                const contacts = contactsData.results || [];
+                
+                // Create teams container
+                const teamsContainer = document.getElementById('teams-container');
+                teamsContainer.innerHTML = '';
+                
+                // Create a section for each team
+                const teamsArray = Array.from(uniqueTeams);
+                if (teamsArray.length === 0) {
+                    teamsArray.push('預設工班'); // Add default team if none found
+                }
+                
+                teamsArray.forEach((teamName, index) => {
+                    const teamSection = document.createElement('div');
+                    teamSection.className = 'team-section';
+                    teamSection.style.marginBottom = '2rem';
+                    teamSection.innerHTML = `
+                        <h4 style="background: #f3f4f6; padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem;">
+                            工班 ${index + 1}: ${teamName}
+                        </h4>
+                        
+                        <div style="margin-left: 1rem;">
+                            <h5 style="margin-bottom: 0.5rem;">負責人</h5>
+                            <select class="form-select team-leader" data-team="${teamName}" style="width: 100%; max-width: 400px; margin-bottom: 1rem;">
+                                <option value="">請選擇負責人</option>
+                                ${workers.map(worker => `
+                                    <option value="${worker.id}">${worker.name || '未命名'} - ${worker.phone || '無電話'}</option>
+                                `).join('')}
+                            </select>
+                            
+                            <h5 style="margin-bottom: 0.5rem;">成員</h5>
+                            <div class="team-members" style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;">
+                                ${workers.map(worker => `
+                                    <label style="display: block; padding: 0.5rem; cursor: pointer;">
+                                        <input type="checkbox" class="team-member" data-team="${teamName}" value="${worker.id}">
+                                        ${worker.name || '未命名'} - ${worker.phone || '無電話'}
+                                    </label>
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
-                `).join('');
-
-                // Populate members list
-                const membersEl = document.getElementById('members-list');
-                membersEl.innerHTML = workers.map(worker => `
-                    <div class="user-item" data-user-id="${worker.id}">
-                        <input type="checkbox" class="user-checkbox" id="member-${worker.id}">
-                        <div class="user-info">
-                            <div class="user-name">${worker.name || '未命名'}</div>
-                            <div class="user-role">工地師父</div>
-                        </div>
-                    </div>
-                `).join('');
-
-                // Add opportunity contact as owner
-                const ownersEl = document.getElementById('owners-list');
-                ownersEl.innerHTML = `
-                    <div class="user-item selected">
-                        <input type="checkbox" class="user-checkbox" checked disabled>
-                        <div class="user-info">
-                            <div class="user-name">${selectedOpportunity.contact_name || '商機連絡人'}</div>
-                            <div class="user-role">業主</div>
-                        </div>
-                    </div>
-                `;
-
-                // Setup user selection
+                    `;
+                    teamsContainer.appendChild(teamSection);
+                });
+                
+                // Populate owners table with opportunity contacts
+                const ownersTbody = document.getElementById('owners-tbody');
+                
+                // Add default opportunity contact
+                let ownersHtml = '';
+                if (selectedOpportunity.contact_name) {
+                    ownersHtml += `
+                        <tr>
+                            <td class="checkbox-cell">
+                                <input type="checkbox" class="owner-checkbox" checked value="${selectedOpportunity.contact_id || 'default'}">
+                            </td>
+                            <td>${selectedOpportunity.contact_name}</td>
+                            <td>${selectedOpportunity.account_name || selectedOpportunity.name}</td>
+                            <td>${selectedOpportunity.contact_phone || '無'}</td>
+                            <td>${selectedOpportunity.contact_email || '無'}</td>
+                        </tr>
+                    `;
+                }
+                
+                // Add additional contacts
+                contacts.forEach(contact => {
+                    ownersHtml += `
+                        <tr>
+                            <td class="checkbox-cell">
+                                <input type="checkbox" class="owner-checkbox" value="${contact.id}">
+                            </td>
+                            <td>${contact.field_k96Xm__c || '未命名'}</td>
+                            <td>${contact.field_6Vqpz__c || '無'}</td>
+                            <td>${contact.field_6pchT__c || '無'}</td>
+                            <td>${contact.field_n6pht__c || '無'}</td>
+                        </tr>
+                    `;
+                });
+                
+                ownersTbody.innerHTML = ownersHtml || '<tr><td colspan="5" style="text-align: center;">無業主資料</td></tr>';
+                
+                // Setup selection handlers
                 setupUserSelection();
 
             } catch (error) {
                 console.error('Error loading users:', error);
+                const teamsContainer = document.getElementById('teams-container');
+                teamsContainer.innerHTML = '<div class="alert alert-warning">載入工班資料失敗</div>';
             }
         }
 
         // Setup user selection handlers
         function setupUserSelection() {
-            document.querySelectorAll('.user-item').forEach(item => {
-                const checkbox = item.querySelector('.user-checkbox');
-                if (checkbox && !checkbox.disabled) {
-                    item.addEventListener('click', function() {
-                        checkbox.checked = !checkbox.checked;
-                        item.classList.toggle('selected');
-                        updateSelectedUsers();
-                    });
-                }
+            // Team leader selection
+            document.querySelectorAll('.team-leader').forEach(select => {
+                select.addEventListener('change', function() {
+                    updateSelectedUsers();
+                });
+            });
+            
+            // Team member selection
+            document.querySelectorAll('.team-member').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectedUsers();
+                });
+            });
+            
+            // Owner selection
+            document.querySelectorAll('.owner-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    updateSelectedUsers();
+                });
             });
         }
 
         // Update selected users arrays
         function updateSelectedUsers() {
-            selectedLeaders = Array.from(document.querySelectorAll('#leaders-list .user-checkbox:checked'))
-                .map(cb => cb.closest('.user-item').dataset.userId);
+            // Get team assignments
+            const teamAssignments = {};
             
-            selectedMembers = Array.from(document.querySelectorAll('#members-list .user-checkbox:checked'))
-                .map(cb => cb.closest('.user-item').dataset.userId);
+            document.querySelectorAll('.team-leader').forEach(select => {
+                const team = select.dataset.team;
+                if (!teamAssignments[team]) {
+                    teamAssignments[team] = {
+                        leader: null,
+                        members: []
+                    };
+                }
+                if (select.value) {
+                    teamAssignments[team].leader = select.value;
+                }
+            });
             
-            selectedOwners = [selectedOpportunity.contact_id || selectedOpportunity.contact];
+            document.querySelectorAll('.team-member:checked').forEach(checkbox => {
+                const team = checkbox.dataset.team;
+                if (!teamAssignments[team]) {
+                    teamAssignments[team] = {
+                        leader: null,
+                        members: []
+                    };
+                }
+                teamAssignments[team].members.push(checkbox.value);
+            });
+            
+            // Store in global variables
+            selectedLeaders = Object.values(teamAssignments)
+                .map(t => t.leader)
+                .filter(l => l);
+            
+            selectedMembers = Object.values(teamAssignments)
+                .flatMap(t => t.members);
+            
+            selectedOwners = Array.from(document.querySelectorAll('.owner-checkbox:checked'))
+                .map(cb => cb.value);
         }
 
         // Navigation functions
@@ -968,6 +1716,7 @@
                 moveToStep(3);
             } else if (currentStep === 3) {
                 loadUsers();
+                loadFieldPermissions();
                 moveToStep(4);
             }
         }
@@ -1016,12 +1765,12 @@
                     leaders: selectedLeaders,
                     members: selectedMembers,
                     owners: selectedOwners,
-                    canCrossView: crossViewEnabled
+                    canCrossView: crossViewEnabled,
+                    fieldPermissions: fieldPermissions
                 }
             };
 
             try {
-                // Get auth token (simplified for demo)
                 const token = localStorage.getItem('auth_token') || 'demo-token';
 
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {

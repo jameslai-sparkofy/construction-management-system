@@ -5,9 +5,10 @@ import { SessionService } from '../services/sessionService.js';
  * Authentication service for phone number + last 3 digits password
  */
 export class AuthService {
-  constructor(sessionsKV, usersKV, apiBaseUrl) {
+  constructor(sessionsKV, usersKV, apiBaseUrl, database = null) {
     this.sessionService = new SessionService(sessionsKV, usersKV);
     this.apiBaseUrl = apiBaseUrl;
+    this.database = database; // D1 database for local authentication
   }
 
   /**
@@ -40,8 +41,14 @@ export class AuthService {
       let userInfo = await this.sessionService.getUserInfo(normalizedPhone, tenantId);
       
       if (!userInfo) {
-        // If not in cache, try to authenticate with the existing API
-        userInfo = await this.authenticateWithExternalAPI(normalizedPhone, password, tenantId);
+        // Try local database authentication first
+        userInfo = await this.authenticateWithLocalDatabase(normalizedPhone, password, tenantId);
+        
+        // If not in local database, try external API
+        if (!userInfo) {
+          userInfo = await this.authenticateWithExternalAPI(normalizedPhone, password, tenantId);
+        }
+        
         if (!userInfo) {
           return ResponseHelper.unauthorized('Invalid credentials');
         }
@@ -49,8 +56,9 @@ export class AuthService {
         // Store user info in cache for future use
         await this.sessionService.storeUserInfo(normalizedPhone, tenantId, userInfo);
       } else {
-        // Verify password with external API (for security)
-        const isValidCredentials = await this.verifyCredentialsWithExternalAPI(normalizedPhone, password, tenantId);
+        // Verify password locally first, then with external API if needed
+        const isValidCredentials = await this.verifyCredentialsLocally(normalizedPhone, password, tenantId) ||
+                                   await this.verifyCredentialsWithExternalAPI(normalizedPhone, password, tenantId);
         if (!isValidCredentials) {
           return ResponseHelper.unauthorized('Invalid credentials');
         }
@@ -266,5 +274,84 @@ export class AuthService {
     }
 
     return userInfo.role === role;
+  }
+
+  /**
+   * Authenticate with local D1 database
+   * @param {string} phone - Phone number
+   * @param {string} password - Password
+   * @param {string} tenantId - Tenant ID
+   * @returns {Promise<object|null>} User info or null
+   */
+  async authenticateWithLocalDatabase(phone, password, tenantId) {
+    if (!this.database) {
+      return null;
+    }
+
+    try {
+      // Query user from database
+      const result = await this.database.prepare(
+        'SELECT * FROM users WHERE phone = ? AND password_suffix = ? AND is_active = 1'
+      ).bind(phone, password).first();
+
+      if (!result) {
+        return null;
+      }
+
+      // Parse user projects if it's a JSON string
+      let userProjects = [];
+      if (result.user_projects) {
+        try {
+          userProjects = JSON.parse(result.user_projects);
+        } catch {
+          userProjects = [];
+        }
+      }
+
+      // Return user info in expected format
+      return {
+        id: result.id,
+        phone: result.phone,
+        name: result.name || 'User',
+        email: result.email || '',
+        role: result.role || 'member',
+        permissions: this.getRolePermissions(result.role),
+        userProjects
+      };
+    } catch (error) {
+      console.error('Local database authentication error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Verify credentials locally
+   * @param {string} phone - Phone number
+   * @param {string} password - Password
+   * @param {string} tenantId - Tenant ID
+   * @returns {Promise<boolean>} Verification result
+   */
+  async verifyCredentialsLocally(phone, password, tenantId) {
+    const userInfo = await this.authenticateWithLocalDatabase(phone, password, tenantId);
+    return userInfo !== null;
+  }
+
+  /**
+   * Get permissions based on role
+   * @param {string} role - User role
+   * @returns {Array<string>} Permissions array
+   */
+  getRolePermissions(role) {
+    switch (role?.toLowerCase()) {
+      case 'admin':
+      case 'superadmin':
+        return ['read', 'write', 'delete', 'admin'];
+      case 'manager':
+      case 'leader':
+        return ['read', 'write', 'delete'];
+      case 'member':
+      default:
+        return ['read', 'write'];
+    }
   }
 }

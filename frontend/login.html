@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登入 - 元心建材工程管理系統</title>
-    <script src="config.js"></script>
+    <title>工程管理系統 - 手機登入</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -13,36 +13,34 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .login-container {
+        .container {
             background: white;
             padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             max-width: 400px;
+            width: 90%;
         }
 
-        .logo {
+        h1 {
             text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .logo h1 {
-            color: #1e3c72;
-            font-size: 28px;
+            color: #1a202c;
             margin-bottom: 10px;
+            font-size: 32px;
         }
 
-        .logo p {
-            color: #666;
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 40px;
             font-size: 14px;
         }
 
@@ -53,79 +51,137 @@
         label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: #4a5568;
             font-weight: 500;
         }
 
         input {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
             font-size: 16px;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
         }
 
         input:focus {
             outline: none;
-            border-color: #1e3c72;
-        }
-
-        .password-hint {
-            margin-top: 5px;
-            font-size: 12px;
-            color: #666;
-        }
-
-        .error-message {
-            color: #e74c3c;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
-        }
-
-        .success-message {
-            color: #27ae60;
-            font-size: 14px;
-            margin-top: 10px;
-            display: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         button {
             width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s;
         }
 
         button:hover {
-            transform: translateY(-1px);
-        }
-
-        button:active {
-            transform: translateY(0);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
         }
 
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .loading {
+        .status-message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            display: none;
+        }
+
+        .status-message.success {
+            background: #c6f6d5;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+            display: block;
+        }
+
+        .status-message.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+            display: block;
+        }
+
+        .status-message.info {
+            background: #bee3f8;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+            display: block;
+        }
+
+        #verifySection {
+            display: none;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #e2e8f0;
+            color: #a0aec0;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .step.completed {
+            background: #48bb78;
+            color: white;
+        }
+
+        .resend-link {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .resend-link a {
+            color: #667eea;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .resend-link a:hover {
+            text-decoration: underline;
+        }
+
+        .loading-spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s linear infinite;
-            vertical-align: middle;
             margin-right: 8px;
         }
 
@@ -133,140 +189,236 @@
             to { transform: rotate(360deg); }
         }
 
-        .footer {
+        .test-mode {
+            background: #fef5e7;
+            border: 1px solid #f39c12;
+            color: #856404;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
             text-align: center;
-            margin-top: 30px;
-            color: #666;
-            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <div class="logo">
-            <h1>工程進度管理系統</h1>
-            <p>元心建材 Construction Management</p>
+    <div class="container">
+        <h1>🏗️ 工程管理系統</h1>
+        <p class="subtitle">使用手機號碼快速登入</p>
+
+        <div class="test-mode">
+            📱 測試模式：使用任何手機號碼<br>
+            驗證碼固定為：123456
         </div>
 
-        <form id="loginForm">
+        <div class="step-indicator">
+            <div class="step active" id="step1">1</div>
+            <div class="step" id="step2">2</div>
+        </div>
+
+        <!-- Step 1: 輸入手機號碼 -->
+        <div id="phoneSection">
             <div class="form-group">
                 <label for="phone">手機號碼</label>
                 <input 
                     type="tel" 
                     id="phone" 
-                    name="phone" 
-                    placeholder="請輸入手機號碼" 
-                    pattern="[0-9]{10}"
+                    placeholder="0912345678"
                     maxlength="10"
-                    required
+                    pattern="[0-9]{10}"
+                    value="0912345678"
                 >
             </div>
-
-            <div class="form-group">
-                <label for="password">密碼</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="請輸入密碼" 
-                    required
-                >
-                <div class="password-hint">預設密碼為手機號碼後3碼</div>
-            </div>
-
-            <div class="error-message" id="errorMessage"></div>
-            <div class="success-message" id="successMessage"></div>
-
-            <button type="submit" id="submitButton">
-                <span id="buttonText">登入系統</span>
+            <button id="sendOtpBtn" onclick="sendOTP()">
+                發送驗證碼
             </button>
-        </form>
-
-        <div class="footer">
-            <p>© 2024 元心建材. All rights reserved.</p>
         </div>
+
+        <!-- Step 2: 輸入驗證碼 -->
+        <div id="verifySection">
+            <div class="form-group">
+                <label for="otp">驗證碼（6位數）</label>
+                <input 
+                    type="text" 
+                    id="otp" 
+                    placeholder="123456"
+                    maxlength="6"
+                    pattern="[0-9]{6}"
+                >
+            </div>
+            <button id="verifyBtn" onclick="verifyOTP()">
+                確認登入
+            </button>
+            <div class="resend-link">
+                沒收到驗證碼？<a onclick="sendOTP()">重新發送</a>
+            </div>
+        </div>
+
+        <!-- 狀態訊息 -->
+        <div id="statusMessage" class="status-message"></div>
     </div>
 
-    <script src="js/api-client.js"></script>
     <script>
-        // Initialize API client
-        const apiClient = new ApiClient(
-            window.location.hostname === 'localhost' 
-                ? 'http://localhost:8787' 
-                : 'https://construction-management-api.workers.dev',
-            'yes-ceramics' // Tenant ID
-        );
+        // Supabase 配置 - 使用你的實際 Keys
+        const SUPABASE_URL = 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+        
+        // 初始化 Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const form = document.getElementById('loginForm');
-        const errorMessage = document.getElementById('errorMessage');
-        const successMessage = document.getElementById('successMessage');
-        const submitButton = document.getElementById('submitButton');
-        const buttonText = document.getElementById('buttonText');
+        // 儲存手機號碼（用於驗證）
+        let currentPhone = '';
 
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // Clear messages
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
-            
-            // Get form data
+        // 顯示訊息
+        function showMessage(message, type = 'info') {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = `status-message ${type}`;
+            statusDiv.style.display = 'block';
+        }
+
+        // 發送 OTP
+        async function sendOTP() {
             const phone = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
             
-            // Disable button and show loading
-            submitButton.disabled = true;
-            buttonText.innerHTML = '<span class="loading"></span>登入中...';
-            
+            if (!phone || phone.length !== 10) {
+                showMessage('請輸入正確的手機號碼', 'error');
+                return;
+            }
+
+            const sendBtn = document.getElementById('sendOtpBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading-spinner"></span>發送中...';
+
             try {
-                // Attempt login
-                const result = await apiClient.login(phone, password);
+                // 格式化手機號碼為國際格式
+                currentPhone = '+886' + phone.substring(1);
                 
-                if (result.success) {
-                    successMessage.textContent = '登入成功！正在跳轉...';
-                    successMessage.style.display = 'block';
+                // 測試模式：不實際發送簡訊
+                console.log('測試模式 - 手機號碼:', currentPhone);
+                
+                // 模擬發送成功
+                showMessage('驗證碼已發送！（測試模式：請輸入 123456）', 'success');
+                
+                // 切換到驗證步驟
+                document.getElementById('phoneSection').style.display = 'none';
+                document.getElementById('verifySection').style.display = 'block';
+                document.getElementById('step1').classList.add('completed');
+                document.getElementById('step1').classList.remove('active');
+                document.getElementById('step2').classList.add('active');
+                
+                // 聚焦到驗證碼輸入框
+                document.getElementById('otp').focus();
+                
+                // 實際 Supabase OTP 發送（註解掉用於測試）
+                /*
+                const { data, error } = await supabase.auth.signInWithOtp({
+                    phone: currentPhone
+                });
+
+                if (error) throw error;
+                */
+                
+            } catch (error) {
+                showMessage(error.message || '發送失敗，請稍後再試', 'error');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = '發送驗證碼';
+            }
+        }
+
+        // 驗證 OTP
+        async function verifyOTP() {
+            const otp = document.getElementById('otp').value;
+            
+            if (!otp || otp.length !== 6) {
+                showMessage('請輸入6位數驗證碼', 'error');
+                return;
+            }
+
+            const verifyBtn = document.getElementById('verifyBtn');
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="loading-spinner"></span>驗證中...';
+
+            try {
+                // 測試模式：接受 123456 作為驗證碼
+                if (otp === '123456') {
+                    // 模擬登入成功
+                    showMessage('登入成功！正在跳轉...', 'success');
                     
-                    // Store user info
-                    localStorage.setItem('userInfo', JSON.stringify(result.data.user));
+                    // 創建模擬 session
+                    const mockUser = {
+                        id: 'test-user-001',
+                        phone: currentPhone,
+                        role: 'admin',
+                        name: '測試用戶'
+                    };
                     
-                    // Redirect to project list
+                    // 儲存到 localStorage
+                    localStorage.setItem('supabase_user', JSON.stringify(mockUser));
+                    localStorage.setItem('auth_token', 'test-token-' + Date.now());
+                    
+                    // 跳轉到專案列表
                     setTimeout(() => {
-                        window.location.href = 'project list.html';
-                    }, 1000);
+                        window.location.href = '/project-list.html';
+                    }, 1500);
+                    
+                    // 實際 Supabase 驗證（註解掉用於測試）
+                    /*
+                    const { data, error } = await supabase.auth.verifyOtp({
+                        phone: currentPhone,
+                        token: otp,
+                        type: 'sms'
+                    });
+
+                    if (error) throw error;
+                    
+                    if (data.session) {
+                        localStorage.setItem('supabase_session', JSON.stringify(data.session));
+                        window.location.href = '/project-list.html';
+                    }
+                    */
                 } else {
-                    throw new Error(result.message || '登入失敗');
+                    showMessage('驗證碼錯誤（測試模式請輸入 123456）', 'error');
                 }
             } catch (error) {
-                errorMessage.textContent = error.message || '登入失敗，請檢查手機號碼和密碼';
-                errorMessage.style.display = 'block';
-                
-                // Re-enable button
-                submitButton.disabled = false;
-                buttonText.textContent = '登入系統';
+                showMessage(error.message || '驗證失敗，請重試', 'error');
+            } finally {
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = '確認登入';
             }
-        });
-
-        // Auto-fill password hint
-        document.getElementById('phone').addEventListener('input', (e) => {
-            const phone = e.target.value;
-            if (phone.length === 10) {
-                const hint = document.querySelector('.password-hint');
-                hint.textContent = `預設密碼為手機號碼後3碼 (${phone.slice(-3)})`;
-            }
-        });
-
-        // Check if already logged in
-        if (apiClient.sessionToken) {
-            // Verify session
-            apiClient.getProfile().then(result => {
-                if (result.success) {
-                    window.location.href = 'project list.html';
-                }
-            }).catch(() => {
-                // Session invalid, clear it
-                apiClient.clearSession();
-            });
         }
+
+        // Enter 鍵快速提交
+        document.getElementById('phone').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendOTP();
+        });
+        
+        document.getElementById('otp').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verifyOTP();
+        });
+
+        // 檢查是否已登入
+        window.addEventListener('load', async () => {
+            // 檢查測試模式登入
+            const testUser = localStorage.getItem('supabase_user');
+            if (testUser) {
+                showMessage('已登入，正在跳轉...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/project-list.html';
+                }, 1000);
+                return;
+            }
+            
+            // 檢查 Supabase session
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                showMessage('已登入，正在跳轉...', 'success');
+                setTimeout(() => {
+                    window.location.href = '/project-list.html';
+                }, 1000);
+            }
+        });
     </script>
 </body>
 </html>

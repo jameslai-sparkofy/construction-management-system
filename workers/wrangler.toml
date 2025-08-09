@@ -11,6 +11,8 @@ CRUD_API_URL = "https://fx-crm-sync.lai-jameslai.workers.dev/api"
 REST_API_TOKEN = "fx-crm-api-secret-2025"
 JWT_SECRET = "your-jwt-secret-key-change-in-production"
 FRONTEND_BASE_URL = "https://manage.yes-ceramics.com"
+CLERK_PUBLISHABLE_KEY = "pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ"
+CLERK_SECRET_KEY = "sk_test_UqjBEE0wOtBatBQbM1buSyr8mIaWqGpes872R5cL6T"
 
 # KV Namespaces for session management
 [[kv_namespaces]]

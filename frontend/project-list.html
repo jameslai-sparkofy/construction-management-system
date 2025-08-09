@@ -72,7 +72,35 @@
             padding: 0 2rem;
         }
 
-        /* Filters and Actions */
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 4px solid #4f46e5;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        /* Controls */
         .controls {
             background: white;
             padding: 1.5rem;
@@ -156,131 +184,103 @@
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
 
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
+        /* Table Container */
+        .table-container {
             background: white;
-            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border-left: 4px solid #4f46e5;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-
-        .stat-change {
-            display: inline-block;
-            margin-top: 0.5rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .stat-up {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .stat-down {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        /* Project Grid */
-        .projects-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .project-card {
-            background: white;
-            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            cursor: pointer;
         }
 
-        .project-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.12);
+        /* Table Styles */
+        .projects-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .project-header {
-            padding: 1.5rem;
+        .projects-table thead {
             background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 2px solid #e5e7eb;
         }
 
-        .project-title {
-            font-size: 1.2rem;
+        .projects-table th {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .projects-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: all 0.3s ease;
+        }
+
+        .projects-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        .projects-table td {
+            padding: 1rem 1.5rem;
+            color: #1f2937;
+            font-size: 0.95rem;
+        }
+
+        /* Project Name Column */
+        .project-name {
             font-weight: 600;
             color: #1f2937;
-            margin-bottom: 0.5rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
         }
 
-        .project-company {
+        .project-name:hover {
+            color: #4f46e5;
+        }
+
+        .company-name {
+            font-size: 0.85rem;
             color: #6b7280;
-            font-size: 0.9rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
+            margin-top: 0.25rem;
         }
 
-        .project-body {
-            padding: 1.5rem;
-        }
-
-        .project-info {
-            display: grid;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .info-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-
-        .info-value {
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
             font-weight: 500;
-            color: #1f2937;
         }
 
+        .status-active {
+            background: #dcfce7;
+            color: #14532d;
+        }
+
+        .status-completed {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #78350f;
+        }
+
+        /* Engineering Tags */
         .engineering-tags {
             display: flex;
             gap: 0.5rem;
-            margin-bottom: 1rem;
         }
 
         .engineering-tag {
-            padding: 0.25rem 0.75rem;
+            padding: 0.25rem 0.5rem;
             border-radius: 6px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 500;
         }
 
@@ -294,27 +294,9 @@
             color: #9f1239;
         }
 
-        .progress-section {
-            margin-top: 1.5rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .progress-label {
-            color: #6b7280;
-            font-size: 0.9rem;
-        }
-
-        .progress-value {
-            font-weight: 600;
-            color: #1f2937;
+        /* Progress Bar */
+        .progress-cell {
+            min-width: 150px;
         }
 
         .progress-bar {
@@ -323,6 +305,7 @@
             background: #e5e7eb;
             border-radius: 4px;
             overflow: hidden;
+            margin-bottom: 0.25rem;
         }
 
         .progress-fill {
@@ -331,23 +314,27 @@
             transition: width 0.5s ease;
         }
 
-        .project-actions {
+        .progress-text {
+            font-size: 0.85rem;
+            color: #6b7280;
+            text-align: center;
+        }
+
+        /* Actions */
+        .actions {
             display: flex;
             gap: 0.5rem;
-            margin-top: 1rem;
         }
 
         .action-btn {
-            flex: 1;
-            padding: 0.5rem;
+            padding: 0.5rem 0.75rem;
             border: 1px solid #e5e7eb;
             background: white;
             border-radius: 6px;
             color: #4b5563;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.3s ease;
-            text-align: center;
         }
 
         .action-btn:hover {
@@ -356,34 +343,88 @@
             color: #4f46e5;
         }
 
-        /* Role Badge */
-        .role-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin-top: 0.5rem;
+        .action-btn.delete {
+            color: #dc2626;
         }
 
-        .role-admin {
+        .action-btn.delete:hover {
             background: #fee2e2;
-            color: #991b1b;
+            border-color: #dc2626;
+            color: #dc2626;
         }
 
-        .role-owner {
-            background: #fed7aa;
-            color: #92400e;
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
         }
 
-        .role-leader {
-            background: #dbeafe;
-            color: #1e40af;
+        .modal.active {
+            display: flex;
         }
 
-        .role-member {
-            background: #e0e7ff;
-            color: #4f46e5;
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+
+        .modal-message {
+            color: #6b7280;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .modal-btn.cancel {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .modal-btn.cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .modal-btn.confirm {
+            background: #dc2626;
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: #b91c1c;
         }
 
         /* Loading State */
@@ -466,8 +507,12 @@
                 width: 100%;
             }
 
-            .projects-grid {
-                grid-template-columns: 1fr;
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .projects-table {
+                min-width: 800px;
             }
 
             .stats-grid {
@@ -495,22 +540,18 @@
             <div class="stat-card">
                 <div class="stat-value" id="totalProjects">0</div>
                 <div class="stat-label">總專案數</div>
-                <span class="stat-change stat-up">+12% 本月</span>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="activeProjects">0</div>
                 <div class="stat-label">進行中專案</div>
-                <span class="stat-change stat-up">+5% 本週</span>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="completedProjects">0</div>
                 <div class="stat-label">已完成專案</div>
-                <span class="stat-change stat-up">+3 本月</span>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="avgProgress">0%</div>
                 <div class="stat-label">平均進度</div>
-                <span class="stat-change stat-up">+8% 本週</span>
             </div>
         </div>
 
@@ -527,13 +568,6 @@
                     <option value="completed">已完成</option>
                     <option value="pending">待開始</option>
                 </select>
-                <select class="filter-select" id="roleFilter">
-                    <option value="">我的角色</option>
-                    <option value="admin">管理員</option>
-                    <option value="owner">業主</option>
-                    <option value="leader">工班負責人</option>
-                    <option value="member">工班成員</option>
-                </select>
             </div>
             <button class="btn-primary" onclick="window.location.href='project-create-v2.html'">
                 <span>➕</span> 建立新專案
@@ -546,9 +580,24 @@
             <div class="loading-text">載入專案中...</div>
         </div>
 
-        <!-- Projects Grid -->
-        <div class="projects-grid" id="projectsGrid" style="display: none;">
-            <!-- 動態載入專案卡片 -->
+        <!-- Projects Table -->
+        <div class="table-container" id="tableContainer" style="display: none;">
+            <table class="projects-table">
+                <thead>
+                    <tr>
+                        <th>專案名稱</th>
+                        <th>工程類型</th>
+                        <th>狀態</th>
+                        <th>進度</th>
+                        <th>案場數</th>
+                        <th>最後更新</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="projectsTableBody">
+                    <!-- 動態載入表格內容 -->
+                </tbody>
+            </table>
         </div>
 
         <!-- Empty State -->
@@ -562,18 +611,33 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-title">確認刪除</div>
+            <div class="modal-message" id="deleteMessage">
+                確定要刪除這個專案嗎？此操作無法復原。
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" onclick="closeDeleteModal()">取消</button>
+                <button class="modal-btn confirm" onclick="confirmDelete()">確認刪除</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // API configuration
         const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
         const API_TOKEN = 'fx-crm-api-secret-2025';
         const WORKER_API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8787' 
-            : 'https://construction-management-api.workers.dev';
+            : 'https://construction-management-api.lai-jameslai.workers.dev';
 
         // User context
         let currentUser = null;
         let allProjects = [];
         let filteredProjects = [];
+        let projectToDelete = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -584,15 +648,17 @@
 
         // Load user info
         function loadUserInfo() {
-            // 從 localStorage 或 session 獲取用戶資訊
             const token = localStorage.getItem('auth_token');
             const userInfo = localStorage.getItem('user_info');
+            const supabaseUser = localStorage.getItem('supabase_user');
             
             if (userInfo) {
                 currentUser = JSON.parse(userInfo);
                 document.getElementById('userName').textContent = currentUser.name || currentUser.phone;
+            } else if (supabaseUser) {
+                currentUser = JSON.parse(supabaseUser);
+                document.getElementById('userName').textContent = currentUser.name || currentUser.phone || '用戶';
             } else {
-                // 如果沒有登入資訊，導向登入頁
                 window.location.href = 'login.html';
             }
         }
@@ -600,17 +666,16 @@
         // Load projects
         async function loadProjects() {
             const loadingEl = document.getElementById('loading');
-            const gridEl = document.getElementById('projectsGrid');
+            const tableEl = document.getElementById('tableContainer');
             const emptyEl = document.getElementById('emptyState');
             
             loadingEl.style.display = 'block';
-            gridEl.style.display = 'none';
+            tableEl.style.display = 'none';
             emptyEl.style.display = 'none';
 
             try {
                 const token = localStorage.getItem('auth_token') || 'demo-token';
                 
-                // 從 Worker API 獲取專案列表
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -618,7 +683,6 @@
                 });
 
                 if (!response.ok) {
-                    // 如果 API 還未實作，使用模擬資料
                     throw new Error('API not ready, using mock data');
                 }
 
@@ -626,11 +690,9 @@
                 allProjects = data.projects || [];
             } catch (error) {
                 console.log('Using mock data:', error);
-                // 使用模擬資料
                 allProjects = await loadMockProjects();
             }
 
-            // 顯示專案
             displayProjects(allProjects);
             updateStats(allProjects);
 
@@ -639,7 +701,7 @@
             if (allProjects.length === 0) {
                 emptyEl.style.display = 'block';
             } else {
-                gridEl.style.display = 'grid';
+                tableEl.style.display = 'block';
             }
         }
 
@@ -653,7 +715,6 @@
                     status: 'active',
                     engineeringTypes: ['SPC', 'CABINET'],
                     progress: 65,
-                    userRole: 'admin',
                     stats: {
                         totalSites: 120,
                         completedSites: 78,
@@ -668,7 +729,6 @@
                     status: 'active',
                     engineeringTypes: ['SPC'],
                     progress: 35,
-                    userRole: 'leader',
                     stats: {
                         totalSites: 80,
                         completedSites: 28,
@@ -683,95 +743,101 @@
                     status: 'completed',
                     engineeringTypes: ['CABINET'],
                     progress: 100,
-                    userRole: 'member',
                     stats: {
                         totalSites: 60,
                         completedSites: 60,
                         pendingSites: 0
                     },
                     lastUpdate: '2025-01-06'
+                },
+                {
+                    id: 'proj_004',
+                    name: '高雄港灣商業中心',
+                    company: '國泰建設',
+                    status: 'pending',
+                    engineeringTypes: ['SPC', 'CABINET'],
+                    progress: 0,
+                    stats: {
+                        totalSites: 150,
+                        completedSites: 0,
+                        pendingSites: 150
+                    },
+                    lastUpdate: '2025-01-05'
                 }
             ];
         }
 
-        // Display projects
+        // Display projects in table
         function displayProjects(projects) {
-            const gridEl = document.getElementById('projectsGrid');
-            gridEl.innerHTML = '';
+            const tbody = document.getElementById('projectsTableBody');
+            tbody.innerHTML = '';
 
             projects.forEach(project => {
-                const card = createProjectCard(project);
-                gridEl.appendChild(card);
+                const row = createProjectRow(project);
+                tbody.appendChild(row);
             });
         }
 
-        // Create project card
-        function createProjectCard(project) {
-            const card = document.createElement('div');
-            card.className = 'project-card';
-            card.onclick = () => window.location.href = `project-details.html?id=${project.id}`;
+        // Create project row
+        function createProjectRow(project) {
+            const row = document.createElement('tr');
 
             const engineeringTags = project.engineeringTypes.map(type => {
                 const className = type === 'SPC' ? 'tag-spc' : 'tag-cabinet';
-                const label = type === 'SPC' ? 'SPC地板' : '浴櫃';
+                const label = type === 'SPC' ? 'SPC' : '浴櫃';
                 return `<span class="engineering-tag ${className}">${label}</span>`;
             }).join('');
 
-            const roleClass = `role-${project.userRole}`;
-            const roleLabel = {
-                admin: '管理員',
-                owner: '業主',
-                leader: '負責人',
-                member: '成員'
-            }[project.userRole];
+            const statusClass = `status-${project.status}`;
+            const statusLabel = {
+                active: '進行中',
+                completed: '已完成',
+                pending: '待開始'
+            }[project.status];
 
-            card.innerHTML = `
-                <div class="project-header">
-                    <div class="project-title">${project.name}</div>
-                    <div class="project-company">
-                        <span>🏢</span> ${project.company}
-                    </div>
-                </div>
-                <div class="project-body">
+            row.innerHTML = `
+                <td>
+                    <a href="project-details.html?id=${project.id}" class="project-name">
+                        ${project.name}
+                    </a>
+                    <div class="company-name">${project.company}</div>
+                </td>
+                <td>
                     <div class="engineering-tags">
                         ${engineeringTags}
                     </div>
-                    <div class="project-info">
-                        <div class="info-item">
-                            <span class="info-label">總案場數</span>
-                            <span class="info-value">${project.stats.totalSites}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">已完成</span>
-                            <span class="info-value">${project.stats.completedSites}</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">最後更新</span>
-                            <span class="info-value">${project.lastUpdate}</span>
-                        </div>
-                    </div>
-                    <div class="progress-section">
-                        <div class="progress-header">
-                            <span class="progress-label">整體進度</span>
-                            <span class="progress-value">${project.progress}%</span>
-                        </div>
+                </td>
+                <td>
+                    <span class="status-badge ${statusClass}">${statusLabel}</span>
+                </td>
+                <td>
+                    <div class="progress-cell">
                         <div class="progress-bar">
                             <div class="progress-fill" style="width: ${project.progress}%"></div>
                         </div>
+                        <div class="progress-text">${project.progress}%</div>
                     </div>
-                    <span class="role-badge ${roleClass}">${roleLabel}</span>
-                    <div class="project-actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); viewDetails('${project.id}')">
-                            查看詳情
+                </td>
+                <td>
+                    ${project.stats.completedSites} / ${project.stats.totalSites}
+                </td>
+                <td>${project.lastUpdate}</td>
+                <td>
+                    <div class="actions">
+                        <button class="action-btn" onclick="viewDetails('${project.id}')">
+                            查看
                         </button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewProgress('${project.id}')">
-                            施工進度
+                        <button class="action-btn" onclick="editProject('${project.id}')">
+                            編輯
+                        </button>
+                        <button class="action-btn delete" onclick="deleteProject('${project.id}', '${project.name}')">
+                            刪除
                         </button>
                     </div>
-                </div>
+                </td>
             `;
 
-            return card;
+            return row;
         }
 
         // Update statistics
@@ -793,18 +859,15 @@
         function setupFilters() {
             const searchInput = document.getElementById('searchInput');
             const statusFilter = document.getElementById('statusFilter');
-            const roleFilter = document.getElementById('roleFilter');
 
             searchInput.addEventListener('input', filterProjects);
             statusFilter.addEventListener('change', filterProjects);
-            roleFilter.addEventListener('change', filterProjects);
         }
 
         // Filter projects
         function filterProjects() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             const statusValue = document.getElementById('statusFilter').value;
-            const roleValue = document.getElementById('roleFilter').value;
 
             filteredProjects = allProjects.filter(project => {
                 const matchSearch = !searchTerm || 
@@ -812,9 +875,8 @@
                     project.company.toLowerCase().includes(searchTerm);
                 
                 const matchStatus = !statusValue || project.status === statusValue;
-                const matchRole = !roleValue || project.userRole === roleValue;
 
-                return matchSearch && matchStatus && matchRole;
+                return matchSearch && matchStatus;
             });
 
             displayProjects(filteredProjects);
@@ -826,9 +888,70 @@
             window.location.href = `project-details.html?id=${projectId}`;
         }
 
-        // View project progress
-        function viewProgress(projectId) {
-            window.location.href = `project-progress.html?id=${projectId}`;
+        // Edit project
+        function editProject(projectId) {
+            // 可以導向編輯頁面或開啟編輯模式
+            window.location.href = `project-edit.html?id=${projectId}`;
+        }
+
+        // Delete project
+        function deleteProject(projectId, projectName) {
+            projectToDelete = projectId;
+            const message = `確定要刪除專案「${projectName}」嗎？此操作無法復原。`;
+            document.getElementById('deleteMessage').textContent = message;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        // Close delete modal
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            projectToDelete = null;
+        }
+
+        // Confirm delete
+        async function confirmDelete() {
+            if (!projectToDelete) return;
+
+            try {
+                const token = localStorage.getItem('auth_token') || 'demo-token';
+                
+                // 呼叫刪除 API
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    // 如果 API 還未實作，模擬刪除
+                    console.log('API not ready, simulating delete');
+                }
+
+                // 從列表中移除專案
+                allProjects = allProjects.filter(p => p.id !== projectToDelete);
+                filteredProjects = filteredProjects.filter(p => p.id !== projectToDelete);
+                
+                // 重新顯示列表
+                displayProjects(filteredProjects.length > 0 ? filteredProjects : allProjects);
+                updateStats(filteredProjects.length > 0 ? filteredProjects : allProjects);
+                
+                // 檢查是否還有專案
+                if (allProjects.length === 0) {
+                    document.getElementById('tableContainer').style.display = 'none';
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+
+                // 關閉 modal
+                closeDeleteModal();
+                
+                // 顯示成功訊息（可選）
+                alert('專案已成功刪除');
+                
+            } catch (error) {
+                console.error('刪除失敗:', error);
+                alert('刪除專案時發生錯誤，請稍後再試');
+            }
         }
 
         // Logout
@@ -836,6 +959,8 @@
             if (confirm('確定要登出嗎？')) {
                 localStorage.removeItem('auth_token');
                 localStorage.removeItem('user_info');
+                localStorage.removeItem('supabase_user');
+                localStorage.removeItem('supabase_session');
                 window.location.href = 'login.html';
             }
         }
