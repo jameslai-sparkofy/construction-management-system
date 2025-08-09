@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 工程管理系統</title>
+    
+    <!-- Clerk -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@5/dist/clerk.browser.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .login-header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .login-header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .login-body {
+            padding: 40px 30px;
+        }
+        
+        #clerk-sign-in {
+            width: 100%;
+        }
+        
+        .demo-login {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+        }
+        
+        .demo-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .demo-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        /* Clerk 元件自訂樣式 */
+        .cl-formButtonPrimary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        }
+        
+        .cl-formButtonPrimary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .cl-card {
+            box-shadow: none !important;
+        }
+        
+        .cl-headerTitle {
+            display: none;
+        }
+        
+        .cl-headerSubtitle {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <h1>🏗️ 工程管理系統</h1>
+            <p>使用手機號碼登入</p>
+        </div>
+        
+        <div class="login-body">
+            <div id="loading" class="loading">
+                <div class="loading-spinner"></div>
+                <p>正在載入登入系統...</p>
+            </div>
+            
+            <div id="error-container"></div>
+            
+            <div id="clerk-sign-in" style="display: none;"></div>
+            
+            <div class="demo-login" style="display: none;" id="demo-section">
+                <button class="demo-button" onclick="demoLogin()">
+                    📱 使用測試帳號登入
+                </button>
+                <div class="demo-info">
+                    測試帳號：0912345678<br>
+                    驗證碼：424242
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Clerk 配置
+        const clerkPublishableKey = 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ';
+        
+        // API 配置
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8787'
+            : 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
+        
+        // 初始化 Clerk
+        async function initClerk() {
+            try {
+                const Clerk = window.Clerk;
+                
+                await Clerk.load({
+                    publishableKey: clerkPublishableKey
+                });
+                
+                // 隱藏載入動畫
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('clerk-sign-in').style.display = 'block';
+                document.getElementById('demo-section').style.display = 'block';
+                
+                // 檢查是否已登入
+                if (Clerk.user) {
+                    console.log('用戶已登入:', Clerk.user);
+                    handleLoginSuccess();
+                    return;
+                }
+                
+                // 掛載登入元件
+                Clerk.mountSignIn(document.getElementById('clerk-sign-in'), {
+                    appearance: {
+                        baseTheme: 'light',
+                        variables: {
+                            colorPrimary: '#667eea',
+                            colorText: '#1f2937',
+                            colorTextSecondary: '#6b7280',
+                            colorBackground: '#ffffff',
+                            colorInputBackground: '#f9fafb',
+                            colorInputText: '#1f2937',
+                            borderRadius: '0.5rem',
+                            fontFamily: '"Microsoft JhengHei", "Segoe UI", system-ui, -apple-system, sans-serif'
+                        },
+                        elements: {
+                            formButtonPrimary: {
+                                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                                '&:hover': {
+                                    background: 'linear-gradient(135deg, #5a67d8 0%, #6b4199 100%)'
+                                }
+                            },
+                            card: {
+                                boxShadow: 'none',
+                                padding: '0'
+                            },
+                            headerTitle: {
+                                display: 'none'
+                            },
+                            headerSubtitle: {
+                                display: 'none'
+                            },
+                            socialButtonsBlockButton: {
+                                display: 'none'
+                            },
+                            dividerRow: {
+                                display: 'none'
+                            }
+                        }
+                    },
+                    signInUrl: window.location.href,
+                    afterSignInUrl: '/project-list.html',
+                    routing: 'hash',
+                    initialValues: {
+                        phoneNumber: '+886'
+                    }
+                });
+                
+                // 監聽登入成功事件
+                Clerk.addListener(({ user }) => {
+                    if (user) {
+                        handleLoginSuccess();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Clerk 初始化失敗:', error);
+                showError('登入系統載入失敗，請重新整理頁面');
+            }
+        }
+        
+        // 處理登入成功
+        async function handleLoginSuccess() {
+            try {
+                const token = await window.Clerk.session.getToken();
+                
+                // 儲存 token
+                localStorage.setItem('auth_token', token);
+                localStorage.setItem('auth_type', 'clerk');
+                
+                // 獲取用戶資料
+                const user = window.Clerk.user;
+                localStorage.setItem('user_phone', user.phoneNumbers[0]?.phoneNumber || '');
+                localStorage.setItem('user_id', user.id);
+                localStorage.setItem('user_name', user.publicMetadata?.name || '用戶');
+                
+                // 導向專案列表
+                window.location.href = '/project-list.html';
+                
+            } catch (error) {
+                console.error('處理登入失敗:', error);
+                showError('登入處理失敗，請重試');
+            }
+        }
+        
+        // 測試帳號快速登入
+        async function demoLogin() {
+            try {
+                // 填入測試帳號
+                const phoneInput = document.querySelector('input[type="tel"]');
+                if (phoneInput) {
+                    phoneInput.value = '+886912345678';
+                    phoneInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    
+                    // 自動點擊繼續按鈕
+                    setTimeout(() => {
+                        const continueButton = document.querySelector('.cl-formButtonPrimary');
+                        if (continueButton) {
+                            continueButton.click();
+                            
+                            // 等待驗證碼輸入框出現
+                            setTimeout(() => {
+                                const codeInput = document.querySelector('input[name="code"]');
+                                if (codeInput) {
+                                    codeInput.value = '424242';
+                                    codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    
+                                    // 自動提交
+                                    setTimeout(() => {
+                                        const submitButton = document.querySelector('.cl-formButtonPrimary');
+                                        if (submitButton) {
+                                            submitButton.click();
+                                        }
+                                    }, 500);
+                                }
+                            }, 1000);
+                        }
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Demo 登入失敗:', error);
+                showError('測試登入失敗，請手動輸入');
+            }
+        }
+        
+        // 顯示錯誤訊息
+        function showError(message) {
+            const errorContainer = document.getElementById('error-container');
+            errorContainer.innerHTML = `
+                <div class="error-message">
+                    ⚠️ ${message}
+                </div>
+            `;
+            
+            // 隱藏載入動畫
+            document.getElementById('loading').style.display = 'none';
+        }
+        
+        // 頁面載入時初始化
+        window.addEventListener('load', initClerk);
+    </script>
+</body>
+</html>

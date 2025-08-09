@@ -964,7 +964,7 @@
         
         const WORKER_API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8787' 
-            : 'https://construction-management-api.lai-jameslai.workers.dev';
+            : 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -1205,88 +1205,26 @@
         // Load permissions for a specific object
         async function loadObjectFieldPermissions(objectApiName, tbodyId) {
             try {
-                // First get the schema to know all fields
-                const schemaResponse = await fetch(`${API_BASE_URL}/api/schema/${objectApiName}`, {
+                // Use the object describe endpoint to get field information
+                const schemaResponse = await fetch(`${API_BASE_URL}/rest/${objectApiName}/describe`, {
                     headers: {
                         'Authorization': `Bearer ${API_TOKEN}`
                     }
                 });
                 
-                if (!schemaResponse.ok) throw new Error('Failed to load schema');
+                if (!schemaResponse.ok) {
+                    // Fallback to hardcoded field list if API fails
+                    console.warn(`Failed to load schema for ${objectApiName}, using default fields`);
+                    const defaultFields = getDefaultFields(objectApiName);
+                    renderFieldsTable(defaultFields, tbodyId, objectApiName);
+                    return;
+                }
                 
                 const schemaData = await schemaResponse.json();
-                const fields = schemaData.data?.fields || [];
+                const fields = schemaData.fields || schemaData.data?.fields || [];
                 
-                let existingPermissions = {};
-                
-                // Render fields table
-                const tbody = document.getElementById(tbodyId);
-                tbody.innerHTML = '';
-                
-                // Filter out system fields and sensitive fields
-                const editableFields = fields.filter(field => {
-                    // Skip system fields
-                    if (['_id', 'created_at', 'updated_at', 'modification_record__c'].includes(field.api_name)) {
-                        return false;
-                    }
-                    // Skip non-editable field types
-                    if (['formula', 'auto_number'].includes(field.type)) {
-                        return false;
-                    }
-                    return true;
-                });
-                
-                editableFields.forEach(field => {
-                    const permissions = existingPermissions[field.api_name] || {
-                        canEditByWorker: false,
-                        canEditByOwner: false,
-                        canEditByAdmin: true
-                    };
-                    
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>
-                            <div class="field-name">${field.label || field.api_name}</div>
-                            <div class="field-api-name">${field.api_name}</div>
-                        </td>
-                        <td>
-                            <span class="field-type-badge">${getFieldTypeLabel(field.type)}</span>
-                        </td>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="permission-checkbox" 
-                                   data-object="${objectApiName}" 
-                                   data-field="${field.api_name}" 
-                                   data-role="worker"
-                                   ${permissions.canEditByWorker ? 'checked' : ''}>
-                        </td>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="permission-checkbox" 
-                                   data-object="${objectApiName}" 
-                                   data-field="${field.api_name}" 
-                                   data-role="owner"
-                                   ${permissions.canEditByOwner ? 'checked' : ''}>
-                        </td>
-                        <td style="text-align: center;">
-                            <input type="checkbox" class="permission-checkbox" 
-                                   data-object="${objectApiName}" 
-                                   data-field="${field.api_name}" 
-                                   data-role="admin"
-                                   checked disabled>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
-                    
-                    // Initialize field permissions
-                    if (!fieldPermissions[objectApiName][field.api_name]) {
-                        fieldPermissions[objectApiName][field.api_name] = {
-                            fieldDisplayName: field.label || field.api_name,
-                            fieldType: field.type,
-                            canEditByWorker: permissions.canEditByWorker,
-                            canEditByOwner: permissions.canEditByOwner,
-                            canEditByAdmin: true
-                        };
-                    }
-                });
+                // Use the new render function
+                renderFieldsTable(fields, tbodyId, objectApiName);
                 
                 // Setup checkbox handlers
                 setupPermissionCheckboxes();
@@ -1296,6 +1234,100 @@
                 const tbody = document.getElementById(tbodyId);
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">無法載入欄位權限設定</td></tr>';
             }
+        }
+        
+        // Get default fields when API fails
+        function getDefaultFields(objectApiName) {
+            const defaultFieldsSPC = [
+                { name: '案場名稱', api_name: 'name', type: 'text', required: true },
+                { name: '地址', api_name: 'field_1P96q__c', type: 'text', required: false },
+                { name: '連絡人', api_name: 'field_k96Xm__c', type: 'text', required: false },
+                { name: '連絡電話', api_name: 'field_6pchT__c', type: 'phone', required: false },
+                { name: '工程類型', api_name: 'field_engineering_type__c', type: 'picklist', required: false },
+                { name: '建築數量', api_name: 'field_building_count__c', type: 'number', required: false },
+                { name: '地上樓層', api_name: 'field_floors_above__c', type: 'number', required: false },
+                { name: '地下樓層', api_name: 'field_floors_below__c', type: 'number', required: false },
+                { name: '戶數', api_name: 'field_unit_count__c', type: 'number', required: false }
+            ];
+            
+            const defaultFieldsCabinet = [
+                { name: '浴櫃名稱', api_name: 'name', type: 'text', required: true },
+                { name: '浴櫃型號', api_name: 'field_cabinet_model__c', type: 'text', required: false },
+                { name: '安裝日期', api_name: 'field_install_date__c', type: 'date', required: false },
+                { name: '安裝狀態', api_name: 'field_install_status__c', type: 'picklist', required: false },
+                { name: '備註', api_name: 'field_notes__c', type: 'textarea', required: false }
+            ];
+            
+            return objectApiName === 'object_8W9cb__c' ? defaultFieldsSPC : defaultFieldsCabinet;
+        }
+        
+        // Render fields table
+        function renderFieldsTable(fields, tbodyId, objectApiName) {
+            const tbody = document.getElementById(tbodyId);
+            tbody.innerHTML = '';
+            
+            // Filter out system fields
+            const filteredFields = fields.filter(field => {
+                const apiName = field.api_name || field.name;
+                return !apiName.startsWith('Created') && 
+                       !apiName.startsWith('Last') && 
+                       !apiName.startsWith('System') &&
+                       apiName !== 'id';
+            });
+            
+            filteredFields.forEach(field => {
+                const fieldName = field.name || field.label || field.api_name;
+                const apiName = field.api_name || field.name;
+                const fieldType = field.type || 'text';
+                
+                // Initialize field permissions if not exists
+                if (!fieldPermissions[objectApiName]) {
+                    fieldPermissions[objectApiName] = {};
+                }
+                
+                if (!fieldPermissions[objectApiName][apiName]) {
+                    fieldPermissions[objectApiName][apiName] = {
+                        canEditByWorker: true,
+                        canEditByOwner: false
+                    };
+                }
+                
+                const permissions = fieldPermissions[objectApiName][apiName];
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div class="field-name">${fieldName}</div>
+                        <div class="field-api-name">${apiName}</div>
+                    </td>
+                    <td>
+                        <span class="field-type-badge">${getFieldTypeLabel(fieldType)}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="permission-checkbox" 
+                               data-object="${objectApiName}" 
+                               data-field="${apiName}" 
+                               data-role="worker"
+                               ${permissions.canEditByWorker ? 'checked' : ''}>
+                    </td>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="permission-checkbox" 
+                               data-object="${objectApiName}" 
+                               data-field="${apiName}" 
+                               data-role="owner"
+                               ${permissions.canEditByOwner ? 'checked' : ''}>
+                    </td>
+                    <td style="text-align: center;">
+                        <input type="checkbox" class="permission-checkbox" 
+                               data-object="${objectApiName}" 
+                               data-field="${apiName}" 
+                               data-role="admin"
+                               checked>
+                    </td>
+                `;
+                
+                tbody.appendChild(row);
+            });
         }
 
         // Get field type label in Chinese
@@ -1575,12 +1607,28 @@
                         
                         <div style="margin-left: 1rem;">
                             <h5 style="margin-bottom: 0.5rem;">負責人</h5>
-                            <select class="form-select team-leader" data-team="${teamName}" style="width: 100%; max-width: 400px; margin-bottom: 1rem;">
-                                <option value="">請選擇負責人</option>
-                                ${workers.map(worker => `
-                                    <option value="${worker.id}">${worker.name || '未命名'} - ${worker.phone || '無電話'}</option>
-                                `).join('')}
-                            </select>
+                            <div class="team-leader-search-container" style="position: relative; width: 100%; max-width: 400px; margin-bottom: 1rem;">
+                                <input type="text" 
+                                       class="form-control team-leader-search" 
+                                       data-team="${teamName}"
+                                       placeholder="搜尋負責人名稱或電話..."
+                                       style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 6px;">
+                                <div class="team-leader-dropdown" 
+                                     data-team="${teamName}"
+                                     style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-top: none; border-radius: 0 0 6px 6px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000;">
+                                    ${workers.map(worker => `
+                                        <div class="team-leader-option" 
+                                             data-value="${worker.id}" 
+                                             data-team="${teamName}"
+                                             data-name="${worker.name || '未命名'}"
+                                             data-phone="${worker.phone || '無電話'}"
+                                             style="padding: 0.5rem; cursor: pointer; border-bottom: 1px solid #f3f4f6;">
+                                            <div style="font-weight: 500;">${worker.name || '未命名'}</div>
+                                            <div style="font-size: 0.8rem; color: #6b7280;">${worker.phone || '無電話'}</div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
                             
                             <h5 style="margin-bottom: 0.5rem;">成員</h5>
                             <div class="team-members" style="max-height: 200px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;">
@@ -1644,10 +1692,62 @@
 
         // Setup user selection handlers
         function setupUserSelection() {
-            // Team leader selection
-            document.querySelectorAll('.team-leader').forEach(select => {
-                select.addEventListener('change', function() {
+            // Team leader search functionality
+            document.querySelectorAll('.team-leader-search').forEach(input => {
+                const teamName = input.dataset.team;
+                const dropdown = document.querySelector(`.team-leader-dropdown[data-team="${teamName}"]`);
+                
+                // Show dropdown on focus
+                input.addEventListener('focus', function() {
+                    dropdown.style.display = 'block';
+                });
+                
+                // Filter options on input
+                input.addEventListener('input', function() {
+                    const searchTerm = this.value.toLowerCase();
+                    const options = dropdown.querySelectorAll('.team-leader-option');
+                    
+                    options.forEach(option => {
+                        const name = option.dataset.name.toLowerCase();
+                        const phone = option.dataset.phone.toLowerCase();
+                        const match = name.includes(searchTerm) || phone.includes(searchTerm);
+                        option.style.display = match ? 'block' : 'none';
+                    });
+                    
+                    dropdown.style.display = 'block';
+                });
+                
+                // Hide dropdown when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+            });
+            
+            // Team leader option selection
+            document.querySelectorAll('.team-leader-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    const teamName = this.dataset.team;
+                    const input = document.querySelector(`.team-leader-search[data-team="${teamName}"]`);
+                    const dropdown = document.querySelector(`.team-leader-dropdown[data-team="${teamName}"]`);
+                    
+                    // Set input value and hide dropdown
+                    input.value = `${this.dataset.name} - ${this.dataset.phone}`;
+                    input.dataset.selectedId = this.dataset.value;
+                    dropdown.style.display = 'none';
+                    
+                    // Update selected users
                     updateSelectedUsers();
+                });
+                
+                // Add hover effect
+                option.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f3f4f6';
+                });
+                
+                option.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
                 });
             });
             
@@ -1671,16 +1771,16 @@
             // Get team assignments
             const teamAssignments = {};
             
-            document.querySelectorAll('.team-leader').forEach(select => {
-                const team = select.dataset.team;
+            document.querySelectorAll('.team-leader-search').forEach(input => {
+                const team = input.dataset.team;
                 if (!teamAssignments[team]) {
                     teamAssignments[team] = {
                         leader: null,
                         members: []
                     };
                 }
-                if (select.value) {
-                    teamAssignments[team].leader = select.value;
+                if (input.dataset.selectedId) {
+                    teamAssignments[team].leader = input.dataset.selectedId;
                 }
             });
             

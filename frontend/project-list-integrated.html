@@ -496,14 +496,14 @@
         // Check authentication
         async function checkAuth() {
             if (!apiClient.sessionToken) {
-                window.location.href = 'login.html';
+                window.location.href = 'clerk.html';
                 return false;
             }
 
             try {
                 const result = await apiClient.getProfile();
                 if (!result.success) {
-                    window.location.href = 'login.html';
+                    window.location.href = 'clerk.html';
                     return false;
                 }
 
@@ -513,7 +513,7 @@
                 return true;
             } catch (error) {
                 console.error('Auth check failed:', error);
-                window.location.href = 'login.html';
+                window.location.href = 'clerk.html';
                 return false;
             }
         }
@@ -744,12 +744,12 @@
         async function logout() {
             try {
                 await apiClient.logout();
-                window.location.href = 'login.html';
+                window.location.href = 'clerk.html';
             } catch (error) {
                 console.error('Logout error:', error);
                 // Clear session anyway
                 apiClient.clearSession();
-                window.location.href = 'login.html';
+                window.location.href = 'clerk.html';
             }
         }
 

@@ -6,8 +6,8 @@
 const CONFIG = {
     // API 配置
     API: {
-        // Cloudflare Workers API
-        WORKER_API_URL: 'https://construction-management-api.lai-jameslai.workers.dev',
+        // Cloudflare Workers API - Clerk Version
+        WORKER_API_URL: 'https://construction-management-api-clerk.lai-jameslai.workers.dev',
         
         // CRM REST API
         CRM_API_URL: 'https://fx-d1-rest-api.lai-jameslai.workers.dev',

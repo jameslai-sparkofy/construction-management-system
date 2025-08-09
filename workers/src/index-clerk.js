@@ -157,6 +157,9 @@ export default {
       });
     }
 
+    // 路由處理
+    const response = await router.handle(request);
+    
     // 為所有回應加入 CORS headers
     Object.entries(corsHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);

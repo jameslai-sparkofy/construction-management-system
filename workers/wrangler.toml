@@ -1,5 +1,5 @@
-name = "construction-management-api"
-main = "src/index.js"
+name = "construction-management-api-clerk"
+main = "src/index-clerk-simple.js"
 compatibility_date = "2024-11-06"
 compatibility_flags = ["nodejs_compat"]
 

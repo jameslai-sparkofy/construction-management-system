@@ -80,6 +80,33 @@
             flex-wrap: wrap;
             font-size: 0.9em;
         }
+        
+        /* 工班圖例 */
+        .team-legend {
+            background: #F8F9FA;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            font-size: 0.85em;
+            align-items: center;
+        }
+        
+        .team-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .team-legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
 
         .legend-item {
             display: flex;
@@ -148,6 +175,39 @@
             width: 80px;
             font-size: 0.85em;
             position: relative;
+            padding: 8px 4px;
+        }
+        
+        /* 工班圓點樣式 */
+        .team-indicator {
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: 1px solid #fff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .team-blue { background: #3B82F6; }
+        .team-orange { background: #F97316; }
+        .team-purple { background: #A855F7; }
+        .team-green { background: #10B981; }
+        
+        /* 無此戶別樣式 */
+        .status-no-unit {
+            background: #E0E0E0 !important;
+            color: #999;
+            cursor: not-allowed;
+            font-size: 0.7em;
+            text-align: center;
+        }
+        
+        .status-no-unit:hover {
+            background: #E0E0E0 !important;
+            transform: none;
+            box-shadow: none;
         }
 
         .progress-grid td:hover:not(.floor-cell) {
@@ -288,7 +348,24 @@
             </button>
         </div>
 
-        <!-- 圖例 -->
+        <!-- 工班圖例 -->
+        <div class="team-legend">
+            <span><strong>工班分配：</strong></span>
+            <div class="team-legend-item">
+                <div class="team-legend-dot team-blue"></div>
+                <span>王大誠工班</span>
+            </div>
+            <div class="team-legend-item">
+                <div class="team-legend-dot team-orange"></div>
+                <span>李經理工班</span>
+            </div>
+            <div class="team-legend-item">
+                <div class="team-legend-dot team-purple"></div>
+                <span>陳志彬工班</span>
+            </div>
+        </div>
+        
+        <!-- 施工狀態圖例 -->
         <div class="legend">
             <div class="legend-item">
                 <div class="legend-color" style="background: #C8E6C9;"></div>
@@ -306,6 +383,10 @@
                 <div class="legend-color" style="background: #FFEBEE;"></div>
                 <span>有問題</span>
             </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #E0E0E0;"></div>
+                <span>無此戶別</span>
+            </div>
         </div>
 
         <!-- A棟進度表 -->
@@ -319,65 +400,150 @@
                             <th>A1</th>
                             <th>A2</th>
                             <th>A3</th>
-                            <th>A4</th>
+                            <th>B1</th>
+                            <th>B2</th>
+                            <th>C1</th>
+                            <th>C2</th>
+                            <th>C3</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
                             <td class="floor-cell">15F</td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '15F', 'A1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '15F', 'A2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '15F', 'A3')">
+                                施工中<span class="progress-percent">85%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-pending" onclick="openUnitDetail('A', '15F', 'B1')">
+                                待施工<span class="progress-percent">0%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '15F', 'B2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '15F', 'C1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '15F', 'C2')">
+                                施工中<span class="progress-percent">70%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-no-unit">
+                                無此戶別
+                            </td>
                         </tr>
                         <tr>
                             <td class="floor-cell">14F</td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">85%</span></td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '14F', 'A1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '14F', 'A2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '14F', 'A3')">
+                                施工中<span class="progress-percent">75%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '14F', 'B1')">
+                                施工中<span class="progress-percent">60%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '14F', 'B2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '14F', 'C1')">
+                                施工中<span class="progress-percent">80%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '14F', 'C2')">
+                                施工中<span class="progress-percent">65%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '14F', 'C3')">
+                                施工中<span class="progress-percent">40%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
                         </tr>
                         <tr>
                             <td class="floor-cell">13F</td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">75%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">60%</span></td>
-                        </tr>
-                        <tr>
-                            <td class="floor-cell">12F</td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">90%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">50%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">45%</span></td>
-                        </tr>
-                        <tr>
-                            <td class="floor-cell">11F</td>
-                            <td class="status-completed">完成<span class="progress-percent">100%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">70%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">30%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
-                        </tr>
-                        <tr>
-                            <td class="floor-cell">10F</td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">95%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">60%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
-                        </tr>
-                        <tr>
-                            <td class="floor-cell">9F</td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">80%</span></td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">40%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '13F', 'A1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '13F', 'A2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '13F', 'A3')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '13F', 'B1')">
+                                施工中<span class="progress-percent">90%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '13F', 'B2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '13F', 'C1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-in-progress" onclick="openUnitDetail('A', '13F', 'C2')">
+                                施工中<span class="progress-percent">55%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-no-unit">
+                                無此戶別
+                            </td>
                         </tr>
                         <tr>
                             <td class="floor-cell">8F</td>
-                            <td class="status-in-progress">施工中<span class="progress-percent">60%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
-                            <td class="status-pending">待施工<span class="progress-percent">0%</span></td>
-                            <td class="status-issue">有問題<span class="progress-percent">15%</span></td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'A1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'A2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'A3')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-blue"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'B1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'B2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-orange"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'C1')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-completed" onclick="openUnitDetail('A', '8F', 'C2')">
+                                完成<span class="progress-percent">100%</span>
+                                <div class="team-indicator team-purple"></div>
+                            </td>
+                            <td class="status-no-unit">
+                                無此戶別
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -596,6 +762,90 @@
             </div>
         </div>
 
+        <!-- 案場詳情 Modal -->
+        <div id="unitDetailModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto;">
+                <div style="padding: 20px; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="modalTitle" style="margin: 0;">🏠 案場詳情</h2>
+                    <button onclick="closeUnitDetail()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">×</button>
+                </div>
+                
+                <div style="padding: 20px;">
+                    <!-- 基本資訊 -->
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px;">
+                            <div><strong>案場編號：</strong><span id="unitCode"></span></div>
+                            <div><strong>工班：</strong><span id="unitTeam"></span></div>
+                            <div><strong>戶別：</strong><span id="unitType"></span></div>
+                            <div><strong>樓層：</strong><span id="unitFloor"></span></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 平面圖 -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px;">📏 平面圖</h4>
+                        <input type="file" id="floorPlan" accept=".jpg,.jpeg,.png,.pdf" style="margin-bottom: 10px;">
+                        <div id="floorPlanPreview" style="min-height: 40px; background: #f8f9fa; border: 1px dashed #d1d5db; border-radius: 6px; padding: 10px; text-align: center; color: #6b7280;">目前無檔案</div>
+                    </div>
+                    
+                    <!-- 施工前特別備註 -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px;">📝 施工前特別備註</h4>
+                        <textarea id="preNotes" rows="3" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; resize: vertical;" placeholder="請輸入特別注意事項..."></textarea>
+                    </div>
+                    
+                    <!-- 施工前照片 -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px;">📷 施工前照片</h4>
+                        <input type="file" id="prePhotos" accept=".jpg,.jpeg,.png" multiple style="margin-bottom: 10px;">
+                        <div id="prePhotosPreview" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                    </div>
+                    
+                    <!-- 施工資訊 -->
+                    <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 15px;">⚙️ 施工資訊</h4>
+                        
+                        <div style="margin-bottom: 15px;">
+                            <label style="font-weight: 500; margin-bottom: 8px; display: block;">施工完成：</label>
+                            <div>
+                                <label style="margin-right: 15px; font-weight: normal;"><input type="radio" name="isCompleted" value="true" onchange="toggleCompletionFields()"> 是</label>
+                                <label style="font-weight: normal;"><input type="radio" name="isCompleted" value="false" checked onchange="toggleCompletionFields()"> 否</label>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                            <div>
+                                <label style="font-weight: 500; margin-bottom: 5px; display: block;">📏 鋪設坪數：</label>
+                                <div style="position: relative;">
+                                    <input type="number" id="actualArea" step="0.1" style="width: 100%; padding: 8px 30px 8px 8px; border: 1px solid #d1d5db; border-radius: 6px;" placeholder="25.5" disabled>
+                                    <span style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: #6b7280; font-size: 14px;">坪</span>
+                                </div>
+                                <div id="areaHint" style="font-size: 12px; color: #6b7280; margin-top: 4px;">需先完成施工</div>
+                            </div>
+                            <div>
+                                <label style="font-weight: 500; margin-bottom: 5px; display: block;">📅 施工日期：</label>
+                                <input type="date" id="completionDate" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" disabled>
+                                <div id="dateHint" style="font-size: 12px; color: #6b7280; margin-top: 4px;">需先完成施工</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 施工後照片 -->
+                    <div style="margin-bottom: 20px;">
+                        <h4 style="margin-bottom: 10px;">📸 施工後照片</h4>
+                        <input type="file" id="postPhotos" accept=".jpg,.jpeg,.png" multiple style="margin-bottom: 10px;">
+                        <div id="postPhotosPreview" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+                    </div>
+                    
+                    <!-- 按鈕 -->
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button onclick="closeUnitDetail()" style="padding: 10px 20px; border: 1px solid #d1d5db; background: white; border-radius: 6px; cursor: pointer;">✖ 取消</button>
+                        <button onclick="saveUnitDetail()" style="padding: 10px 20px; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 6px; cursor: pointer;">💾 提交</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 使用說明 -->
         <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
             <h3 style="margin-bottom: 15px; color: #333;">📖 使用說明</h3>
@@ -628,13 +878,161 @@
             event.target.closest('.building-btn').classList.add('active');
         }
 
-        // 添加點擊效果
-        document.querySelectorAll('.progress-grid td:not(.floor-cell)').forEach(cell => {
-            cell.addEventListener('click', function() {
-                if (this.textContent !== '-') {
-                    alert(`戶別資訊：${this.textContent}\n\n點擊後可查看詳細施工記錄、照片等資訊`);
+        // 現在的 Modal 資料
+        let currentUnitData = {};
+        
+        // 工班資料
+        const teamData = {
+            'team-blue': { name: '王大誠工班', phone: '0912-345-678' },
+            'team-orange': { name: '李經理工班', phone: '0923-456-789' },
+            'team-purple': { name: '陳志彬工班', phone: '0934-567-890' }
+        };
+        
+        // 開啟案場詳情 Modal
+        function openUnitDetail(building, floor, unit) {
+            const modal = document.getElementById('unitDetailModal');
+            const title = document.getElementById('modalTitle');
+            
+            // 設定標題
+            title.textContent = `🏠 案場詳情 - ${building}棟 ${floor} ${unit}`;
+            
+            // 定位工班資訊（根據戶別判斷）
+            let teamClass = 'team-blue';
+            if (unit.startsWith('B')) teamClass = 'team-orange';
+            else if (unit.startsWith('C')) teamClass = 'team-purple';
+            
+            const team = teamData[teamClass];
+            
+            // 填入基本資訊
+            document.getElementById('unitCode').textContent = `${building}-${floor}-${unit}`;
+            document.getElementById('unitTeam').textContent = `${team.name} (${team.phone})`;
+            document.getElementById('unitType').textContent = unit;
+            document.getElementById('unitFloor').textContent = floor;
+            
+            // 儲存當前資料
+            currentUnitData = {
+                building, floor, unit, teamClass,
+                unitId: `${building}-${floor}-${unit}`
+            };
+            
+            // 重置表單
+            resetModalForm();
+            
+            // 顯示 Modal
+            modal.style.display = 'block';
+        }
+        
+        // 關閉 Modal
+        function closeUnitDetail() {
+            document.getElementById('unitDetailModal').style.display = 'none';
+            resetModalForm();
+        }
+        
+        // 重置表單
+        function resetModalForm() {
+            document.getElementById('floorPlanPreview').innerHTML = '目前無檔案';
+            document.getElementById('preNotes').value = '';
+            document.getElementById('prePhotosPreview').innerHTML = '';
+            document.getElementById('postPhotosPreview').innerHTML = '';
+            document.querySelector('input[name="isCompleted"][value="false"]').checked = true;
+            document.getElementById('actualArea').disabled = true;
+            document.getElementById('completionDate').disabled = true;
+            document.getElementById('areaHint').textContent = '需先完成施工';
+            document.getElementById('dateHint').textContent = '需先完成施工';
+            
+            // 設定預設值
+            document.getElementById('actualArea').placeholder = '25.5';
+            document.getElementById('completionDate').value = new Date().toISOString().split('T')[0];
+        }
+        
+        // 切換完成狀態
+        function toggleCompletionFields() {
+            const isCompleted = document.querySelector('input[name="isCompleted"]:checked').value === 'true';
+            const areaInput = document.getElementById('actualArea');
+            const dateInput = document.getElementById('completionDate');
+            const areaHint = document.getElementById('areaHint');
+            const dateHint = document.getElementById('dateHint');
+            
+            if (isCompleted) {
+                areaInput.disabled = false;
+                dateInput.disabled = false;
+                areaInput.style.backgroundColor = '';
+                dateInput.style.backgroundColor = '';
+                areaHint.textContent = '預設坪數：25.5坪';
+                dateHint.textContent = '預設為今日';
+                areaInput.value = areaInput.placeholder;
+            } else {
+                areaInput.disabled = true;
+                dateInput.disabled = true;
+                areaInput.style.backgroundColor = '#f3f4f6';
+                dateInput.style.backgroundColor = '#f3f4f6';
+                areaHint.textContent = '需先完成施工';
+                dateHint.textContent = '需先完成施工';
+                areaInput.value = '';
+            }
+        }
+        
+        // 儲存案場詳情
+        function saveUnitDetail() {
+            const formData = {
+                unitId: currentUnitData.unitId,
+                floorPlan: document.getElementById('floorPlan').files[0],
+                preNotes: document.getElementById('preNotes').value,
+                prePhotos: document.getElementById('prePhotos').files,
+                isCompleted: document.querySelector('input[name="isCompleted"]:checked').value === 'true',
+                actualArea: document.getElementById('actualArea').value,
+                completionDate: document.getElementById('completionDate').value,
+                postPhotos: document.getElementById('postPhotos').files
+            };
+            
+            console.log('核存案場詳情：', formData);
+            
+            // TODO: 送到 API 儲存
+            alert('案場詳情已儲存！\n\n（此功能將整合 API 進行資料持久化）');
+            closeUnitDetail();
+        }
+        
+        // 文件上傳預覽
+        document.getElementById('floorPlan').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const preview = document.getElementById('floorPlanPreview');
+            if (file) {
+                preview.innerHTML = `<span style="color: #10b981;">✓ 已選擇：${file.name}</span>`;
+            } else {
+                preview.innerHTML = '目前無檔案';
+            }
+        });
+        
+        // 多文件上傳預覽
+        function setupPhotoPreview(inputId, previewId) {
+            document.getElementById(inputId).addEventListener('change', function(e) {
+                const files = e.target.files;
+                const preview = document.getElementById(previewId);
+                preview.innerHTML = '';
+                
+                Array.from(files).forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('div');
+                        img.style.cssText = 'width: 60px; height: 60px; background: #f3f4f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; text-align: center; position: relative;';
+                        img.innerHTML = `📷 ${index + 1}<br><span style="font-size: 10px;">${file.name.substring(0, 8)}...</span>`;
+                        preview.appendChild(img);
+                    }
+                });
+                
+                if (files.length === 0) {
+                    preview.innerHTML = '';
                 }
             });
+        }
+        
+        setupPhotoPreview('prePhotos', 'prePhotosPreview');
+        setupPhotoPreview('postPhotos', 'postPhotosPreview');
+        
+        // 點擊 Modal 外部關閉
+        document.getElementById('unitDetailModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUnitDetail();
+            }
         });
     </script>
 </body>

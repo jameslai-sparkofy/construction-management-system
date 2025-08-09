@@ -631,7 +631,7 @@
         const API_TOKEN = 'fx-crm-api-secret-2025';
         const WORKER_API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8787' 
-            : 'https://construction-management-api.lai-jameslai.workers.dev';
+            : 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
 
         // User context
         let currentUser = null;
@@ -659,7 +659,7 @@
                 currentUser = JSON.parse(supabaseUser);
                 document.getElementById('userName').textContent = currentUser.name || currentUser.phone || '用戶';
             } else {
-                window.location.href = 'login.html';
+                window.location.href = 'clerk.html';
             }
         }
 
@@ -961,7 +961,7 @@
                 localStorage.removeItem('user_info');
                 localStorage.removeItem('supabase_user');
                 localStorage.removeItem('supabase_session');
-                window.location.href = 'login.html';
+                window.location.href = 'clerk.html';
             }
         }
     </script>

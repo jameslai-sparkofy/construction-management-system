@@ -57,7 +57,11 @@
       "Bash(clerk:*)",
       "Bash(npx @clerk/backend-cli:*)",
       "Bash(npx supabase:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(npx wrangler deploy:*)",
+      "Bash(npx wrangler tail:*)",
+      "Bash(npx wrangler pages deploy:*)",
+      "Bash(npx wrangler:*)"
     ],
     "deny": []
   }
