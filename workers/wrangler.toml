@@ -3,10 +3,10 @@ main = "src/index.js"
 compatibility_date = "2024-11-06"
 compatibility_flags = ["nodejs_compat"]
 
-# Custom domain routing
-routes = [
-  { pattern = "api.yes-ceramics.com/*", zone_name = "yes-ceramics.com" }
-]
+# Custom domain routing handled separately via Cloudflare dashboard
+# routes = [
+#   { pattern = "api.yes-ceramics.com/*", zone_name = "yes-ceramics.com" }
+# ]
 
 # Environment variables
 [vars]
