@@ -1,0 +1,2773 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案詳情 - 元心建材管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Official Colors from screenshot */
+            --heading: #222222;
+            --body-text: #6b7280;
+            --primary: #84C7D0;
+            --secondary: #6C6F7D;
+            --border: #e5e7eb;
+            --border-primary: #d1d5db;
+            
+            /* Status Colors */
+            --completed: #84c7d0;
+            --in-progress: #f59e0b;
+            --pending: #ffffff;
+            --maintenance: #fbbf24;
+            --maintenance-done: #415a77;
+            --no-unit: #f3f4f6;
+            
+            /* Extended Palette */
+            --background: #f9fafb;
+            --surface: #ffffff;
+            
+            /* Shadows */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: var(--background);
+            color: var(--body-text);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .back-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            color: var(--body-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 1.5rem;
+        }
+
+        .back-btn:hover {
+            background: var(--background);
+        }
+
+        .project-info {
+            flex: 1;
+        }
+
+        .project-info h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--heading);
+            margin-bottom: 0.125rem;
+        }
+
+        .project-info p {
+            font-size: 0.8125rem;
+            color: var(--body-text);
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .header-actions button {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--body-text);
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .header-actions button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 0;
+            padding: 0;
+            background: var(--surface);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid #e5e7eb;
+            box-shadow: none;
+        }
+
+        .nav-tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 500;
+            position: relative;
+            margin-bottom: -2px;
+            border-radius: 0;
+        }
+
+        .nav-tab:hover {
+            color: var(--heading);
+            background: rgba(132, 199, 208, 0.05);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            background: transparent;
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Building Grid Content */
+        .building-grid-wrapper {
+            background: var(--surface);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .building-tabs {
+            display: flex;
+            gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: var(--surface);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .building-btn {
+            padding: 1rem 3rem;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            color: var(--body-text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.95rem;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .building-btn:hover:not(.active) {
+            background: rgba(132, 199, 208, 0.1);
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .building-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(132, 199, 208, 0.3);
+        }
+
+        /* Floor Grid Table */
+        .floor-grid-container {
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+
+        .floor-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .floor-grid thead th {
+            padding: 0.4rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--heading);
+            background: var(--background);
+            border: 1px solid var(--border);
+        }
+
+        .floor-grid tbody th {
+            padding: 0.4rem;
+            text-align: center;
+            font-weight: 600;
+            color: var(--heading);
+            background: var(--background);
+            border: 1px solid var(--border);
+        }
+
+        .grid-cell {
+            padding: 0.4rem;
+            border: 1px solid var(--border);
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: var(--pending);
+            min-width: 120px;
+            height: 60px;
+        }
+
+        .grid-cell:hover {
+            background: rgba(132, 199, 208, 0.1);
+            border-color: var(--primary);
+        }
+
+        .grid-cell.completed {
+            background: var(--completed);
+            color: white;
+        }
+
+        .grid-cell.no-unit {
+            background: var(--no-unit);
+            cursor: default;
+            pointer-events: none;
+        }
+
+        .cell-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100%;
+        }
+
+        .cell-line1 {
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .cell-line2 {
+            font-size: 0.75rem;
+            color: var(--body-text);
+        }
+
+        .cell-team {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #84C7D0;
+            color: white;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-align: center;
+            line-height: 20px;
+            margin-left: 0.25rem;
+        }
+
+        .grid-cell.completed .cell-team {
+            background: #5A9BA5;
+        }
+
+        .maintenance-badges {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            display: flex;
+            gap: 4px;
+        }
+
+        .maintenance-badge {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--maintenance);
+            color: var(--heading);
+            font-size: 0.625rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .maintenance-badge.done {
+            background: var(--maintenance-done);
+            color: white;
+        }
+
+        /* Modal Styles from site-modal-final */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-container {
+            background: white;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 95vh;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Compact Header */
+        .modal-header {
+            background: linear-gradient(135deg, #84C7D0 0%, #6C6F7D 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .site-basic-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .info-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .divider {
+            width: 1px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-header-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .modal-share-btn {
+            padding: 0.5rem 0.75rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Modal Body */
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+
+        /* 媒體區塊 - 動態佈局 */
+        .media-container {
+            margin-bottom: 1rem;
+        }
+
+        .media-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .section-icon {
+            font-size: 1.125rem;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        /* 照片網格 - 緊湊佈局 */
+        .photos-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            min-height: 90px;
+        }
+
+        .photo-box {
+            width: 80px;
+            height: 80px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .photo-box:hover {
+            border-color: #84C7D0;
+            background: #f0fdf4;
+        }
+
+        .photo-box.has-image {
+            border-style: solid;
+            border-color: #84C7D0;
+            padding: 2px;
+        }
+
+        .photo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: zoom-in;
+        }
+
+        .photo-box.add-photo {
+            background: #f9fafb;
+        }
+
+        .photo-box.add-photo:hover {
+            background: #e5f7fa;
+            border-color: #84C7D0;
+        }
+
+        /* 所有媒體區塊的緊湊排列 - 始終橫向 */
+        .all-media-compact {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .all-media-compact .media-container {
+            flex: 1;
+            min-width: 30%;
+            margin-bottom: 0;
+        }
+
+        .all-media-compact .photos-wrapper {
+            min-height: 80px;
+        }
+
+        /* 施工前備註區塊 - 可收合 */
+        .before-construction-section {
+            background: #fef9f3;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .before-construction-section.collapsed {
+            background: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .notes-header {
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fef9f3;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .before-construction-section.collapsed .notes-header {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .notes-content {
+            padding: 0 1rem 1rem;
+            max-height: 200px;
+            transition: all 0.3s ease;
+        }
+
+        .before-construction-section.collapsed .notes-content {
+            max-height: 0;
+            padding: 0 1rem;
+            overflow: hidden;
+        }
+
+        .expand-icon {
+            transition: transform 0.3s ease;
+            color: #6b7280;
+        }
+
+        .before-construction-section.collapsed .expand-icon {
+            transform: rotate(-90deg);
+        }
+
+        .notes-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .photo-remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            line-height: 1;
+        }
+
+        .photo-box.has-image:hover .photo-remove-btn {
+            display: flex;
+        }
+
+        /* 施工完成區塊 - 使用藍綠色 */
+        .completion-section {
+            background: #c5edf2;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #84C7D0;
+        }
+
+        .completion-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+
+        .completion-checkbox input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .completion-label {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+            user-select: none;
+        }
+
+        .worker-name {
+            font-size: 0.875rem;
+            color: #4f46e5;
+            margin-left: 0.5rem;
+            font-weight: normal;
+        }
+
+        .completion-fields {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        .completion-fields.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #completionFields2 {
+            display: grid;
+            grid-template-columns: 1fr;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: all 0.3s ease;
+        }
+
+        #completionFields2.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .field-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .field-input {
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .field-input:focus {
+            outline: none;
+            border-color: #84C7D0;
+            box-shadow: 0 0 0 3px rgba(132, 199, 208, 0.2);
+        }
+
+        /* 提交按鈕 - 醒目設計 */
+        .submit-section {
+            padding: 1.5rem;
+            background: white;
+            border-top: 2px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .btn-cancel {
+            padding: 0.875rem 1.5rem;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-submit {
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, #84C7D0 0%, #6eb5c0 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 1.125rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(132, 199, 208, 0.3);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(132, 199, 208, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(30px); 
+                opacity: 0; 
+            }
+            to { 
+                transform: translateY(0); 
+                opacity: 1; 
+            }
+        }
+
+        /* Lightbox 樣式 */
+        #lightbox {
+            animation: fadeIn 0.3s ease;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 200px;
+            color: var(--body-text);
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c00;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        /* Construction Team Info in Legend */
+        .construction-team-info {
+            margin: 0;
+            border-top: 1px solid var(--border);
+        }
+
+        .team-info-toggle {
+            display: none;
+            width: 100%;
+            padding: 0.75rem 1.5rem;
+            background: var(--background);
+            border: none;
+            border-bottom: 1px solid var(--border);
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--heading);
+            font-weight: 600;
+        }
+
+        .team-info-toggle::after {
+            content: '';
+            float: right;
+        }
+
+        .team-info-content {
+            display: block;
+        }
+
+        /* Collapsible sections for mobile */
+        .section-toggle {
+            display: none;
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.875rem;
+            color: var(--heading);
+            cursor: pointer;
+            text-align: left;
+            margin-bottom: 0.5rem;
+        }
+
+        .section-toggle::after {
+            content: '▼';
+            float: right;
+            transition: transform 0.3s;
+        }
+
+        .section-toggle.collapsed::after {
+            transform: rotate(-90deg);
+        }
+
+        /* Tablet and Mobile Nav Tabs */
+        @media (max-width: 768px) {
+            /* Collapsible sections */
+            .section-toggle {
+                display: block;
+            }
+
+            .stats-section.collapsed,
+            .construction-info.collapsed .construction-info-content {
+                display: none;
+            }
+
+            .construction-info {
+                padding: 0.75rem 1rem;
+            }
+
+            .construction-info.collapsed {
+                padding: 0;
+                margin: 0;
+                background: transparent;
+            }
+            
+            /* Construction team info toggle on mobile */
+            .team-info-toggle {
+                display: block;
+            }
+            
+            .construction-team-info.collapsed .team-info-content {
+                display: none;
+            }
+            
+            .construction-team-info.collapsed .team-info-toggle::after {
+                content: ' ▶';
+            }
+            
+            .construction-team-info:not(.collapsed) .team-info-toggle::after {
+                content: ' ▼';
+            }
+
+            .nav-tabs {
+                padding: 0 1rem;
+            }
+            
+            .nav-tab {
+                padding: 0.875rem 1.25rem;
+                font-size: 0.9rem;
+            }
+            
+            .building-tabs {
+                padding: 0.75rem 1rem;
+                gap: 0.5rem;
+            }
+            
+            .building-btn {
+                padding: 0.875rem 2.25rem;
+                font-size: 0.875rem;
+                min-width: 100px;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .nav-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 0;
+                margin-bottom: 1rem;
+            }
+            
+            .nav-tab {
+                flex-shrink: 0;
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                white-space: nowrap;
+                min-width: fit-content;
+            }
+            
+            .building-grid-wrapper {
+                margin: 0.5rem;
+            }
+            
+            .building-tabs {
+                padding: 0.5rem;
+                gap: 0.375rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 0.5rem;
+            }
+            
+            .building-btn {
+                flex-shrink: 0;
+                padding: 0.75rem 2rem;
+                font-size: 0.8125rem;
+                min-width: 90px;
+                border-width: 1.5px;
+            }
+            
+            .floor-grid-container {
+                padding: 0.5rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+        }
+        
+        /* 手機優化 */
+        @media (max-width: 768px) {
+            .project-stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .floor-grid-container {
+                padding: 0.5rem;
+            }
+            
+            .floor-grid {
+                min-width: 500px;
+            }
+            
+            .floor-grid th,
+            .floor-grid td {
+                padding: 0.5rem 0.375rem;
+                font-size: 0.75rem;
+            }
+            
+            .site-cell {
+                padding: 0.375rem;
+                min-height: 45px;
+            }
+            
+            .site-unit {
+                font-size: 0.8125rem;
+            }
+            
+            .site-info {
+                font-size: 0.625rem;
+                gap: 0.125rem;
+            }
+            
+            .site-area {
+                font-size: 0.625rem;
+            }
+            
+            .site-team,
+            .site-worker {
+                font-size: 0.625rem;
+            }
+
+            .modal-container {
+                max-width: 100%;
+                max-height: 100vh;
+                border-radius: 0;
+            }
+
+            .modal-overlay {
+                padding: 0;
+            }
+
+            .modal-body {
+                padding: 1rem 0;
+            }
+
+            .header-info {
+                overflow-x: auto;
+                padding-bottom: 0.25rem;
+            }
+
+            .site-basic-info {
+                min-width: fit-content;
+            }
+
+            .completion-fields {
+                grid-template-columns: 1fr;
+            }
+            
+            #completionFields2 {
+                margin-top: 0.5rem !important;
+            }
+            
+            #completionFields2 .field-group {
+                grid-column: span 1 !important;
+            }
+            
+            .before-construction-section {
+                margin: 0 1rem 1rem;
+            }
+            
+            .completion-section {
+                margin: 0 1rem 1rem;
+            }
+
+            .all-media-compact {
+                gap: 0.25rem;
+                padding: 0 0.75rem;
+                margin-bottom: 0.75rem;
+            }
+            
+            .all-media-compact .media-container {
+                flex: 1;
+                min-width: 0;
+                max-width: 33.333%;
+            }
+            
+            .media-header {
+                padding: 0.375rem 0.5rem;
+                background: #f3f4f6;
+                margin-bottom: 0.375rem;
+                border-radius: 4px;
+            }
+            
+            .section-icon {
+                font-size: 1rem;
+                display: none;
+            }
+            
+            .section-title {
+                font-size: 0.875rem;
+                font-weight: 500;
+                text-align: center;
+                width: 100%;
+                color: #374151;
+            }
+            
+            .photos-wrapper {
+                padding: 0.375rem;
+                min-height: 65px;
+                max-height: 65px;
+                overflow-x: auto;
+                overflow-y: hidden;
+                display: flex;
+                gap: 0.25rem;
+            }
+            
+            .photo-box {
+                width: 55px;
+                height: 55px;
+                flex-shrink: 0;
+            }
+            
+            .photo-box div {
+                font-size: 1.25rem !important;
+            }
+            
+            .photo-box.has-image .photo-remove-btn {
+                width: 18px;
+                height: 18px;
+                font-size: 0.75rem;
+                top: 2px;
+                right: 2px;
+                background: rgba(0, 0, 0, 0.7);
+                border-radius: 3px;
+            }
+        }
+        /* Statistics Cards */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            padding: 1.25rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #84C7D0 0%, #6eb5c0 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .stat-card:nth-child(2) .stat-icon {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .stat-card:nth-child(3) .stat-icon {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .stat-card:nth-child(4) .stat-icon {
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--heading);
+            line-height: 1;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--body-text);
+        }
+
+        @media (max-width: 1024px) {
+            .stats-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 0;
+            }
+            
+            .header {
+                padding: 1rem;
+                margin-bottom: 0.5rem;
+            }
+            
+            .header-content {
+                gap: 0.75rem;
+            }
+            
+            .back-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+            }
+            
+            .project-info h1 {
+                font-size: 1.25rem;
+            }
+            
+            .project-info p {
+                font-size: 0.75rem;
+            }
+            
+            .header-actions {
+                flex-direction: row;
+                gap: 0.5rem;
+            }
+            
+            .header-actions button {
+                padding: 0.5rem;
+                font-size: 0.875rem;
+            }
+            
+            .header-actions button span:last-child {
+                display: none; /* Hide text labels on mobile, keep icons */
+            }
+            
+            .stats-section {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.5rem;
+                padding: 0 1rem;
+                margin: 1rem 0;
+            }
+            
+            .stat-card {
+                padding: 0.875rem;
+                gap: 0.75rem;
+            }
+            
+            .stat-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.2rem;
+                border-radius: 8px;
+            }
+            
+            .stat-value {
+                font-size: 1.25rem;
+            }
+            
+            .stat-label {
+                font-size: 0.75rem;
+            }
+        }
+        
+        /* Legend */
+        .legend-container {
+            display: flex;
+            gap: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--background);
+            border-top: 1px solid var(--border);
+            margin: 0;
+        }
+
+        .legend-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            color: var(--heading);
+            margin-right: 0.5rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--body-text);
+            cursor: default;
+        }
+        
+        .legend-item[title] {
+            cursor: help;
+        }
+        
+        .legend-item[title]:hover {
+            opacity: 0.8;
+        }
+
+        .legend-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+        }
+
+        .legend-icon.completed {
+            background: var(--completed);
+            color: white;
+            border-color: var(--completed);
+        }
+
+        .legend-icon.pending {
+            background: var(--pending);
+            color: var(--body-text);
+        }
+
+        .legend-icon.empty {
+            background: var(--no-unit);
+            color: var(--body-text);
+        }
+
+        /* Team Icons */
+        .team-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            background: #84C7D0;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            border: none;
+        }
+        
+        /* Responsive Legend */
+        @media (max-width: 768px) {
+            .legend-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .legend-group {
+                flex-wrap: wrap;
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .legend-container {
+                margin: 0.5rem;
+                padding: 0.75rem;
+            }
+            
+            .legend-item {
+                font-size: 0.75rem;
+            }
+            
+            .legend-icon {
+                width: 20px;
+                height: 20px;
+                font-size: 0.75rem;
+            }
+            
+            .team-icon {
+                width: 24px;
+                height: 24px;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <button class="back-btn" onclick="goBack()">←</button>
+                <div class="project-info">
+                    <h1 id="projectName">載入中...</h1>
+                    <p id="projectDescription">正在載入專案資料...</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-report">
+                        <span>📊</span>
+                        <span>報表</span>
+                    </button>
+                    <button class="btn-settings">
+                        <span>⚙️</span>
+                        <span>設定</span>
+                    </button>
+                    <button class="btn-export">
+                        <span>📥</span>
+                        <span>匯出</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <button class="section-toggle" onclick="toggleSection('statsSection')">統計資訊</button>
+        <div class="stats-section" id="statsSection">
+            <div class="stat-card">
+                <div class="stat-icon">🏢</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statTotalSites">0</div>
+                    <div class="stat-label">總案場數</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">✓</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statCompleted">0</div>
+                    <div class="stat-label">已完工</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏳</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">待施工</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-content">
+                    <div class="stat-value" id="statMaintenance">0</div>
+                    <div class="stat-label">待維修</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-tab="spc">SPC工程</button>
+            <button class="nav-tab" data-tab="cabinet">浴櫃工程</button>
+            <button class="nav-tab" data-tab="maintenance">維修單</button>
+            <button class="nav-tab" data-tab="announcements">進度公告</button>
+        </div>
+
+        <!-- Building Grid -->
+        <div class="building-grid-wrapper">
+            <div class="building-tabs" id="buildingTabs">
+                <!-- 動態生成建築物標籤 -->
+            </div>
+            
+            <!-- Legend -->
+            <div id="gridLegend" class="legend-container">
+                <div class="legend-group" style="background: rgba(132, 199, 208, 0.1); padding: 0.5rem 1rem; border-radius: 6px;">
+                    <span class="legend-title">狀態：</span>
+                    <div class="legend-item">
+                        <div class="legend-icon completed"></div>
+                        <span>完成</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon pending"></div>
+                        <span>待施工</span>
+                    </div>
+                    <div class="legend-item" title="代表第1次的維修單待維修">
+                        <div class="legend-icon" style="background: #fbbf24; color: white; border-color: #fbbf24; border-radius: 3px;">
+                            <span style="font-size: 0.75rem; font-weight: 700;">1</span>
+                        </div>
+                        <span>待維修</span>
+                    </div>
+                    <div class="legend-item" title="代表第2次的維修單已維修">
+                        <div class="legend-icon" style="background: #415a77; color: white; border-color: #415a77; border-radius: 3px;">
+                            <span style="font-size: 0.75rem; font-weight: 700;">2</span>
+                        </div>
+                        <span>已維修</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon empty">✕</div>
+                        <span>無此戶</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon" style="background: #d999b9; color: white; border-color: #d999b9; border-radius: 50%; width: 20px; height: 20px;">!</div>
+                        <span>特別備註</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Construction Team Info -->
+            <div class="construction-team-info" id="constructionTeamInfo">
+                <button class="team-info-toggle" onclick="toggleTeamInfo()">工班資訊</button>
+                <div class="team-info-content">
+                    <div style="padding: 1rem 1.5rem; background: #fffbeb;">
+                        <div class="legend-group" style="background: transparent; padding: 0;">
+                            <span class="legend-title">工班：</span>
+                            <div class="legend-item" id="legendTeams">
+                                <!-- 動態生成工班圖例 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="floor-grid-container">
+                <div id="gridContent" class="loading">
+                    載入中...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Site Details Modal -->
+    <div class="modal-overlay" id="siteModal">
+        <div class="modal-container">
+            <!-- Compact Header -->
+            <div class="modal-header">
+                <div class="header-info">
+                    <div class="site-basic-info">
+                        <div class="info-item">
+                            <span class="info-label">棟別</span>
+                            <span class="info-value" id="modalBuilding">-</span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="info-item">
+                            <span class="info-label">樓層</span>
+                            <span class="info-value" id="modalFloor">-</span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="info-item">
+                            <span class="info-label">戶別</span>
+                            <span class="info-value" id="modalUnit">-</span>
+                        </div>
+                        <div class="divider"></div>
+                        <div class="info-item">
+                            <span class="info-label">工班</span>
+                            <span class="info-value" id="modalTeam">-</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-header-actions">
+                    <button class="modal-share-btn" onclick="shareLink()">分享</button>
+                    <button class="modal-close" onclick="closeModal()">×</button>
+                </div>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <!-- 所有媒體區塊緊湊排列 -->
+                <div class="all-media-compact">
+                    <!-- 平面圖 -->
+                    <div class="media-container">
+                        <div class="media-header">
+                            <span class="section-icon">📐</span>
+                            <span class="section-title">平面圖</span>
+                        </div>
+                        <div class="photos-wrapper" id="floorPlanPhotos">
+                            <div class="photo-box add-photo" onclick="uploadPhoto('floorPlan')">
+                                <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 施工前照片 -->
+                    <div class="media-container">
+                        <div class="media-header">
+                            <span class="section-icon">📷</span>
+                            <span class="section-title">施工前照片</span>
+                        </div>
+                        <div class="photos-wrapper" id="beforePhotos">
+                            <div class="photo-box add-photo" onclick="uploadPhoto('before')">
+                                <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 完工照片 -->
+                    <div class="media-container">
+                        <div class="media-header">
+                            <span class="section-icon">✅</span>
+                            <span class="section-title">完工照片</span>
+                        </div>
+                        <div class="photos-wrapper" id="afterPhotos">
+                            <div class="photo-box add-photo" onclick="uploadPhoto('after')">
+                                <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 施工前備註 - 可收合 -->
+                <div class="before-construction-section collapsed" id="notesSection">
+                    <div class="notes-header" onclick="toggleNotes()">
+                        <div class="section-title" style="margin: 0;">
+                            <span>📝</span>
+                            <span>施工前特別備註</span>
+                        </div>
+                        <span class="expand-icon">▼</span>
+                    </div>
+                    <div class="notes-content">
+                        <textarea class="notes-input" id="notesInput" placeholder="請輸入施工前的特別注意事項..." onchange="checkNotesValue()"></textarea>
+                    </div>
+                </div>
+
+                <!-- 施工完成 - 重要區塊 -->
+                <div class="completion-section">
+                    <div class="completion-checkbox" onclick="toggleCompletion()">
+                        <input type="checkbox" id="completionCheck">
+                        <label class="completion-label" for="completionCheck">
+                            施工完成
+                            <span class="worker-name" id="workerName"></span>
+                        </label>
+                    </div>
+                    <div class="completion-fields" id="completionFields">
+                        <div class="field-group">
+                            <label class="field-label">鋪設坪數</label>
+                            <input type="number" class="field-input" id="areaInput" placeholder="15.5" step="0.1">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">師傅</label>
+                            <input type="text" class="field-input" id="workerInput" readonly style="background: #f3f4f6;">
+                        </div>
+                    </div>
+                    <div class="completion-fields" id="completionFields2" style="margin-top: 0.75rem;">
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label class="field-label">施工日期</label>
+                            <input type="date" class="field-input" id="dateInput">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 提交區 -->
+            <div class="submit-section">
+                <button class="btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn-submit" onclick="submitForm()">提交</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox for images -->
+    <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; cursor: zoom-out;" onclick="closeLightbox()">
+        <img id="lightboxImg" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; object-fit: contain;">
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // API Configuration
+        const API_BASE_URL = CONFIG?.API?.CRM_API_URL || CONFIG?.API?.D1_REST_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
+        const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || CONFIG?.API?.REST_API_TOKEN || 'fx-crm-api-secret-2025';
+
+        // 欄位對應表
+        const fieldMapping = {
+            building: 'field_WD7k1__c',     // 棟別
+            floor: 'field_Q6Svh__c',         // 樓層
+            unit: 'field_XuJP2__c',          // 戶別
+            team: 'shift_time__c',           // 工班
+            area: 'field_B2gh1__c',          // 鋪設坪數
+            worker: 'field_u1wpv__c',        // 工班師父
+            date: 'field_23pFq__c',          // 施工日期
+            completed: 'construction_completed__c',  // 施工完成
+            beforeNotes: 'field_sF6fn__c',   // 施工前備註
+            floorPlan: 'field_3T38o__c',     // 平面圖
+            beforePhotos: 'field_V3d91__c',  // 施工前照片
+            afterPhotos: 'field_3Fqof__c',   // 完工照片
+            label: 'field_23Z5i__c',         // 標籤
+            stage: 'field_z9H6O__c',         // 階段
+            siteArea: 'field_tXAko__c',      // 工地坪數
+            opportunityId: 'field_1P96q__c'  // 商機關聯
+        };
+
+        // Global variables
+        let currentProject = null;
+        let currentSites = [];
+        let currentUser = null;
+        let currentBuilding = 'A';
+        let currentSiteId = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Get project ID from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+            const siteId = urlParams.get('site_id');
+            const tabName = urlParams.get('tab') || 'spc';  // Default to 'spc' tab
+            
+            if (!projectId) {
+                showError('未提供專案 ID');
+                return;
+            }
+
+            // Load user data
+            await loadUserData();
+            
+            // Load project data
+            await loadProject(projectId);
+            
+            // If site_id is provided, open the modal
+            if (siteId) {
+                await openSiteModal(siteId);
+            }
+
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Switch to the tab specified in URL
+            if (tabName && tabName !== 'spc') {
+                // Find and click the corresponding tab
+                const targetTab = document.querySelector(`.nav-tab[data-tab="${tabName}"]`);
+                if (targetTab) {
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    targetTab.classList.add('active');
+                    handleTabSwitch(tabName);
+                }
+            }
+        });
+
+        // Load user data
+        async function loadUserData() {
+            // Try to get user from localStorage or session
+            const userStr = localStorage.getItem('user');
+            if (userStr) {
+                currentUser = JSON.parse(userStr);
+            } else {
+                // Default user for testing
+                currentUser = {
+                    id: 'user_001',
+                    name: '王師傅',
+                    phone: '0912345678'
+                };
+            }
+        }
+
+        // Load project data
+        async function loadProject(projectId) {
+            try {
+                // Fetch project data
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/newopportunityobj?_id=${projectId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load project');
+                }
+
+                const result = await response.json();
+                // Handle both dataList and results format
+                const projects = result.dataList || result.results;
+                if (projects && projects.length > 0) {
+                    currentProject = projects[0];
+                    updateProjectInfo();
+                    await loadSites();
+                } else {
+                    showError('專案不存在');
+                }
+            } catch (error) {
+                console.error('Error loading project:', error);
+                showError('載入專案失敗');
+            }
+        }
+
+        // Update project info in header
+        function updateProjectInfo() {
+            if (!currentProject) return;
+            
+            document.getElementById('projectName').textContent = currentProject.name || '未命名專案';
+            document.getElementById('projectDescription').textContent = 
+                currentProject.field_tOYE1__c || '暫無描述'; // 假設有描述欄位
+        }
+
+        // Load sites for the project
+        async function loadSites() {
+            try {
+                const opportunityId = currentProject._id || currentProject.id;
+                
+                // Show loading state
+                const gridContent = document.getElementById('gridContent');
+                gridContent.innerHTML = '<div class="loading">載入案場資料中...</div>';
+                
+                // Fetch sites data
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/object_8W9cb__c?field_1P96q__c=${opportunityId}&limit=500`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load sites');
+                }
+
+                const result = await response.json();
+                // Handle both dataList and results format
+                currentSites = result.dataList || result.results || [];
+                
+                // Process and display sites
+                processSitesData();
+                renderBuildingTabs();
+                renderFloorGrid();
+                updateStatistics();
+                
+                // Clear error state if successful
+                gridContent.classList.remove('loading');
+            } catch (error) {
+                console.error('Error loading sites:', error);
+                showError('載入案場資料失敗');
+            }
+        }
+
+        // Process sites data
+        function processSitesData() {
+            // Group sites by building
+            const buildings = {};
+            const teams = new Map(); // 收集所有工班
+            
+            currentSites.forEach(site => {
+                const building = site[fieldMapping.building] || 'A';
+                if (!buildings[building]) {
+                    buildings[building] = [];
+                }
+                buildings[building].push(site);
+                
+                // 收集工班資訊
+                const team = site[fieldMapping.team];
+                if (team && team !== '-') {
+                    const teamAbbr = site.team_abbreviation || (team ? team.charAt(0) : '');
+                    teams.set(team, teamAbbr);
+                }
+            });
+            
+            // Store processed data
+            window.sitesGroupedByBuilding = buildings;
+            
+            // 更新工班圖例
+            updateTeamLegend(teams);
+        }
+        
+        // Update team legend
+        function updateTeamLegend(teams) {
+            const legendTeams = document.getElementById('legendTeams');
+            if (!legendTeams) return;
+            
+            if (teams.size === 0) {
+                legendTeams.innerHTML = '<span style="color: #9ca3af;">無工班資料</span>';
+                return;
+            }
+            
+            let items = [];
+            teams.forEach((abbr, name) => {
+                items.push(`
+                    <span class="team-icon">${abbr}</span>
+                    <span>${name}</span>
+                `);
+            });
+            
+            // 將工班分開顯示為多個 legend-item
+            legendTeams.innerHTML = items.map(item => `<div class="legend-item">${item}</div>`).join('');
+        }
+
+        // Render building tabs
+        function renderBuildingTabs() {
+            const tabsContainer = document.getElementById('buildingTabs');
+            const buildings = Object.keys(window.sitesGroupedByBuilding || {}).sort();
+            
+            tabsContainer.innerHTML = buildings.map(building => `
+                <button class="building-btn ${building === currentBuilding ? 'active' : ''}" 
+                        data-building="${building}">
+                    ${building}棟
+                </button>
+            `).join('');
+        }
+
+        // Render floor grid
+        function renderFloorGrid() {
+            const gridContent = document.getElementById('gridContent');
+            const sites = window.sitesGroupedByBuilding[currentBuilding] || [];
+            
+            if (sites.length === 0) {
+                gridContent.innerHTML = '<div class="error-message">此棟別暫無案場資料</div>';
+                return;
+            }
+
+            // Group by floor and unit
+            const floorMap = {};
+            const units = new Set();
+            
+            sites.forEach(site => {
+                const floor = site[fieldMapping.floor] || 0;
+                const unit = site[fieldMapping.unit] || '';
+                
+                if (!floorMap[floor]) {
+                    floorMap[floor] = {};
+                }
+                floorMap[floor][unit] = site;
+                units.add(unit);
+            });
+
+            // Sort floors and units
+            const sortedFloors = Object.keys(floorMap).sort((a, b) => b - a);
+            const sortedUnits = Array.from(units).sort();
+
+            // Generate table HTML
+            let html = '<table class="floor-grid"><thead><tr><th></th>';
+            sortedUnits.forEach(unit => {
+                html += `<th>${unit}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            sortedFloors.forEach(floor => {
+                // Convert to integer for display
+                const floorInt = Math.floor(parseFloat(floor));
+                html += `<tr><th>${floorInt}F</th>`;
+                sortedUnits.forEach(unit => {
+                    const site = floorMap[floor][unit];
+                    if (site) {
+                        const isCompleted = site[fieldMapping.completed];
+                        const team = site[fieldMapping.team] || '-';
+                        const area = site[fieldMapping.area] || site[fieldMapping.siteArea] || '-';
+                        const worker = site[fieldMapping.worker] || '';
+                        const date = site[fieldMapping.date] || '';
+                        
+                        // Get team abbreviation (first character of team name if no abbreviation field exists)
+                        const teamAbbr = site.team_abbreviation || (team && team !== '-' ? team.charAt(0) : team);
+                        
+                        // Get worker abbreviation (last character of name if abbreviation field is empty)
+                        const workerAbbr = site.worker_abbreviation || (worker ? worker.charAt(worker.length - 1) : worker);
+                        
+                        html += `
+                            <td class="grid-cell ${isCompleted ? 'completed' : ''}" 
+                                onclick="openSiteModal('${site._id}')">
+                                <div class="cell-content">
+                                    ${isCompleted ? 
+                                        `<div class="cell-line1">${date} | ${workerAbbr}</div>
+                                         <div class="cell-line2">${area}坪<span class="cell-team">${teamAbbr}</span></div>` :
+                                        `<div class="cell-line1">${area}坪<span class="cell-team">${teamAbbr}</span></div>`
+                                    }
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        html += '<td class="grid-cell no-unit"></td>';
+                    }
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            gridContent.innerHTML = html;
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const buildings = Object.keys(window.sitesGroupedByBuilding || {});
+            const totalSites = currentSites.length;
+            const completedSites = currentSites.filter(site => site[fieldMapping.completed]).length;
+            const pendingSites = totalSites - completedSites;
+            const completionRate = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0;
+            
+            // Update stat cards
+            document.getElementById('statTotalSites').textContent = totalSites;
+            document.getElementById('statCompleted').textContent = completedSites;
+            document.getElementById('statPending').textContent = pendingSites;
+            document.getElementById('statMaintenance').textContent = 0; // TODO: Get actual maintenance count
+            
+            // Store stats globally for later use
+            window.projectStats = {
+                buildingCount: buildings.length,
+                unitCount: totalSites,
+                completedCount: completedSites,
+                pendingCount: pendingSites,
+                completionRate: completionRate
+            };
+        }
+
+        // Open site modal
+        async function openSiteModal(siteId) {
+            currentSiteId = siteId;
+            
+            // Find site data
+            const site = currentSites.find(s => s._id === siteId);
+            if (!site) {
+                // Try to fetch from API
+                await fetchSiteData(siteId);
+                return;
+            }
+            
+            // Update modal with site data
+            updateModalWithSiteData(site);
+            
+            // Show modal
+            const modal = document.getElementById('siteModal');
+            modal.classList.add('active');
+            
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.set('site_id', siteId);
+            window.history.pushState({}, '', url);
+        }
+
+        // Fetch site data from API
+        async function fetchSiteData(siteId) {
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/object_8W9cb__c?_id=${siteId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch site data');
+                }
+
+                const result = await response.json();
+                // Handle both dataList and results format
+                const sites = result.dataList || result.results;
+                if (sites && sites.length > 0) {
+                    updateModalWithSiteData(sites[0]);
+                    
+                    // Show modal
+                    const modal = document.getElementById('siteModal');
+                    modal.classList.add('active');
+                }
+            } catch (error) {
+                console.error('Error fetching site:', error);
+                alert('載入案場資料失敗');
+            }
+        }
+
+        // Update modal with site data
+        function updateModalWithSiteData(site) {
+            // Basic info
+            document.getElementById('modalBuilding').textContent = 
+                (site[fieldMapping.building] || 'A') + '棟';
+            // Convert floor to integer for display
+            const floor = Math.floor(parseFloat(site[fieldMapping.floor] || '1'));
+            document.getElementById('modalFloor').textContent = floor + 'F';
+            document.getElementById('modalUnit').textContent = 
+                site[fieldMapping.unit] || '-';
+            document.getElementById('modalTeam').textContent = 
+                site[fieldMapping.team] || '-';
+            
+            // Notes
+            const notes = site[fieldMapping.beforeNotes] || '';
+            document.getElementById('notesInput').value = notes;
+            checkNotesValue();
+            
+            // Completion status
+            const isCompleted = site[fieldMapping.completed];
+            const checkbox = document.getElementById('completionCheck');
+            checkbox.checked = isCompleted;
+            
+            if (isCompleted) {
+                document.getElementById('areaInput').value = site[fieldMapping.area] || '';
+                document.getElementById('workerInput').value = site[fieldMapping.worker] || '';
+                document.getElementById('dateInput').value = site[fieldMapping.date] || '';
+                
+                document.getElementById('completionFields').classList.add('active');
+                document.getElementById('completionFields2').classList.add('active');
+                document.getElementById('workerName').textContent = `- ${site[fieldMapping.worker] || ''}`;
+            } else {
+                document.getElementById('completionFields').classList.remove('active');
+                document.getElementById('completionFields2').classList.remove('active');
+                document.getElementById('workerName').textContent = '';
+            }
+            
+            // Load photos if any
+            loadExistingPhotos(site);
+        }
+
+        // Load existing photos
+        function loadExistingPhotos(site) {
+            // Clear existing photos (except add buttons)
+            ['floorPlanPhotos', 'beforePhotos', 'afterPhotos'].forEach(containerId => {
+                const container = document.getElementById(containerId);
+                const addButton = container.querySelector('.add-photo');
+                container.innerHTML = '';
+                if (addButton) {
+                    container.appendChild(addButton);
+                }
+            });
+            
+            // Load floor plan
+            if (site[fieldMapping.floorPlan]) {
+                addPhotoToContainer('floorPlanPhotos', site[fieldMapping.floorPlan]);
+            }
+            
+            // Load before photos
+            if (site[fieldMapping.beforePhotos]) {
+                const photos = site[fieldMapping.beforePhotos].split(',');
+                photos.forEach(photo => addPhotoToContainer('beforePhotos', photo));
+            }
+            
+            // Load after photos
+            if (site[fieldMapping.afterPhotos]) {
+                const photos = site[fieldMapping.afterPhotos].split(',');
+                photos.forEach(photo => addPhotoToContainer('afterPhotos', photo));
+            }
+        }
+
+        // Add photo to container
+        function addPhotoToContainer(containerId, photoUrl) {
+            const container = document.getElementById(containerId);
+            const photoBox = document.createElement('div');
+            photoBox.className = 'photo-box has-image';
+            
+            const img = document.createElement('img');
+            img.src = photoUrl;
+            img.alt = '照片';
+            img.style.cursor = 'zoom-in';
+            img.onclick = () => openLightbox(photoUrl);
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'photo-remove-btn';
+            removeBtn.innerHTML = '×';
+            removeBtn.onclick = (e) => {
+                e.stopPropagation();
+                removePhoto(removeBtn);
+            };
+            
+            photoBox.appendChild(img);
+            photoBox.appendChild(removeBtn);
+            
+            // Insert before add button
+            const addButton = container.querySelector('.add-photo');
+            if (addButton) {
+                container.insertBefore(photoBox, addButton);
+            } else {
+                container.appendChild(photoBox);
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            const modal = document.getElementById('siteModal');
+            modal.classList.remove('active');
+            
+            // Remove site_id from URL
+            const url = new URL(window.location);
+            url.searchParams.delete('site_id');
+            window.history.pushState({}, '', url);
+            
+            currentSiteId = null;
+        }
+
+        // Toggle completion
+        function toggleCompletion() {
+            const checkbox = document.getElementById('completionCheck');
+            const fields = document.getElementById('completionFields');
+            const fields2 = document.getElementById('completionFields2');
+            const workerName = document.getElementById('workerName');
+            const workerInput = document.getElementById('workerInput');
+            
+            checkbox.checked = !checkbox.checked;
+            
+            if (checkbox.checked) {
+                fields.classList.add('active');
+                fields2.classList.add('active');
+                
+                // Auto-fill values
+                if (!document.getElementById('dateInput').value) {
+                    setToday();
+                }
+                
+                // Auto-fill worker name
+                workerInput.value = currentUser.name;
+                workerInput.setAttribute('value', currentUser.name);
+                
+                // Show worker name in label
+                workerName.textContent = `- ${currentUser.name}`;
+                
+                // Vibration feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate(50);
+                }
+            } else {
+                fields.classList.remove('active');
+                fields2.classList.remove('active');
+                workerName.textContent = '';
+                workerInput.value = '';
+                workerInput.removeAttribute('value');
+            }
+        }
+
+        // Set today's date
+        function setToday() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('dateInput').value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        // Toggle notes
+        function toggleNotes() {
+            const section = document.getElementById('notesSection');
+            section.classList.toggle('collapsed');
+        }
+
+        // Check notes value
+        function checkNotesValue() {
+            const section = document.getElementById('notesSection');
+            const input = document.getElementById('notesInput');
+            
+            if (input.value && input.value.trim() !== '') {
+                section.classList.remove('collapsed');
+            } else {
+                section.classList.add('collapsed');
+            }
+        }
+
+        // Upload photo
+        function uploadPhoto(type) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.multiple = true;
+            input.onchange = async (e) => {
+                const files = e.target.files;
+                
+                for (let file of files) {
+                    // Upload to R2
+                    const photoUrl = await uploadToR2(file);
+                    if (photoUrl) {
+                        // Add to UI
+                        let containerId;
+                        switch(type) {
+                            case 'floorPlan':
+                                containerId = 'floorPlanPhotos';
+                                break;
+                            case 'before':
+                                containerId = 'beforePhotos';
+                                break;
+                            case 'after':
+                                containerId = 'afterPhotos';
+                                break;
+                        }
+                        addPhotoToContainer(containerId, photoUrl);
+                    }
+                }
+            };
+            input.click();
+        }
+
+        // Upload to R2
+        async function uploadToR2(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                const response = await fetch(`${WORKER_API_URL}/api/v1/files/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    },
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+                
+                const result = await response.json();
+                return result.url;
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert('上傳失敗');
+                return null;
+            }
+        }
+
+        // Remove photo
+        function removePhoto(btn) {
+            btn.parentElement.remove();
+        }
+
+        // Open lightbox
+        function openLightbox(src) {
+            const lightbox = document.getElementById('lightbox');
+            const img = document.getElementById('lightboxImg');
+            img.src = src;
+            lightbox.style.display = 'block';
+        }
+
+        // Close lightbox
+        function closeLightbox() {
+            document.getElementById('lightbox').style.display = 'none';
+        }
+
+        // Share link
+        function shareLink() {
+            const url = window.location.href;
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert('連結已複製！\n' + url);
+                });
+            }
+        }
+
+        // Submit form
+        async function submitForm() {
+            if (!currentSiteId) return;
+            
+            const isCompleted = document.getElementById('completionCheck').checked;
+            
+            // Prepare update data
+            const updateData = {
+                [fieldMapping.beforeNotes]: document.getElementById('notesInput').value,
+                [fieldMapping.completed]: isCompleted
+            };
+            
+            if (isCompleted) {
+                const area = document.getElementById('areaInput').value;
+                const date = document.getElementById('dateInput').value;
+                const worker = document.getElementById('workerInput').value;
+                
+                if (!area || !date) {
+                    alert('請填寫鋪設坪數和施工日期！');
+                    return;
+                }
+                
+                updateData[fieldMapping.area] = area;
+                updateData[fieldMapping.date] = date;
+                updateData[fieldMapping.worker] = worker;
+                
+                // Update stage if completed
+                updateData[fieldMapping.stage] = '驗收';
+                updateData[fieldMapping.label] = '已完工';
+            }
+            
+            // Collect photo URLs
+            const floorPlanPhotos = collectPhotoUrls('floorPlanPhotos');
+            const beforePhotos = collectPhotoUrls('beforePhotos');
+            const afterPhotos = collectPhotoUrls('afterPhotos');
+            
+            if (floorPlanPhotos.length > 0) {
+                updateData[fieldMapping.floorPlan] = floorPlanPhotos[0]; // Only one floor plan
+            }
+            if (beforePhotos.length > 0) {
+                updateData[fieldMapping.beforePhotos] = beforePhotos.join(',');
+            }
+            if (afterPhotos.length > 0) {
+                updateData[fieldMapping.afterPhotos] = afterPhotos.join(',');
+            }
+            
+            try {
+                // Update site data
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/object_8W9cb__c/${currentSiteId}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(updateData)
+                    }
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Update failed');
+                }
+                
+                // Vibration feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate([50, 30, 50]);
+                }
+                
+                alert('提交成功！');
+                
+                // Reload sites to refresh grid
+                await loadSites();
+                
+                // Close modal
+                closeModal();
+            } catch (error) {
+                console.error('Submit error:', error);
+                alert('提交失敗，請稍後再試');
+            }
+        }
+
+        // Collect photo URLs from container
+        function collectPhotoUrls(containerId) {
+            const container = document.getElementById(containerId);
+            const images = container.querySelectorAll('.has-image img');
+            return Array.from(images).map(img => img.src);
+        }
+
+        // Load progress announcements from database
+        async function loadProgressAnnouncements() {
+            const gridContent = document.getElementById('gridContent');
+            
+            // Show loading
+            gridContent.innerHTML = `
+                <div style="padding: 2rem; text-align: center;">
+                    <div class="loading">載入進度公告中...</div>
+                </div>
+            `;
+            
+            try {
+                const opportunityId = currentProject._id || currentProject.id;
+                
+                // Fetch announcements from API
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/progress_management_announ__c?field_RFr42__c=${opportunityId}&order_by=order_by&limit=50`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load announcements');
+                }
+
+                const result = await response.json();
+                const announcements = result.dataList || result.results || [];
+                
+                // Display announcements
+                if (announcements.length > 0) {
+                    let html = `
+                        <div style="padding: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                <h2 style="color: var(--heading);">進度公告</h2>
+                                <button onclick="addAnnouncement()" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    新增公告
+                                </button>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    `;
+                    
+                    announcements.forEach(announcement => {
+                        const content = announcement.announcement_content__c || '無內容';
+                        const createTime = announcement.create_time ? 
+                            new Date(announcement.create_time).toLocaleDateString('zh-TW') : 
+                            '未知日期';
+                        const showToTeam = announcement.field_q97ij__c ? '✓ 工班可見' : '';
+                        const showToOwner = announcement.field_uO778__c ? '✓ 業主可見' : '';
+                        const announcementNumber = announcement.name || '';
+                        
+                        // Check if there's an image
+                        const imageHtml = announcement.field_dvR88__c ? 
+                            `<img src="${announcement.field_dvR88__c}" style="max-width: 100%; margin-top: 0.5rem; border-radius: 4px;" alt="公告圖片">` : 
+                            '';
+                        
+                        html += `
+                            <div style="padding: 1rem; background: var(--background); border-left: 4px solid var(--primary); border-radius: 4px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong style="color: var(--heading);">公告 #${announcementNumber}</strong>
+                                    <div style="display: flex; gap: 1rem; align-items: center;">
+                                        ${showToTeam ? `<span style="color: var(--primary); font-size: 0.75rem;">${showToTeam}</span>` : ''}
+                                        ${showToOwner ? `<span style="color: var(--primary); font-size: 0.75rem;">${showToOwner}</span>` : ''}
+                                        <span style="color: var(--body-text); font-size: 0.875rem;">${createTime}</span>
+                                    </div>
+                                </div>
+                                <p style="color: var(--body-text); white-space: pre-wrap;">${content}</p>
+                                ${imageHtml}
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                    
+                    gridContent.innerHTML = html;
+                } else {
+                    // No announcements
+                    gridContent.innerHTML = `
+                        <div style="padding: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                <h2 style="color: var(--heading);">進度公告</h2>
+                                <button onclick="addAnnouncement()" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    新增公告
+                                </button>
+                            </div>
+                            <div style="background: var(--background); padding: 2rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; margin-bottom: 1rem;">📢</div>
+                                <p style="color: var(--body-text);">目前沒有進度公告</p>
+                            </div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                gridContent.innerHTML = `
+                    <div style="padding: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="color: var(--heading);">進度公告</h2>
+                            <button onclick="addAnnouncement()" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                新增公告
+                            </button>
+                        </div>
+                        <div style="background: #fee; color: #c00; padding: 1rem; border-radius: 8px;">
+                            載入進度公告失敗：${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Add new announcement (placeholder function)
+        function addAnnouncement() {
+            alert('新增公告功能開發中...');
+        }
+
+        // Toggle collapsible sections
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            const button = section.previousElementSibling;
+            
+            if (section && button && button.classList.contains('section-toggle')) {
+                section.classList.toggle('collapsed');
+                button.classList.toggle('collapsed');
+            }
+        }
+
+        // Toggle construction team info
+        function toggleTeamInfo() {
+            const teamInfo = document.getElementById('constructionTeamInfo');
+            if (teamInfo) {
+                teamInfo.classList.toggle('collapsed');
+            }
+        }
+
+        // Initialize collapsible sections on mobile
+        function initCollapsibleSections() {
+            if (window.innerWidth <= 768) {
+                // Collapse sections by default on mobile
+                const statsSection = document.getElementById('statsSection');
+                const constructionTeamInfo = document.getElementById('constructionTeamInfo');
+                const statsToggle = statsSection?.previousElementSibling;
+                
+                if (statsSection && statsToggle && statsToggle.classList.contains('section-toggle')) {
+                    statsSection.classList.add('collapsed');
+                    statsToggle.classList.add('collapsed');
+                }
+                
+                // Collapse construction team info by default on mobile
+                if (constructionTeamInfo) {
+                    constructionTeamInfo.classList.add('collapsed');
+                }
+            }
+        }
+
+        // Call on page load and resize
+        window.addEventListener('DOMContentLoaded', initCollapsibleSections);
+        window.addEventListener('resize', () => {
+            // Remove collapsed state when switching to desktop
+            if (window.innerWidth > 768) {
+                const sections = document.querySelectorAll('.stats-section, .construction-team-info');
+                const toggles = document.querySelectorAll('.section-toggle');
+                
+                sections.forEach(section => section.classList.remove('collapsed'));
+                toggles.forEach(toggle => toggle.classList.remove('collapsed'));
+            }
+        });
+
+        // Handle tab switching
+        function handleTabSwitch(tabName) {
+            const gridWrapper = document.querySelector('.building-grid-wrapper');
+            const gridContent = document.getElementById('gridContent');
+            const legend = document.getElementById('gridLegend');
+            const buildingTabs = document.getElementById('buildingTabs');
+            
+            // Update URL with the new tab parameter
+            const url = new URL(window.location);
+            url.searchParams.set('tab', tabName);
+            window.history.pushState({}, '', url);
+            
+            switch(tabName) {
+                case 'spc':
+                    // Show SPC engineering grid (current view)
+                    gridWrapper.style.display = 'block';
+                    buildingTabs.style.display = 'flex';
+                    legend.style.display = 'flex';
+                    renderFloorGrid();
+                    break;
+                    
+                case 'cabinet':
+                    // Show cabinet engineering message
+                    gridWrapper.style.display = 'block';
+                    buildingTabs.style.display = 'none';
+                    legend.style.display = 'none';
+                    gridContent.innerHTML = `
+                        <div style="padding: 3rem; text-align: center;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
+                            <h2 style="color: var(--heading); margin-bottom: 0.5rem;">本專案未包含浴櫃工程服務</h2>
+                            <p style="color: var(--body-text);">此專案僅提供 SPC 工程服務</p>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'maintenance':
+                    // Show maintenance orders
+                    gridWrapper.style.display = 'block';
+                    buildingTabs.style.display = 'none';
+                    legend.style.display = 'none';
+                    gridContent.innerHTML = `
+                        <div style="padding: 2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                                <h2 style="color: var(--heading);">維修單管理</h2>
+                                <button style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    新增維修單
+                                </button>
+                            </div>
+                            <div style="background: var(--background); padding: 2rem; border-radius: 8px; text-align: center;">
+                                <div style="font-size: 2rem; margin-bottom: 1rem;">🔧</div>
+                                <p style="color: var(--body-text);">目前沒有維修單</p>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'announcements':
+                    // Show progress announcements
+                    gridWrapper.style.display = 'block';
+                    buildingTabs.style.display = 'none';
+                    legend.style.display = 'none';
+                    loadProgressAnnouncements();
+                    break;
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Tab switching
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    const tabName = this.dataset.tab;
+                    handleTabSwitch(tabName);
+                });
+            });
+
+            // Building switching
+            document.getElementById('buildingTabs').addEventListener('click', (e) => {
+                if (e.target.classList.contains('building-btn')) {
+                    document.querySelectorAll('.building-btn').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentBuilding = e.target.dataset.building;
+                    renderFloorGrid();
+                }
+            });
+
+            // Modal background click to close
+            document.getElementById('siteModal').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    closeModal();
+                }
+            });
+
+            // ESC key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+
+            // Report button
+            const reportBtn = document.querySelector('.btn-report');
+            if (reportBtn) {
+                reportBtn.addEventListener('click', () => {
+                    showPermissionAlert('報表功能');
+                });
+            }
+
+            // Export button
+            const exportBtn = document.querySelector('.btn-export');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    showPermissionAlert('匯出功能');
+                });
+            }
+
+            // Settings button
+            const settingsBtn = document.querySelector('.btn-settings');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => {
+                    // Navigate to project settings (Step 4 of creation)
+                    const projectId = new URLSearchParams(window.location.search).get('id');
+                    if (projectId) {
+                        // Store project data for editing
+                        localStorage.setItem('editingProjectId', projectId);
+                        localStorage.setItem('editingProject', JSON.stringify(currentProject));
+                        // Navigate to project-create with edit mode
+                        window.location.href = `project-create-v2.html?mode=edit&id=${projectId}&step=4`;
+                    }
+                });
+            }
+        }
+
+        // Go back
+        function goBack() {
+            window.location.href = 'project-list.html';
+        }
+
+        // Show error
+        function showError(message) {
+            const gridContent = document.getElementById('gridContent');
+            gridContent.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        // Show permission alert
+        function showPermissionAlert(feature) {
+            // Create alert modal if it doesn't exist
+            let alertModal = document.getElementById('permissionAlertModal');
+            if (!alertModal) {
+                alertModal = document.createElement('div');
+                alertModal.id = 'permissionAlertModal';
+                alertModal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                    display: none;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                `;
+                
+                const alertContent = document.createElement('div');
+                alertContent.style.cssText = `
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 12px;
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                `;
+                
+                alertContent.innerHTML = `
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">🔒</div>
+                    <h2 style="color: #1e293b; margin-bottom: 1rem; font-size: 1.5rem;">權限不足</h2>
+                    <p id="permissionMessage" style="color: #64748b; margin-bottom: 1.5rem;">您沒有權限使用此功能</p>
+                    <button onclick="document.getElementById('permissionAlertModal').style.display='none'" 
+                            style="padding: 0.75rem 2rem; background: #84C7D0; color: white; border: none; 
+                                   border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 500;">
+                        確定
+                    </button>
+                `;
+                
+                alertModal.appendChild(alertContent);
+                document.body.appendChild(alertModal);
+                
+                // Close on background click
+                alertModal.addEventListener('click', (e) => {
+                    if (e.target === alertModal) {
+                        alertModal.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Update message and show
+            const message = document.getElementById('permissionMessage');
+            if (message) {
+                message.textContent = `您沒有權限使用${feature}。請聯繫管理員開通權限。`;
+            }
+            alertModal.style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
