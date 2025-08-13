@@ -1,0 +1,45 @@
+name: Deploy Development
+
+on:
+  push:
+    branches:
+      - development
+  pull_request:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: development
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd workers
+          npm ci
+      
+      - name: Deploy API to Cloudflare Workers
+        run: |
+          cd workers
+          npx wrangler deploy --config wrangler-develop.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_DEVELOPMENT }}
+      
+      - name: Deploy Frontend to Cloudflare Pages
+        run: |
+          cd workers
+          npx wrangler pages deploy ../frontend \
+            --project-name construction-management-frontend-dev \
+            --branch development \
+            --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_DEVELOPMENT }}
