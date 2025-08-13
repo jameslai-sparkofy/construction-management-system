@@ -26,7 +26,7 @@ export default {
       return new Response(JSON.stringify({ 
         name: '工程管理系統 API',
         status: 'healthy',
-        version: '3.0.1-final',
+        version: '3.1.0-final-new-token',
         timestamp: new Date().toISOString(),
         features: {
           simpleAuth: true,
@@ -59,43 +59,111 @@ export default {
     
     // Projects list
     if (path === '/api/v1/projects' && method === 'GET') {
-      return new Response(JSON.stringify({
-        success: true,
-        projects: [
-          {
-            id: 'proj_001',
-            name: '建功段建案',
-            opportunity_id: 'opp_001',
-            opportunity_name: '建功段',
-            status: 'planning',
-            progress: 25,
-            created_at: '2025-08-01T00:00:00Z'
-          },
-          {
-            id: 'proj_002',
-            name: '興安西建案',
-            opportunity_id: 'opp_002',
-            opportunity_name: '興安西',
-            status: 'in_progress',
-            progress: 60,
-            created_at: '2025-07-15T00:00:00Z'
-          }
-        ]
-      }), { headers });
+      try {
+        console.log('[DEBUG] api-final.js - Getting projects from D1');
+        
+        const query = env.DB_ENGINEERING.prepare(`
+          SELECT 
+            p.id,
+            p.opportunity_id,
+            p.name,
+            p.status,
+            p.created_at,
+            p.updated_at,
+            p.spc_engineering,
+            p.cabinet_engineering,
+            p.created_by
+          FROM projects p
+          WHERE p.status = 'active'
+          ORDER BY p.created_at DESC
+        `);
+        
+        const { results } = await query.all();
+        console.log('[DEBUG] Found', results?.length || 0, 'projects in D1');
+        
+        // Process each project
+        const projects = results.map(project => {
+          // Parse JSON fields
+          const spcEng = project.spc_engineering ? JSON.parse(project.spc_engineering) : {};
+          const cabinetEng = project.cabinet_engineering ? JSON.parse(project.cabinet_engineering) : {};
+          
+          // Determine engineering types
+          const engineeringTypes = [];
+          if (spcEng.enabled) engineeringTypes.push('SPC');
+          if (cabinetEng.enabled) engineeringTypes.push('浴櫃');
+          
+          return {
+            id: project.id,
+            name: project.name,
+            opportunity_id: project.opportunity_id,
+            status: 'active',
+            progress: 0,
+            engineeringTypes: engineeringTypes,
+            created_at: project.created_at,
+            updated_at: project.updated_at
+          };
+        });
+        
+        return new Response(JSON.stringify({
+          success: true,
+          projects: projects,
+          total: projects.length
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] api-final.js - Error fetching projects:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch projects',
+          message: error.message
+        }), { status: 500, headers });
+      }
     }
     
     // Create project
     if (path === '/api/v1/projects' && method === 'POST') {
-      const data = await request.json();
-      return new Response(JSON.stringify({
-        success: true,
-        project: {
-          id: 'proj_' + Date.now(),
-          name: data.name,
-          opportunity_id: data.opportunity_id,
-          created_at: new Date().toISOString()
-        }
-      }), { headers });
+      try {
+        const data = await request.json();
+        console.log('[DEBUG] Creating project with data:', JSON.stringify(data));
+        
+        const projectId = 'proj_' + Date.now();
+        
+        // Insert into D1 database
+        await env.DB_ENGINEERING.prepare(`
+          INSERT INTO projects (
+            id, opportunity_id, name, 
+            spc_engineering, cabinet_engineering, permissions,
+            status, created_by
+          ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
+        `).bind(
+          projectId,
+          data.opportunityId || data.opportunity_id || '',
+          data.name || '',
+          JSON.stringify(data.spcEngineering || {}),
+          JSON.stringify(data.cabinetEngineering || {}),
+          JSON.stringify(data.permissions || {}),
+          data.createdBy || 'system'
+        ).run();
+        
+        console.log('[DEBUG] Project created successfully:', projectId);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          project: {
+            id: projectId,
+            name: data.name,
+            opportunity_id: data.opportunityId || data.opportunity_id,
+            created_at: new Date().toISOString()
+          }
+        }), { headers });
+      } catch (error) {
+        console.error('[DEBUG] Error creating project:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message,
+          message: error.message
+        }), { status: 500, headers });
+      }
     }
     
     // Opportunities

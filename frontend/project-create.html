@@ -283,6 +283,95 @@
             background: #f9fafb;
         }
 
+        /* Permissions Section */
+        .permissions-section {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e5e7eb;
+        }
+
+        .permissions-section h3 {
+            margin-bottom: 1rem;
+            color: #1f2937;
+            font-size: 1.1rem;
+        }
+
+        .permissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .permissions-table th {
+            background: #f9fafb;
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .permissions-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .team-leader-select {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            background: white;
+        }
+
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        .switch input:checked + .slider {
+            background-color: #4f46e5;
+        }
+
+        .switch input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
         /* Loading Spinner */
         .loading {
             display: none;
@@ -410,7 +499,7 @@
             <!-- Step 2: Select Engineering Types -->
             <div class="step-content" id="step-content-2">
                 <h2>選擇工程類型</h2>
-                <p style="color: #6b7280; margin-bottom: 1.5rem;">請選擇此專案要包含的工程類型，可以多選</p>
+                <p style="color: #6b7280; margin-bottom: 1.5rem;">請選擇此專案要包含的工程類型（單選）</p>
                 
                 <div class="loading" id="engineeringTypesLoading">
                     <div class="spinner"></div>
@@ -450,6 +539,11 @@
             <div class="step-content" id="step-content-4">
                 <h2>設定權限</h2>
                 
+                <div class="loading" id="permissionsLoading">
+                    <div class="spinner"></div>
+                    <p style="margin-top: 1rem; color: #6b7280;">載入權限設定...</p>
+                </div>
+                
                 <div id="permissionsContent">
                     <!-- Dynamic content -->
                 </div>
@@ -479,10 +573,10 @@
         let engineeringStats = {};
 
         // API Configuration
-        const API_BASE_URL = CONFIG?.API?.D1_REST_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
+        const API_BASE_URL = CONFIG?.API?.CRM_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
         const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
-        const API_TOKEN = CONFIG?.API?.REST_API_TOKEN || 'fx-crm-api-secret-2025';
-        const USE_V2_API = true; // Use new V2 API
+        const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || 'fx-crm-api-secret-2025';
+        const USE_V2_API = false; // Use fallback data since V2 API endpoints don't exist
 
         // ========================================
         // Initialization
@@ -625,13 +719,18 @@
                     card.addEventListener('click', function() {
                         const type = this.dataset.type;
                         
-                        if (this.classList.contains('selected')) {
-                            this.classList.remove('selected');
-                            selectedEngineeringTypes = selectedEngineeringTypes.filter(t => t !== type);
-                        } else {
-                            this.classList.add('selected');
-                            selectedEngineeringTypes.push(type);
-                        }
+                        // 單選模式：先清除其他選擇
+                        document.querySelectorAll('.engineering-type-card').forEach(card => {
+                            card.classList.remove('active');
+                        });
+                        selectedEngineeringTypes = [];
+                        
+                        // 選中當前項目
+                        this.classList.add('active');
+                        selectedEngineeringTypes = [type];
+                        
+                        // 儲存選擇的工程類型（確保變數能夠保持）
+                        window.selectedEngineeringTypes = selectedEngineeringTypes;
                         
                         document.getElementById('step2-next').disabled = selectedEngineeringTypes.length === 0;
                     });
@@ -644,6 +743,37 @@
                     { code: 'SPC', name: 'SPC 石塑地板', description: '石塑複合地板工程', icon: '🏗️' },
                     { code: 'CABINET', name: '浴櫃工程', description: '浴室櫃體安裝工程', icon: '🚿' }
                 ];
+                
+                // 還是要渲染 fallback 資料
+                grid.innerHTML = availableEngineeringTypes.map(type => `
+                    <div class="engineering-type-card" data-type="${type.code}">
+                        <div class="engineering-type-icon">${type.icon || '📦'}</div>
+                        <div class="engineering-type-name">${type.name}</div>
+                        <div class="engineering-type-desc">${type.description || ''}</div>
+                    </div>
+                `).join('');
+                
+                // Add click handlers
+                document.querySelectorAll('.engineering-type-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const type = this.dataset.type;
+                        
+                        // 單選模式：先清除其他選擇
+                        document.querySelectorAll('.engineering-type-card').forEach(card => {
+                            card.classList.remove('active');
+                        });
+                        selectedEngineeringTypes = [];
+                        
+                        // 選中當前項目
+                        this.classList.add('active');
+                        selectedEngineeringTypes = [type];
+                        
+                        // 儲存選擇的工程類型（確保變數能夠保持）
+                        window.selectedEngineeringTypes = selectedEngineeringTypes;
+                        
+                        document.getElementById('step2-next').disabled = selectedEngineeringTypes.length === 0;
+                    });
+                });
             } finally {
                 loading.classList.remove('active');
             }
@@ -663,31 +793,49 @@
         }
 
         async function loadOpportunities() {
+            // 如果是編輯模式，跳過載入商機
+            if (isEditMode) {
+                console.log('Edit mode - skipping opportunities loading');
+                return;
+            }
+            
             const loading = document.getElementById('opportunitiesLoading');
             const table = document.getElementById('opportunitiesTable');
             const tbody = document.getElementById('opportunitiesTableBody');
+            
+            // 檢查 DOM 元素是否存在
+            if (!loading || !table || !tbody) {
+                console.warn('Opportunities elements not found - skipping load');
+                return;
+            }
             
             loading.classList.add('active');
             table.style.display = 'none';
             
             try {
-                const response = await fetch(`${API_BASE_URL}/rest/newopportunityobj?limit=500&filter[stage__c]=贏單`, {
+                // 直接獲取所有商機，不使用 filter（filter 參數格式有問題）
+                const response = await fetch(`${API_BASE_URL}/rest/newopportunityobj?limit=500`, {
                     headers: {
                         'Authorization': `Bearer ${API_TOKEN}`
                     }
                 });
                 
                 const result = await response.json();
-                const opportunities = result.results || [];
+                // 在前端過濾出贏單的商機
+                const opportunities = (result.results || []).filter(opp => 
+                    opp.sales_status__r === '贏單' || opp.sales_status === '2'
+                );
+                
+                console.log(`Loaded ${opportunities.length} winning opportunities`);
                 
                 // Render opportunities
                 tbody.innerHTML = opportunities.map(opp => `
-                    <tr onclick="selectOpportunity('${opp._id}', '${(opp.opportunity_name || '').replace(/'/g, "\\'")}', '${(opp.customer_name || '').replace(/'/g, "\\'")}')">
+                    <tr onclick="selectOpportunity('${opp._id}', '${(opp.name || '').replace(/'/g, "\\'")}', '${(opp.account_id__r || '').replace(/'/g, "\\'")}')">
                         <td><input type="radio" name="opportunity" value="${opp._id}"></td>
-                        <td>${opp.opportunity_name || ''}</td>
-                        <td>${opp.customer_name || ''}</td>
-                        <td>${formatCurrency(opp.expected_amount || 0)}</td>
-                        <td><span class="badge">${opp.stage__c || ''}</span></td>
+                        <td>${opp.name || ''}</td>
+                        <td>${opp.account_id__r || ''}</td>
+                        <td>${formatCurrency(opp.amount || 0)}</td>
+                        <td><span class="badge">${opp.sales_status__r || ''}</span></td>
                     </tr>
                 `).join('');
                 
@@ -715,6 +863,9 @@
                     const stats = await loadEngineeringStats(type);
                     engineeringStats[type] = stats;
                     
+                    // 儲存統計資料（確保變數能夠保持）
+                    window.engineeringStats = engineeringStats;
+                    
                     // Render statistics
                     const typeInfo = availableEngineeringTypes.find(t => t.code === type);
                     content.innerHTML += `
@@ -730,8 +881,12 @@
                                     <td><span class="stat-value">${stats.teamCount || 0}</span></td>
                                 </tr>
                                 <tr>
-                                    <td>已完成數</td>
-                                    <td><span class="stat-value">${stats.completedCount || 0}</span></td>
+                                    <td>維修單數量</td>
+                                    <td><span class="stat-value">${stats.maintenanceCount || 0}</span></td>
+                                </tr>
+                                <tr>
+                                    <td>進度管理公告</td>
+                                    <td><span class="stat-value">${stats.announcementCount || 0}</span></td>
                                 </tr>
                             </table>
                         </div>
@@ -746,66 +901,320 @@
         }
 
         async function loadEngineeringStats(type) {
-            // TODO: Load actual statistics from API
-            // For now, return mock data
-            if (type === 'SPC') {
-                return { siteCount: 224, teamCount: 4, completedCount: 0 };
-            } else if (type === 'CABINET') {
-                return { siteCount: 56, teamCount: 2, completedCount: 0 };
+            // 從 CRM API 載入實際的案場統計資料
+            if (!selectedOpportunity || !selectedOpportunity.id) {
+                return { siteCount: 0, teamCount: 0, maintenanceCount: 0, announcementCount: 0 };
             }
-            return { siteCount: 0, teamCount: 0, completedCount: 0 };
-        }
-
-        function loadPermissions() {
-            const content = document.getElementById('permissionsContent');
             
-            // 編輯模式下顯示狀態選擇
-            if (isEditMode) {
-                const savedProject = localStorage.getItem('demo_created_project');
-                let currentStatus = 'not_started';
-                let currentStartDate = '';
-                let currentEndDate = '';
+            try {
+                let siteCount = 0;
+                let teamCount = 0;
+                let maintenanceCount = 0;
+                let announcementCount = 0;
                 
-                if (savedProject) {
-                    const project = JSON.parse(savedProject);
-                    currentStatus = project.project_status || 'not_started';
-                    currentStartDate = project.start_date || '';
-                    currentEndDate = project.end_date || '';
+                if (type === 'SPC') {
+                    // 查詢 SPC 案場數量 (object_8w9cb__c)
+                    const spcResponse = await fetch(
+                        `${API_BASE_URL}/rest/object_8w9cb__c?field_1P96q__c=${selectedOpportunity.id}&limit=1000`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+                    
+                    if (spcResponse.ok) {
+                        const spcData = await spcResponse.json();
+                        const sites = spcData.results || [];
+                        siteCount = sites.length;
+                        
+                        // 計算不重複的工班數量（從 shift_time__c 欄位）
+                        const uniqueTeams = new Set();
+                        sites.forEach(site => {
+                            if (site.shift_time__c) {
+                                uniqueTeams.add(site.shift_time__c);
+                            }
+                        });
+                        teamCount = uniqueTeams.size;
+                    }
+                    
+                    // 查詢維修單數量 (object_k1XqG__c)
+                    const maintenanceResponse = await fetch(
+                        `${API_BASE_URL}/rest/object_k1XqG__c?field_1P96q__c=${selectedOpportunity.id}&limit=1000`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+                    
+                    if (maintenanceResponse.ok) {
+                        const maintenanceData = await maintenanceResponse.json();
+                        maintenanceCount = maintenanceData.results ? maintenanceData.results.length : 0;
+                    }
+                    
+                } else if (type === 'CABINET') {
+                    // 查詢浴櫃案場數量 (site_cabinet__c)
+                    const cabinetResponse = await fetch(
+                        `${API_BASE_URL}/rest/site_cabinet__c?field_1P96q__c=${selectedOpportunity.id}&limit=1000`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+                    
+                    if (cabinetResponse.ok) {
+                        const cabinetData = await cabinetResponse.json();
+                        const sites = cabinetData.results || [];
+                        siteCount = sites.length;
+                        
+                        // 計算不重複的工班數量（從 shift_time__c 欄位）
+                        const uniqueTeams = new Set();
+                        sites.forEach(site => {
+                            if (site.shift_time__c) {
+                                uniqueTeams.add(site.shift_time__c);
+                            }
+                        });
+                        teamCount = uniqueTeams.size;
+                    }
+                    
+                    // 浴櫃也可能有維修單
+                    const maintenanceResponse = await fetch(
+                        `${API_BASE_URL}/rest/object_k1XqG__c?field_1P96q__c=${selectedOpportunity.id}&limit=1000`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
+                    
+                    if (maintenanceResponse.ok) {
+                        const maintenanceData = await maintenanceResponse.json();
+                        maintenanceCount = maintenanceData.results ? maintenanceData.results.length : 0;
+                    }
                 }
                 
-                content.innerHTML = `
-                    <div class="form-group">
-                        <label>專案狀態</label>
-                        <select id="projectStatus" class="filter-select">
-                            <option value="not_started" ${currentStatus === 'not_started' ? 'selected' : ''}>尚未開始</option>
-                            <option value="in_progress" ${currentStatus === 'in_progress' ? 'selected' : ''}>進行中</option>
-                            <option value="maintenance" ${currentStatus === 'maintenance' ? 'selected' : ''}>維修中</option>
-                            <option value="warranty" ${currentStatus === 'warranty' ? 'selected' : ''}>保固中</option>
-                            <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>已完工</option>
-                        </select>
-                    </div>
+                // 查詢進度管理公告數量 (progress_management_announ__c)
+                const announcementResponse = await fetch(
+                    `${API_BASE_URL}/rest/progress_management_announ__c?field_1P96q__c=${selectedOpportunity.id}&limit=1000`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+                
+                if (announcementResponse.ok) {
+                    const announcementData = await announcementResponse.json();
+                    announcementCount = announcementData.results ? announcementData.results.length : 0;
+                }
+                
+                console.log(`Loaded stats for ${type}: sites=${siteCount}, teams=${teamCount}, maintenance=${maintenanceCount}, announcements=${announcementCount}`);
+                return { siteCount, teamCount, maintenanceCount, announcementCount };
+                
+            } catch (error) {
+                console.error(`Failed to load engineering stats for ${type}:`, error);
+                // API 失敗時返回 0
+                return { siteCount: 0, teamCount: 0, maintenanceCount: 0, announcementCount: 0 };
+            }
+        }
+
+        async function loadPermissions() {
+            const content = document.getElementById('permissionsContent');
+            const loading = document.getElementById('permissionsLoading');
+            
+            console.log('Loading permissions...');
+            
+            if (loading) {
+                loading.classList.add('active');
+            }
+            content.innerHTML = '';
+            
+            try {
+                // 獲取工班負責人列表（從工地師父 object_50HJ8__c）
+                const mastersResponse = await fetch(
+                    `${API_BASE_URL}/rest/object_50HJ8__c?limit=100`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+                
+                let masters = [];
+                if (mastersResponse.ok) {
+                    const mastersData = await mastersResponse.json();
+                    masters = mastersData.results || [];
+                }
+                
+                // 獲取商機連絡人（從 NewOpportunityContactsObj）
+                let contacts = [];
+                if (selectedOpportunity) {
+                    const contactsResponse = await fetch(
+                        `${API_BASE_URL}/rest/NewOpportunityContactsObj?opportunity_id=${selectedOpportunity.id}&limit=100`,
+                        {
+                            headers: {
+                                'Authorization': `Bearer ${API_TOKEN}`
+                            }
+                        }
+                    );
                     
-                    <div class="form-group">
-                        <label>開始日期</label>
-                        <input type="date" id="startDate" value="${currentStartDate}">
-                    </div>
+                    if (contactsResponse.ok) {
+                        const contactsData = await contactsResponse.json();
+                        contacts = contactsData.results || [];
+                    }
+                }
+                
+                // 從統計資料中獲取工班列表
+                const teams = new Set();
+                for (const type of selectedEngineeringTypes) {
+                    if (engineeringStats[type]) {
+                        // 重新查詢以獲取詳細的工班資訊
+                        const tableName = type === 'SPC' ? 'object_8w9cb__c' : 'site_cabinet__c';
+                        const siteResponse = await fetch(
+                            `${API_BASE_URL}/rest/${tableName}?field_1P96q__c=${selectedOpportunity.id}&limit=1000`,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${API_TOKEN}`
+                                }
+                            }
+                        );
+                        
+                        if (siteResponse.ok) {
+                            const siteData = await siteResponse.json();
+                            const sites = siteData.results || [];
+                            sites.forEach(site => {
+                                if (site.shift_time__c) {
+                                    teams.add(site.shift_time__c);
+                                }
+                            });
+                        }
+                    }
+                }
+                
+                const teamList = Array.from(teams);
+                
+                // 建立權限設置介面
+                let permissionsHTML = '';
+                
+                // 編輯模式下的狀態設置
+                if (isEditMode) {
+                    const savedProject = localStorage.getItem('demo_created_project');
+                    let currentStatus = 'not_started';
+                    let currentStartDate = '';
+                    let currentEndDate = '';
                     
-                    <div class="form-group">
-                        <label>結束日期</label>
-                        <input type="date" id="endDate" value="${currentEndDate}">
-                    </div>
+                    if (savedProject) {
+                        const project = JSON.parse(savedProject);
+                        currentStatus = project.project_status || 'not_started';
+                        currentStartDate = project.start_date || '';
+                        currentEndDate = project.end_date || '';
+                    }
                     
-                    <div class="alert alert-info">
-                        其他權限設定將根據選擇的工程類型和工班自動配置
+                    permissionsHTML += `
+                        <div class="permissions-section">
+                            <h3>專案設定</h3>
+                            <div class="form-group">
+                                <label>專案狀態</label>
+                                <select id="projectStatus" class="filter-select">
+                                    <option value="not_started" ${currentStatus === 'not_started' ? 'selected' : ''}>尚未開始</option>
+                                    <option value="in_progress" ${currentStatus === 'in_progress' ? 'selected' : ''}>進行中</option>
+                                    <option value="maintenance" ${currentStatus === 'maintenance' ? 'selected' : ''}>維修中</option>
+                                    <option value="warranty" ${currentStatus === 'warranty' ? 'selected' : ''}>保固中</option>
+                                    <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>已完工</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>開始日期</label>
+                                <input type="date" id="startDate" value="${currentStartDate}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>結束日期</label>
+                                <input type="date" id="endDate" value="${currentEndDate}">
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // 業主設定
+                permissionsHTML += `
+                    <div class="permissions-section">
+                        <h3>業主設定</h3>
+                        <div class="form-group">
+                            <label>選擇業主（從商機連絡人）</label>
+                            <select id="projectOwner" class="filter-select">
+                                <option value="">請選擇業主</option>
+                                ${contacts.map(contact => `
+                                    <option value="${contact._id}">${contact.name || contact.contact_name || '未命名'}</option>
+                                `).join('')}
+                            </select>
+                        </div>
                     </div>
                 `;
-            } else {
-                // 新建模式的原始內容
+                
+                // 工班權限設定
+                if (teamList.length > 0) {
+                    permissionsHTML += `
+                        <div class="permissions-section">
+                            <h3>工班權限設定</h3>
+                            <p style="color: #6b7280; margin-bottom: 1rem;">為每個工班設定負責人和查看權限</p>
+                            
+                            <table class="permissions-table">
+                                <thead>
+                                    <tr>
+                                        <th>工班</th>
+                                        <th>工班負責人</th>
+                                        <th>可查看其他工班進度</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${teamList.map((team, index) => `
+                                        <tr>
+                                            <td>${team}</td>
+                                            <td>
+                                                <select class="team-leader-select" data-team="${team}">
+                                                    <option value="">請選擇負責人</option>
+                                                    ${masters.map(master => `
+                                                        <option value="${master._id}">${master.name || master.field_name__c || '未命名'}</option>
+                                                    `).join('')}
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <label class="switch">
+                                                    <input type="checkbox" class="team-view-others" data-team="${team}">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    permissionsHTML += `
+                        <div class="alert alert-info">
+                            <p>尚無工班資料，權限將在建立專案後自動配置</p>
+                        </div>
+                    `;
+                }
+                
+                content.innerHTML = permissionsHTML;
+                
+            } catch (error) {
+                console.error('Failed to load permissions data:', error);
                 content.innerHTML = `
-                    <div class="alert alert-info">
-                        權限設定將根據選擇的工程類型和工班自動配置
+                    <div class="alert alert-error">
+                        載入權限設定失敗，將使用預設權限
                     </div>
                 `;
+            } finally {
+                if (loading) {
+                    loading.classList.remove('active');
+                }
             }
         }
 
@@ -827,6 +1236,9 @@
 
         function selectOpportunity(id, name, company) {
             selectedOpportunity = { id, name, company };
+            
+            // 儲存選擇的商機（確保變數能夠保持）
+            window.selectedOpportunity = selectedOpportunity;
             
             // Update UI
             document.querySelectorAll('input[name="opportunity"]').forEach(radio => {
@@ -887,24 +1299,52 @@
             const confirmMessage = isEditMode ? '確定要更新此專案嗎？' : '確定要建立此專案嗎？';
             if (!confirm(confirmMessage)) return;
             
-            // Prepare project data in V2 format
-            const projectDataV2 = {
-                project: {
-                    id: selectedOpportunity.id,
-                    opportunity_id: selectedOpportunity.id,
-                    name: selectedOpportunity.name,
-                    company_name: selectedOpportunity.company,
-                    cross_view_enabled: false // TODO: Get from UI
-                },
-                engineering_types: selectedEngineeringTypes.map(type => ({
-                    engineering_type_code: type,
-                    is_enabled: true,
-                    site_count: engineeringStats[type]?.siteCount || 0,
-                    team_count: engineeringStats[type]?.teamCount || 0
-                })),
-                team_assignments: [], // TODO: Get from UI
-                owners: [], // TODO: Get from UI
-                field_permissions: [] // TODO: Get from UI
+            // 收集權限設置
+            const permissions = {
+                owner: document.getElementById('projectOwner')?.value || null,
+                teams: []
+            };
+            
+            // 收集每個工班的權限設置
+            const teamLeaderSelects = document.querySelectorAll('.team-leader-select');
+            const teamViewOthersCheckboxes = document.querySelectorAll('.team-view-others');
+            
+            teamLeaderSelects.forEach((select, index) => {
+                const teamName = select.getAttribute('data-team');
+                const leaderId = select.value;
+                const canViewOthers = teamViewOthersCheckboxes[index]?.checked || false;
+                
+                permissions.teams.push({
+                    name: teamName,
+                    leaderId: leaderId,
+                    canViewOthers: canViewOthers
+                });
+            });
+            
+            // Prepare project data in V1 format (compatible with current backend)
+            const projectData = {
+                opportunityId: selectedOpportunity.id,
+                name: selectedOpportunity.name,
+                spcEngineering: selectedEngineeringTypes.includes('SPC') ? {
+                    enabled: true,
+                    siteCount: (engineeringStats && engineeringStats['SPC'] && engineeringStats['SPC'].siteCount) || 0,
+                    teamCount: (engineeringStats && engineeringStats['SPC'] && engineeringStats['SPC'].teamCount) || 0,
+                    maintenanceCount: (engineeringStats && engineeringStats['SPC'] && engineeringStats['SPC'].maintenanceCount) || 0,
+                    announcementCount: (engineeringStats && engineeringStats['SPC'] && engineeringStats['SPC'].announcementCount) || 0
+                } : {},
+                cabinetEngineering: selectedEngineeringTypes.includes('CABINET') ? {
+                    enabled: true,
+                    siteCount: (engineeringStats && engineeringStats['CABINET'] && engineeringStats['CABINET'].siteCount) || 0,
+                    teamCount: (engineeringStats && engineeringStats['CABINET'] && engineeringStats['CABINET'].teamCount) || 0,
+                    maintenanceCount: (engineeringStats && engineeringStats['CABINET'] && engineeringStats['CABINET'].maintenanceCount) || 0,
+                    announcementCount: (engineeringStats && engineeringStats['CABINET'] && engineeringStats['CABINET'].announcementCount) || 0
+                } : {},
+                permissions: permissions,
+                projectStatus: isEditMode ? (document.getElementById('projectStatus')?.value || 'not_started') : 'not_started',
+                startDate: isEditMode ? document.getElementById('startDate')?.value : null,
+                endDate: isEditMode ? document.getElementById('endDate')?.value : null,
+                createdBy: 'system',
+                teams: permissions.teams
             };
             
             try {
@@ -930,7 +1370,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify(projectDataV2)
+                    body: JSON.stringify(projectData)
                 });
                 
                 if (response.ok) {
