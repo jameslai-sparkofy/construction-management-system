@@ -723,26 +723,17 @@
                     allProjects = [];
                 }
                 
-                // 總是檢查 localStorage 中的專案並合併
-                const savedProject = localStorage.getItem('demo_created_project');
-                if (savedProject) {
-                    const localProject = JSON.parse(savedProject);
-                    // 避免重複，檢查是否已經存在
-                    const existingProject = allProjects.find(p => p.id === localProject.id);
-                    if (!existingProject) {
-                        allProjects.unshift(localProject); // 添加到列表開頭
-                    }
+                // 移除 localStorage 專案載入，避免重複顯示
+                // 清除舊的 localStorage 資料（如果存在）
+                if (localStorage.getItem('demo_created_project')) {
+                    localStorage.removeItem('demo_created_project');
+                    console.log('Cleared old localStorage project data');
                 }
                 
             } catch (error) {
                 console.error('Failed to load projects:', error);
-                // 當 API 失敗時，檢查是否有本地儲存的專案（用於展示）
-                const savedProject = localStorage.getItem('demo_created_project');
-                if (savedProject) {
-                    allProjects = [JSON.parse(savedProject)];
-                } else {
-                    allProjects = [];
-                }
+                // 當 API 失敗時，只顯示空列表
+                allProjects = [];
             }
 
             displayProjects(allProjects);

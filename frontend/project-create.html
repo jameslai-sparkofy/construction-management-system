@@ -181,9 +181,30 @@
             box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
         }
 
-        .engineering-type-card.selected {
+        .engineering-type-card.selected,
+        .engineering-type-card.active {
             background: #eef2ff;
             border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            position: relative;
+        }
+        
+        .engineering-type-card.selected::after,
+        .engineering-type-card.active::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 24px;
+            height: 24px;
+            background: #4f46e5;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
         }
 
         .engineering-type-icon {
@@ -1281,8 +1302,8 @@
                     project.lastUpdate = new Date().toLocaleDateString('zh-TW');
                     project.updated_at = new Date().toISOString();
                     
-                    // 儲存更新後的資料
-                    localStorage.setItem('demo_created_project', JSON.stringify(project));
+                    // 不再儲存到 localStorage，避免重複顯示
+                    // localStorage.setItem('demo_created_project', JSON.stringify(project));
                     
                     alert('專案更新成功！');
                     window.location.href = 'project-list.html';
@@ -1394,7 +1415,8 @@
                         start_date: null,
                         end_date: null
                     };
-                    localStorage.setItem('demo_created_project', JSON.stringify(demoProject));
+                    // 不再儲存到 localStorage，避免重複顯示
+                    // localStorage.setItem('demo_created_project', JSON.stringify(demoProject));
                     
                     const successMessage = isEditMode ? '專案更新成功！' : '專案建立成功！';
                     alert(successMessage);

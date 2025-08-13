@@ -1371,6 +1371,7 @@
             }
         }
     </style>
+    <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
 </head>
 <body>
@@ -1603,8 +1604,8 @@
 
                 <!-- 施工完成 - 重要區塊 -->
                 <div class="completion-section">
-                    <div class="completion-checkbox" onclick="toggleCompletion()">
-                        <input type="checkbox" id="completionCheck">
+                    <div class="completion-checkbox">
+                        <input type="checkbox" id="completionCheck" onchange="handleCompletionChange()">
                         <label class="completion-label" for="completionCheck">
                             施工完成
                             <span class="worker-name" id="workerName"></span>
@@ -1642,7 +1643,6 @@
         <img id="lightboxImg" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; object-fit: contain;">
     </div>
 
-    <script src="config.js"></script>
     <script>
         // API Configuration
         const API_BASE_URL = CONFIG?.API?.CRM_API_URL || CONFIG?.API?.D1_REST_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
@@ -1734,25 +1734,26 @@
         // Load project data
         async function loadProject(projectId) {
             try {
-                // Fetch project data
+                // Fetch project data from engineering management API
                 const response = await fetch(
-                    `${API_BASE_URL}/rest/newopportunityobj?_id=${projectId}`,
+                    `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}`,
                     {
                         headers: {
-                            'Authorization': `Bearer ${API_TOKEN}`
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                         }
                     }
                 );
 
                 if (!response.ok) {
-                    throw new Error('Failed to load project');
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 const result = await response.json();
-                // Handle both dataList and results format
-                const projects = result.dataList || result.results;
-                if (projects && projects.length > 0) {
-                    currentProject = projects[0];
+                console.log('[DEBUG] Project API response:', result);
+                
+                if (result.success && result.project) {
+                    currentProject = result.project;
                     updateProjectInfo();
                     await loadSites();
                 } else {
@@ -1760,7 +1761,7 @@
                 }
             } catch (error) {
                 console.error('Error loading project:', error);
-                showError('載入專案失敗');
+                showError('載入專案失敗: ' + error.message);
             }
         }
 
@@ -1776,7 +1777,16 @@
         // Load sites for the project
         async function loadSites() {
             try {
-                const opportunityId = currentProject._id || currentProject.id;
+                // Use opportunity_id to fetch related sites
+                const opportunityId = currentProject.opportunity_id;
+                
+                if (!opportunityId) {
+                    console.warn('No opportunity_id found for project');
+                    showError('無法載入案場資料：缺少商機關聯');
+                    return;
+                }
+                
+                console.log('[DEBUG] Loading sites for opportunity:', opportunityId);
                 
                 // Show loading state
                 const gridContent = document.getElementById('gridContent');
@@ -2158,15 +2168,15 @@
             currentSiteId = null;
         }
 
-        // Toggle completion
-        function toggleCompletion() {
+        // Handle completion checkbox change
+        function handleCompletionChange() {
             const checkbox = document.getElementById('completionCheck');
             const fields = document.getElementById('completionFields');
             const fields2 = document.getElementById('completionFields2');
             const workerName = document.getElementById('workerName');
             const workerInput = document.getElementById('workerInput');
             
-            checkbox.checked = !checkbox.checked;
+            // Don't toggle here - checkbox state is already changed by user click
             
             if (checkbox.checked) {
                 fields.classList.add('active');
@@ -2175,6 +2185,14 @@
                 // Auto-fill values
                 if (!document.getElementById('dateInput').value) {
                     setToday();
+                }
+                
+                // Auto-fill area from site data (工地坪數)
+                if (currentSiteId && currentSites.length > 0) {
+                    const site = currentSites.find(s => s._id === currentSiteId);
+                    if (site && site[fieldMapping.siteArea]) {
+                        document.getElementById('areaInput').value = site[fieldMapping.siteArea];
+                    }
                 }
                 
                 // Auto-fill worker name
@@ -2413,7 +2431,22 @@
             `;
             
             try {
-                const opportunityId = currentProject._id || currentProject.id;
+                // Use opportunity_id to fetch related announcements
+                const opportunityId = currentProject.opportunity_id;
+                
+                if (!opportunityId) {
+                    console.warn('No opportunity_id found for project');
+                    gridContent.innerHTML = `
+                        <div style="padding: 2rem;">
+                            <div style="background: #fee; color: #c00; padding: 1rem; border-radius: 8px;">
+                                無法載入進度公告：缺少商機關聯
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                console.log('[DEBUG] Loading announcements for opportunity:', opportunityId);
                 
                 // Fetch announcements from API
                 const response = await fetch(

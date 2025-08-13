@@ -166,6 +166,274 @@ export default {
       }
     }
     
+    // Get single project by ID (but not stats or other special endpoints)
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+$/) && method === 'GET') {
+      try {
+        const projectId = path.split('/').pop();
+        console.log('[DEBUG] api-final.js - Getting project by ID:', projectId);
+        
+        const query = env.DB_ENGINEERING.prepare(`
+          SELECT 
+            p.id,
+            p.opportunity_id,
+            p.name,
+            p.status,
+            p.created_at,
+            p.updated_at,
+            p.spc_engineering,
+            p.cabinet_engineering,
+            p.permissions,
+            p.created_by
+          FROM projects p
+          WHERE p.id = ? AND p.status = 'active'
+        `);
+        
+        const project = await query.bind(projectId).first();
+        
+        if (!project) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project not found',
+            message: `專案 ${projectId} 不存在`
+          }), { status: 404, headers });
+        }
+        
+        // Parse JSON fields
+        const spcEng = project.spc_engineering ? JSON.parse(project.spc_engineering) : {};
+        const cabinetEng = project.cabinet_engineering ? JSON.parse(project.cabinet_engineering) : {};
+        const permissions = project.permissions ? JSON.parse(project.permissions) : {};
+        
+        // Determine engineering types
+        const engineeringTypes = [];
+        if (spcEng.enabled) engineeringTypes.push('SPC');
+        if (cabinetEng.enabled) engineeringTypes.push('浴櫃');
+        
+        const projectData = {
+          id: project.id,
+          name: project.name,
+          opportunity_id: project.opportunity_id,
+          status: 'active',
+          progress: 0,
+          engineeringTypes: engineeringTypes,
+          created_at: project.created_at,
+          updated_at: project.updated_at,
+          spc_engineering: spcEng,
+          cabinet_engineering: cabinetEng,
+          permissions: permissions,
+          created_by: project.created_by
+        };
+        
+        console.log('[DEBUG] Found project:', projectData.name);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          project: projectData
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] api-final.js - Error fetching project:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch project',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Delete project by ID
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+$/) && method === 'DELETE') {
+      try {
+        const projectId = path.split('/').pop();
+        console.log('[DEBUG] api-final.js - Deleting project by ID:', projectId);
+        
+        // First check if project exists
+        const checkQuery = env.DB_ENGINEERING.prepare(`
+          SELECT id FROM projects WHERE id = ? AND status = 'active'
+        `);
+        
+        const project = await checkQuery.bind(projectId).first();
+        
+        if (!project) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project not found',
+            message: `專案 ${projectId} 不存在`
+          }), { status: 404, headers });
+        }
+        
+        // Soft delete - mark as deleted instead of removing from database
+        const deleteQuery = env.DB_ENGINEERING.prepare(`
+          UPDATE projects 
+          SET status = 'deleted', 
+              updated_at = datetime('now')
+          WHERE id = ?
+        `);
+        
+        await deleteQuery.bind(projectId).run();
+        
+        console.log('[DEBUG] Project deleted successfully:', projectId);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '專案已成功刪除',
+          deleted_id: projectId
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] api-final.js - Error deleting project:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to delete project',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Update project by ID
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+$/) && (method === 'PUT' || method === 'PATCH')) {
+      try {
+        const projectId = path.split('/').pop();
+        const data = await request.json();
+        console.log('[DEBUG] api-final.js - Updating project:', projectId, data);
+        
+        // Check if project exists
+        const checkQuery = env.DB_ENGINEERING.prepare(`
+          SELECT id FROM projects WHERE id = ? AND status = 'active'
+        `);
+        
+        const project = await checkQuery.bind(projectId).first();
+        
+        if (!project) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project not found',
+            message: `專案 ${projectId} 不存在`
+          }), { status: 404, headers });
+        }
+        
+        // Build update query dynamically based on provided fields
+        const updateFields = [];
+        const values = [];
+        
+        if (data.name !== undefined) {
+          updateFields.push('name = ?');
+          values.push(data.name);
+        }
+        
+        if (data.opportunity_id !== undefined) {
+          updateFields.push('opportunity_id = ?');
+          values.push(data.opportunity_id);
+        }
+        
+        if (data.spc_engineering !== undefined) {
+          updateFields.push('spc_engineering = ?');
+          values.push(JSON.stringify(data.spc_engineering));
+        }
+        
+        if (data.cabinet_engineering !== undefined) {
+          updateFields.push('cabinet_engineering = ?');
+          values.push(JSON.stringify(data.cabinet_engineering));
+        }
+        
+        if (data.permissions !== undefined) {
+          updateFields.push('permissions = ?');
+          values.push(JSON.stringify(data.permissions));
+        }
+        
+        if (data.project_status !== undefined) {
+          updateFields.push('project_status = ?');
+          values.push(data.project_status);
+        }
+        
+        // Always update the updated_at timestamp
+        updateFields.push('updated_at = datetime("now")');
+        
+        if (updateFields.length === 1) {
+          // Only updated_at, nothing else to update
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'No fields to update',
+            message: '沒有提供要更新的欄位'
+          }), { status: 400, headers });
+        }
+        
+        // Add projectId at the end for WHERE clause
+        values.push(projectId);
+        
+        const updateQuery = env.DB_ENGINEERING.prepare(`
+          UPDATE projects 
+          SET ${updateFields.join(', ')}
+          WHERE id = ?
+        `);
+        
+        await updateQuery.bind(...values).run();
+        
+        // Fetch updated project
+        const fetchQuery = env.DB_ENGINEERING.prepare(`
+          SELECT * FROM projects WHERE id = ?
+        `);
+        
+        const updatedProject = await fetchQuery.bind(projectId).first();
+        
+        console.log('[DEBUG] Project updated successfully:', projectId);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '專案已成功更新',
+          project: updatedProject
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] api-final.js - Error updating project:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update project',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Project statistics
+    if (path === '/api/v1/projects/stats' && method === 'GET') {
+      try {
+        const statsQuery = env.DB_ENGINEERING.prepare(`
+          SELECT 
+            COUNT(*) as total,
+            0 as not_started,
+            0 as in_progress,
+            0 as maintenance,
+            0 as warranty,
+            0 as completed
+          FROM projects
+          WHERE status = 'active'
+        `);
+        
+        const stats = await statsQuery.first();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          stats: {
+            total: stats.total || 0,
+            by_status: {
+              not_started: stats.not_started || 0,
+              in_progress: stats.in_progress || 0,
+              maintenance: stats.maintenance || 0,
+              warranty: stats.warranty || 0,
+              completed: stats.completed || 0
+            }
+          }
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error getting project stats:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get stats',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
     // Opportunities
     if (path === '/api/v1/opportunities' && method === 'GET') {
       return new Response(JSON.stringify({

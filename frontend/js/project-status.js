@@ -127,18 +127,18 @@ const ProjectStatus = {
     updateProjectStatusLocally(projectId, newStatus, options = {}) {
         const { startDate, endDate } = options;
         
-        // 更新 localStorage 中的資料
-        const savedProject = localStorage.getItem('demo_created_project');
-        if (savedProject) {
-            const project = JSON.parse(savedProject);
-            if (project.id === projectId) {
-                project.project_status = newStatus;
-                if (startDate) project.start_date = startDate;
-                if (endDate) project.end_date = endDate;
-                project.updated_at = new Date().toISOString();
-                localStorage.setItem('demo_created_project', JSON.stringify(project));
-            }
-        }
+        // 不再更新 localStorage，避免重複顯示
+        // const savedProject = localStorage.getItem('demo_created_project');
+        // if (savedProject) {
+        //     const project = JSON.parse(savedProject);
+        //     if (project.id === projectId) {
+        //         project.project_status = newStatus;
+        //         if (startDate) project.start_date = startDate;
+        //         if (endDate) project.end_date = endDate;
+        //         project.updated_at = new Date().toISOString();
+        //         localStorage.setItem('demo_created_project', JSON.stringify(project));
+        //     }
+        // }
         
         console.log(`Local status update: Project ${projectId} status changed to ${newStatus}`);
         
