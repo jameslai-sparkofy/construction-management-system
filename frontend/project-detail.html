@@ -1390,11 +1390,15 @@
                     </button>
                     <button class="btn-settings">
                         <span>⚙️</span>
-                        <span>設定</span>
+                        <span>編輯</span>
                     </button>
                     <button class="btn-export">
                         <span>📥</span>
                         <span>匯出</span>
+                    </button>
+                    <button class="btn-delete" style="background: #fee2e2; color: #dc2626;">
+                        <span>🗑️</span>
+                        <span>刪除</span>
                     </button>
                 </div>
             </div>
@@ -2687,47 +2691,47 @@
                 });
             }
 
-            // Settings button
+            // Settings button (Edit)
             const settingsBtn = document.querySelector('.btn-settings');
             if (settingsBtn) {
-                settingsBtn.addEventListener('click', async () => {
-                    // Navigate to project settings (Step 4 of creation)
+                settingsBtn.addEventListener('click', () => {
+                    // 直接導航到編輯頁面
                     const projectId = new URLSearchParams(window.location.search).get('id');
                     if (projectId) {
-                        // Try to load project from API first
+                        // 使用標準的編輯模式 URL
+                        window.location.href = `project-create.html?id=${projectId}`;
+                    }
+                });
+            }
+
+            // Delete button
+            const deleteBtn = document.querySelector('.btn-delete');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const projectId = new URLSearchParams(window.location.search).get('id');
+                    const projectName = document.getElementById('projectName').textContent;
+                    
+                    if (projectId && confirm(`確定要刪除專案「${projectName}」嗎？此操作無法復原。`)) {
                         try {
                             const response = await fetch(
                                 `${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-clerk.lai-jameslai.workers.dev'}/api/v1/projects/${projectId}`,
                                 {
+                                    method: 'DELETE',
                                     headers: AuthUtils.getRequestHeaders()
                                 }
                             );
-                            
+
                             if (response.ok) {
-                                const result = await response.json();
-                                if (result.success && result.data) {
-                                    // Store the API data
-                                    localStorage.setItem('editingProjectId', projectId);
-                                    localStorage.setItem('editingProject', JSON.stringify(result.data));
-                                } else {
-                                    // Fallback to current project data
-                                    localStorage.setItem('editingProjectId', projectId);
-                                    localStorage.setItem('editingProject', JSON.stringify(currentProject));
-                                }
+                                alert('專案已成功刪除');
+                                window.location.href = 'project-list.html';
                             } else {
-                                // Fallback to current project data
-                                localStorage.setItem('editingProjectId', projectId);
-                                localStorage.setItem('editingProject', JSON.stringify(currentProject));
+                                const error = await response.json();
+                                throw new Error(error.error || '刪除失敗');
                             }
                         } catch (error) {
-                            console.error('Error loading project from API:', error);
-                            // Fallback to current project data
-                            localStorage.setItem('editingProjectId', projectId);
-                            localStorage.setItem('editingProject', JSON.stringify(currentProject));
+                            console.error('刪除專案失敗:', error);
+                            alert('刪除專案時發生錯誤：' + error.message);
                         }
-                        
-                        // Navigate to project-create with edit mode
-                        window.location.href = `project-create.html?mode=edit&id=${projectId}&step=4`;
                     }
                 });
             }
