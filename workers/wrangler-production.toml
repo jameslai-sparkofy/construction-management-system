@@ -1,10 +1,11 @@
-name = "construction-d1-api"
+name = "construction-api-production"
 main = "src/api-final.js"
 compatibility_date = "2024-11-06"
 
 [vars]
 ENVIRONMENT = "production"
 DEV_TOKEN = "prod-token-for-api"
+API_BASE_URL = "https://construction-api-production.lai-jameslai.workers.dev"
 
 # KV Namespaces (使用相同的 KV)
 [[kv_namespaces]]

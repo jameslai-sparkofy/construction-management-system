@@ -1,0 +1,74 @@
+表名,表說明,欄位名稱,欄位ID,資料類型,說明,範例值
+projects,專案表 (Project),ID,id,TEXT PRIMARY KEY,,proj_20250813_001
+,,關聯到 fx-crm-database 的 newopportunityobj,opportunity_id,TEXT NOT NULL,關聯到 fx-crm-database 的 newopportunityobj,96ce6b00-fbd7-4b09-bcd0-dcd09f8e7c01
+,,名稱,name,TEXT NOT NULL,,勝美-建功段-2023
+,,JSON 儲存 SPC 工程設定,spc_engineering,TEXT,JSON 儲存 SPC 工程設定,{"enabled":true,"siteCount":90,"teamCount":9}
+,,JSON 儲存浴櫃工程設定,cabinet_engineering,TEXT,JSON 儲存浴櫃工程設定,{"enabled":false}
+,,JSON 儲存維修單設定,maintenance,TEXT,JSON 儲存維修單設定,範例文字
+,,JSON 儲存進度管理公告設定,progress_management,TEXT,JSON 儲存進度管理公告設定,範例文字
+,,JSON 儲存權限設定,permissions,TEXT,JSON 儲存權限設定,{"owner":"user_001","teams":[{"name":"工班A","leaderId":"master_001","canViewOthers":true}]}
+,,JSON 儲存計算後的統計資料,cached_stats,TEXT,JSON 儲存計算後的統計資料 (building_count, unit_count, completion_rate),{"building_count":5,"unit_count":90,"completion_rate":45}
+,,統計資料最後更新時間,stats_updated_at,DATETIME,統計資料最後更新時間,2025-08-13 15:00:00
+,,active/completed/pending,status,TEXT DEFAULT 'active',active/completed/pending,active
+,,建立者,created_by,TEXT,,user_team_1_leader
+,,建立時間,created_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,更新時間,updated_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,,,,,
+users,使用者表 (USER),ID,id,TEXT PRIMARY KEY,,user_001
+,,手機號碼作為登入 ID,phone,TEXT UNIQUE NOT NULL,手機號碼作為登入 ID,0912345678
+,,手機末3碼作為密碼,password_suffix,TEXT NOT NULL,手機末3碼作為密碼,678
+,,名稱,name,TEXT,,王小明
+,,電子郵件,email,TEXT,,wang@example.com
+,,admin/owner/leader/member,role,TEXT DEFAULT 'member',admin/owner/leader/member,admin
+,,JSON 陣列儲存使用者可存取的專案,user_projects,TEXT,JSON 陣列儲存使用者可存取的專案,["proj_001","proj_002"]
+,,會話令牌,session_token,TEXT,,sess_1755066524374_xeiiby4q6
+,,最後登入,last_login,DATETIME,,2025-08-13 15:00:00
+,,是否啟用,is_active,INTEGER DEFAULT 1,,1
+,,建立時間,created_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,更新時間,updated_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,,,,,
+project_permissions,專案權限表 (關聯表),ID,id,INTEGER PRIMARY KEY AUTOINCREMENT,,1
+,,專案ID,project_id,TEXT NOT NULL,,範例文字
+,,使用者ID,user_id,TEXT NOT NULL,,範例文字
+,,admin/owner/leader/member,role,TEXT NOT NULL,admin/owner/leader/member,範例文字
+,,SPC/CABINET/ALL,engineering_type,TEXT,SPC/CABINET/ALL,範例文字
+,,可編輯,can_edit,INTEGER DEFAULT 0,,1
+,,是否可以看到其他工班進度,can_view_others,INTEGER DEFAULT 0,是否可以看到其他工班進度,1
+,,建立時間,created_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,,,,,
+construction_progress,施工進度表 (本地快取),ID,id,INTEGER PRIMARY KEY AUTOINCREMENT,,1
+,,專案ID,project_id,TEXT NOT NULL,,範例文字
+,,關聯到 fx-crm-database 的 object_8w9cb__c,site_id,TEXT NOT NULL,關聯到 fx-crm-database 的 object_8w9cb__c,site_001
+,,SPC/CABINET,engineering_type,TEXT NOT NULL,SPC/CABINET,SPC
+,,pending/in_progress/completed,status,TEXT DEFAULT 'pending',pending/in_progress/completed,in_progress
+,,施工前照片,before_photo_url,TEXT,,https://r2.url/before.jpg
+,,施工後照片,after_photo_url,TEXT,,範例文字
+,,平面圖,floor_plan_url,TEXT,,範例文字
+,,施工面積,construction_area,REAL,,28.5
+,,施工日期,construction_date,DATE,,2025-08-13
+,,工人ID,worker_id,TEXT,,範例文字
+,,工人姓名,worker_name,TEXT,,李師傅
+,,備註,notes,TEXT,,一樓大廳已完工
+,,外部顯示名稱,external_display_name,TEXT,外部顯示名稱,範例文字
+,,建立時間,created_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,更新時間,updated_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,,,,,
+login_logs,登入記錄表,ID,id,INTEGER PRIMARY KEY AUTOINCREMENT,,1
+,,使用者ID,user_id,TEXT,,範例文字
+,,手機號碼,phone,TEXT,,範例文字
+,,登入時間,login_time,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,IP位址,ip_address,TEXT,,範例文字
+,,使用者代理,user_agent,TEXT,,範例文字
+,,成功,success,INTEGER DEFAULT 1,,1
+,,錯誤訊息,error_message,TEXT,,範例文字
+,,,,,,
+project_activities,專案活動記錄表,ID,id,INTEGER PRIMARY KEY AUTOINCREMENT,,1
+,,專案ID,project_id,TEXT NOT NULL,,範例文字
+,,使用者ID,user_id,TEXT,,範例文字
+,,create/update/delete/complete,activity_type,TEXT,create/update/delete/complete,範例文字
+,,site/permission/photo,target_type,TEXT,site/permission/photo,範例文字
+,,目標ID,target_id,TEXT,,範例文字
+,,描述,description,TEXT,,範例文字
+,,JSON 儲存額外資料,metadata,TEXT,JSON 儲存額外資料,範例文字
+,,建立時間,created_at,DATETIME DEFAULT CURRENT_TIMESTAMP,,2025-08-13 15:00:00
+,,,,,,

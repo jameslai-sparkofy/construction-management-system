@@ -2,7 +2,7 @@
 const CONFIG = {
   API: {
     // 開發環境 API
-    WORKER_API_URL: 'https://construction-api-develop.lai-jameslai.workers.dev',
+    WORKER_API_URL: 'https://construction-api-development.lai-jameslai.workers.dev',
     
     // CRM API (共用)
     CRM_API_URL: 'https://fx-d1-rest-api.lai-jameslai.workers.dev',

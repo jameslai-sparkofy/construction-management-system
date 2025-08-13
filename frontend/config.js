@@ -6,8 +6,8 @@
 const CONFIG = {
     // API 配置
     API: {
-        // Cloudflare Workers API - 實際的 Worker URL
-        WORKER_API_URL: 'https://construction-d1-api.lai-jameslai.workers.dev',
+        // Cloudflare Workers API - 生產環境 Worker URL
+        WORKER_API_URL: 'https://construction-api-production.lai-jameslai.workers.dev',
         
         // CRM REST API
         CRM_API_URL: 'https://fx-d1-rest-api.lai-jameslai.workers.dev',

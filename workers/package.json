@@ -37,7 +37,7 @@
     "prettier": "^3.1.1",
     "typescript": "^5.3.3",
     "vitest": "^1.1.0",
-    "wrangler": "^3.78.12"
+    "wrangler": "^4.29.1"
   },
   "dependencies": {
     "@clerk/backend": "^2.7.0"
