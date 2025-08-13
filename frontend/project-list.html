@@ -408,79 +408,6 @@
             color: #dc2626;
         }
 
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: var(--surface);
-            border-radius: 12px;
-            padding: 2rem;
-            max-width: 400px;
-            width: 90%;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .modal-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--heading);
-        }
-
-        .modal-message {
-            color: var(--body-text);
-            margin-bottom: 1.5rem;
-            line-height: 1.5;
-        }
-
-        .modal-actions {
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-        }
-
-        .modal-btn {
-            padding: 0.75rem 1.25rem;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: none;
-        }
-
-        .modal-btn.cancel {
-            background: var(--background);
-            color: var(--body-text);
-        }
-
-        .modal-btn.cancel:hover {
-            background: var(--border);
-        }
-
-        .modal-btn.confirm {
-            background: #dc2626;
-            color: white;
-        }
-
-        .modal-btn.confirm:hover {
-            background: #b91c1c;
-        }
 
         /* Loading State */
         .loading {
@@ -680,10 +607,7 @@
                         <th>狀態</th>
                         <th>進度</th>
                         <th>案場數</th>
-                        <th>開始日期</th>
-                        <th>結束日期</th>
                         <th>最後更新</th>
-                        <th>操作</th>
                     </tr>
                 </thead>
                 <tbody id="projectsTableBody">
@@ -703,19 +627,6 @@
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal" id="deleteModal">
-        <div class="modal-content">
-            <div class="modal-title">確認刪除</div>
-            <div class="modal-message" id="deleteMessage">
-                確定要刪除這個專案嗎？此操作無法復原。
-            </div>
-            <div class="modal-actions">
-                <button class="modal-btn cancel" onclick="closeDeleteModal()">取消</button>
-                <button class="modal-btn confirm" onclick="confirmDelete()">確認刪除</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Load configuration first -->
     <script src="config.js"></script>
@@ -735,7 +646,6 @@
         let currentUser = null;
         let allProjects = [];
         let filteredProjects = [];
-        let projectToDelete = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
@@ -861,6 +771,15 @@
         // Create project row
         function createProjectRow(project) {
             const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.onclick = (e) => {
+                // 如果點擊的是狀態選擇器，不要觸發導航
+                if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') {
+                    e.stopPropagation();
+                    return;
+                }
+                window.location.href = `project-detail.html?id=${project.id}`;
+            };
 
             const engineeringTags = (project.engineeringTypes || []).map(type => {
                 const className = type === 'SPC' ? 'tag-spc' : 'tag-cabinet';
@@ -873,16 +792,19 @@
                 project.project_status || 'not_started',
                 {
                     className: 'status-select-inline',
-                    onChange: (e) => updateProjectStatus(project.id, e.target.value)
+                    onChange: (e) => {
+                        e.stopPropagation();
+                        updateProjectStatus(project.id, e.target.value);
+                    }
                 }
             );
 
             row.innerHTML = `
                 <td>
-                    <a href="project-detail.html?id=${project.id}" class="project-name">
+                    <div class="project-name">
                         ${project.name}
-                    </a>
-                    <div class="company-name">${project.company || project.opportunity_id}</div>
+                    </div>
+                    <div class="company-name">${project.company || project.company_name || ''}</div>
                 </td>
                 <td>
                     <div class="engineering-tags">
@@ -893,30 +815,15 @@
                 <td>
                     <div class="progress-cell">
                         <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${project.progress}%"></div>
+                            <div class="progress-fill" style="width: ${project.progress || 0}%"></div>
                         </div>
-                        <div class="progress-text">${project.progress}%</div>
+                        <div class="progress-text">${project.progress || 0}%</div>
                     </div>
                 </td>
                 <td>
                     ${(project.stats && project.stats.completedSites) || project.completed_count || 0} / ${(project.stats && project.stats.totalSites) || project.unit_count || 0}
                 </td>
-                <td>${ProjectStatus.formatDate(project.start_date)}</td>
-                <td>${ProjectStatus.formatDate(project.end_date)}</td>
-                <td>${project.lastUpdate}</td>
-                <td>
-                    <div class="actions">
-                        <button class="action-btn" onclick="viewDetails('${project.id}')">
-                            查看
-                        </button>
-                        <button class="action-btn" onclick="editProject('${project.id}')">
-                            編輯
-                        </button>
-                        <button class="action-btn delete" onclick="deleteProject('${project.id}', '${project.name}')">
-                            刪除
-                        </button>
-                    </div>
-                </td>
+                <td>${project.lastUpdate || new Date().toLocaleDateString('zh-TW')}</td>
             `;
 
             // 將狀態選擇器插入到狀態單元格
@@ -998,73 +905,7 @@
             updateStatsFromLocal(filteredProjects);
         }
 
-        // View project details
-        function viewDetails(projectId) {
-            window.location.href = `project-detail.html?id=${projectId}`;
-        }
 
-        // Edit project
-        function editProject(projectId) {
-            // 跳轉到 project-create.html 並傳入專案 ID 進行編輯
-            window.location.href = `project-create.html?id=${projectId}`;
-        }
-
-        // Delete project
-        function deleteProject(projectId, projectName) {
-            projectToDelete = projectId;
-            const message = `確定要刪除專案「${projectName}」嗎？此操作無法復原。`;
-            document.getElementById('deleteMessage').textContent = message;
-            document.getElementById('deleteModal').classList.add('active');
-        }
-
-        // Close delete modal
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').classList.remove('active');
-            projectToDelete = null;
-        }
-
-        // Confirm delete
-        async function confirmDelete() {
-            if (!projectToDelete) return;
-
-            try {
-                // 呼叫 V2 刪除 API
-                const apiVersion = USE_V2_API ? 'v2' : 'v1';
-                const response = await fetch(`${WORKER_API_URL}/api/${apiVersion}/projects/${projectToDelete}`, {
-                    method: 'DELETE',
-                    headers: AuthUtils.getRequestHeaders()
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Delete failed');
-                }
-
-                // 從列表中移除專案
-                allProjects = allProjects.filter(p => p.id !== projectToDelete);
-                filteredProjects = filteredProjects.filter(p => p.id !== projectToDelete);
-                
-                // 重新顯示列表
-                displayProjects(filteredProjects.length > 0 ? filteredProjects : allProjects);
-                updateStatsFromLocal(filteredProjects.length > 0 ? filteredProjects : allProjects);
-                
-                // 檢查是否還有專案
-                if (allProjects.length === 0) {
-                    document.getElementById('tableContainer').style.display = 'none';
-                    document.getElementById('emptyState').style.display = 'block';
-                }
-
-                // 關閉 modal
-                closeDeleteModal();
-                
-                // 顯示成功訊息（可選）
-                alert('專案已成功刪除');
-                
-            } catch (error) {
-                console.error('刪除失敗:', error);
-                alert('刪除專案時發生錯誤，請稍後再試');
-            }
-        }
 
         // 點擊統計卡片篩選專案
         function filterByStatus(status) {
@@ -1077,14 +918,22 @@
             if (status === 'all') {
                 statusFilter.value = '';
                 displayProjects(allProjects);
+                updateStatsFromLocal(allProjects);
             } else {
                 statusFilter.value = status;
-                const filtered = allProjects.filter(project => project.project_status === status);
+                // 修正：對於 not_started 狀態，要包含沒有設定狀態的專案
+                const filtered = allProjects.filter(project => {
+                    if (status === 'not_started') {
+                        return !project.project_status || project.project_status === 'not_started';
+                    }
+                    return project.project_status === status;
+                });
                 displayProjects(filtered);
+                updateStatsFromLocal(filtered);
                 
                 // 設置對應卡片為 active
                 const activeCard = [...statCards].find(card => 
-                    card.getAttribute('onclick').includes(status)
+                    card.getAttribute('onclick').includes(`'${status}'`)
                 );
                 if (activeCard) activeCard.classList.add('active');
             }
