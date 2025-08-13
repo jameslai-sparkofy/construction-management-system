@@ -40,10 +40,6 @@
     "wrangler": "^3.78.12"
   },
   "dependencies": {
-    "@clerk/backend": "^2.6.3",
-    "@supabase/supabase-js": "^2.54.0",
-    "itty-router": "^4.2.1",
-    "jsonwebtoken": "^9.0.2",
-    "uuid": "^9.0.1"
+    "@clerk/backend": "^2.7.0"
   }
 }

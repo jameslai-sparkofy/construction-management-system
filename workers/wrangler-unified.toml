@@ -1,0 +1,31 @@
+name = "construction-api-unified"
+main = "src/unified-api.js"
+compatibility_date = "2024-11-06"
+
+# 環境變數
+[vars]
+ENVIRONMENT = "production"
+API_VERSION = "3.0.0"
+
+# KV Namespaces (Session 管理)
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "3d3356dca3684619bea5750829dbcaa5"
+
+# D1 Databases
+# 工程管理資料庫
+[[d1_databases]]
+binding = "DB_ENGINEERING"
+database_name = "engineering-management"
+database_id = "21fce5cd-8364-4dc2-be7f-6d68cbd6fca9"
+
+# CRM 資料庫
+[[d1_databases]]
+binding = "DB_CRM"
+database_name = "fx-crm-database"
+database_id = "332221d8-61cb-4084-88dc-394e208ae8b4"
+
+# R2 Bucket (未來檔案上傳用)
+[[r2_buckets]]
+binding = "CONSTRUCTION_PHOTOS"
+bucket_name = "construction-photos"

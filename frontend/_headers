@@ -1,0 +1,11 @@
+# Headers for all HTML files
+/*.html
+  Content-Type: text/html; charset=utf-8
+
+# Headers for CSS files
+/*.css
+  Content-Type: text/css; charset=utf-8
+
+# Headers for JavaScript files  
+/*.js
+  Content-Type: application/javascript; charset=utf-8

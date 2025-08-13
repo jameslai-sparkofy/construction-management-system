@@ -1,0 +1,6 @@
+name = "construction-api-simple"
+main = "src/api-final.js"
+compatibility_date = "2024-11-06"
+
+[vars]
+ENVIRONMENT = "production"

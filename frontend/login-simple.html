@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 元心建材工程管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl card-shadow p-8 w-full max-w-md">
+        <div class="text-center mb-8">
+            <div class="text-6xl mb-4">🏗️</div>
+            <h1 class="text-3xl font-bold text-gray-800">元心建材</h1>
+            <p class="text-gray-600 mt-2">工程管理系統</p>
+        </div>
+
+        <!-- 登入表單 -->
+        <form id="loginForm" class="space-y-6">
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">手機號碼</label>
+                <input 
+                    type="tel" 
+                    id="phone"
+                    placeholder="0912345678"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                >
+            </div>
+
+            <div>
+                <label class="block text-gray-700 font-medium mb-2">密碼（手機末3碼）</label>
+                <input 
+                    type="password" 
+                    id="password"
+                    placeholder="678"
+                    maxlength="3"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                    required
+                >
+            </div>
+
+            <button 
+                type="submit" 
+                class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 transition duration-200 font-medium"
+            >
+                登入
+            </button>
+        </form>
+
+        <!-- 測試帳號提示 -->
+        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+            <p class="text-sm text-blue-800">
+                <strong>測試帳號：</strong><br>
+                手機：0912345678<br>
+                密碼：678
+            </p>
+        </div>
+
+        <!-- 錯誤訊息 -->
+        <div id="error-message" class="hidden mt-4 p-4 bg-red-50 text-red-700 rounded-lg"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/unified-auth.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const phone = document.getElementById('phone').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('error-message');
+            
+            // 使用統一認證系統
+            const result = await window.UnifiedAuth.loginSimple(phone, password);
+            
+            if (result.success) {
+                // 登入成功，跳轉到專案列表
+                window.location.href = 'project-list.html';
+            } else {
+                errorDiv.textContent = result.error || '登入失敗';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

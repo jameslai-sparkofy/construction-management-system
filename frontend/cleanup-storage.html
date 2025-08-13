@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>清理 LocalStorage - 元心建材工程管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6">清理 LocalStorage 測試資料</h1>
+            
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold mb-3">目前 LocalStorage 內容：</h2>
+                <div id="current-storage" class="bg-gray-50 p-4 rounded border border-gray-200 font-mono text-sm max-h-96 overflow-auto"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <button onclick="cleanTestProjects()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    清理測試專案資料
+                </button>
+                <button onclick="cleanAllProjects()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    清理所有專案資料
+                </button>
+                <button onclick="cleanAuthData()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                    清理認證資料
+                </button>
+                <button onclick="cleanAll()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800">
+                    清理所有 LocalStorage
+                </button>
+            </div>
+            
+            <div id="result" class="hidden p-4 rounded"></div>
+            
+            <div class="mt-6 pt-6 border-t">
+                <button onclick="refreshDisplay()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mr-4">
+                    重新整理顯示
+                </button>
+                <a href="project-list.html" class="inline-block bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                    返回專案列表
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 顯示當前 localStorage 內容
+        function displayCurrentStorage() {
+            const storageDiv = document.getElementById('current-storage');
+            const items = {};
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                let value = localStorage.getItem(key);
+                
+                // 嘗試解析 JSON
+                try {
+                    const parsed = JSON.parse(value);
+                    value = JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // 保持原始值
+                }
+                
+                items[key] = value;
+            }
+            
+            if (Object.keys(items).length === 0) {
+                storageDiv.innerHTML = '<span class="text-gray-500">LocalStorage 是空的</span>';
+            } else {
+                storageDiv.innerHTML = Object.entries(items)
+                    .map(([key, value]) => {
+                        const preview = value.length > 200 ? value.substring(0, 200) + '...' : value;
+                        return `<div class="mb-4">
+                            <div class="font-bold text-blue-600">${key}:</div>
+                            <pre class="mt-1 text-xs whitespace-pre-wrap break-all">${preview}</pre>
+                        </div>`;
+                    })
+                    .join('');
+            }
+        }
+        
+        // 清理測試專案資料
+        function cleanTestProjects() {
+            let cleaned = 0;
+            const testPatterns = [
+                /^project_/,
+                /^demo_/,
+                /^test_/,
+                /測試/,
+                /Demo/,
+                /Test/
+            ];
+            
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                
+                // 檢查是否為測試資料
+                if (testPatterns.some(pattern => pattern.test(key))) {
+                    keysToRemove.push(key);
+                    continue;
+                }
+                
+                // 檢查值內容
+                try {
+                    const value = localStorage.getItem(key);
+                    const parsed = JSON.parse(value);
+                    
+                    if (Array.isArray(parsed)) {
+                        // 過濾測試專案
+                        const filtered = parsed.filter(item => {
+                            if (typeof item === 'object' && item.name) {
+                                return !testPatterns.some(pattern => pattern.test(item.name));
+                            }
+                            return true;
+                        });
+                        
+                        if (filtered.length !== parsed.length) {
+                            localStorage.setItem(key, JSON.stringify(filtered));
+                            cleaned++;
+                        }
+                    }
+                } catch (e) {
+                    // 忽略非 JSON 資料
+                }
+            }
+            
+            // 移除標記的 keys
+            keysToRemove.forEach(key => {
+                localStorage.removeItem(key);
+                cleaned++;
+            });
+            
+            showResult(`已清理 ${cleaned} 個測試項目`, 'success');
+            refreshDisplay();
+        }
+        
+        // 清理所有專案資料
+        function cleanAllProjects() {
+            let cleaned = 0;
+            const projectKeys = [];
+            
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.includes('project') || key === 'projects' || key === 'sites') {
+                    projectKeys.push(key);
+                }
+            }
+            
+            projectKeys.forEach(key => {
+                localStorage.removeItem(key);
+                cleaned++;
+            });
+            
+            showResult(`已清理 ${cleaned} 個專案相關項目`, 'success');
+            refreshDisplay();
+        }
+        
+        // 清理認證資料
+        function cleanAuthData() {
+            const authKeys = ['auth_token', 'user_info', 'token', 'session', 'user'];
+            let cleaned = 0;
+            
+            authKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    cleaned++;
+                }
+            });
+            
+            showResult(`已清理 ${cleaned} 個認證相關項目（將需要重新登入）`, 'warning');
+            refreshDisplay();
+        }
+        
+        // 清理所有 localStorage
+        function cleanAll() {
+            const count = localStorage.length;
+            localStorage.clear();
+            showResult(`已清理所有 ${count} 個項目`, 'error');
+            refreshDisplay();
+        }
+        
+        // 顯示結果
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.classList.remove('hidden', 'bg-green-100', 'bg-yellow-100', 'bg-red-100');
+            resultDiv.classList.remove('text-green-700', 'text-yellow-700', 'text-red-700');
+            
+            if (type === 'success') {
+                resultDiv.classList.add('bg-green-100', 'text-green-700');
+            } else if (type === 'warning') {
+                resultDiv.classList.add('bg-yellow-100', 'text-yellow-700');
+            } else if (type === 'error') {
+                resultDiv.classList.add('bg-red-100', 'text-red-700');
+            }
+            
+            resultDiv.textContent = message;
+            
+            setTimeout(() => {
+                resultDiv.classList.add('hidden');
+            }, 5000);
+        }
+        
+        // 重新整理顯示
+        function refreshDisplay() {
+            displayCurrentStorage();
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            displayCurrentStorage();
+        });
+    </script>
+</body>
+</html>

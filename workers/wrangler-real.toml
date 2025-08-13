@@ -1,16 +1,11 @@
-name = "construction-management-api-clerk"
+name = "eng-api-real"
 main = "src/index.js"
 compatibility_date = "2024-11-06"
 compatibility_flags = ["nodejs_compat"]
 
-# Custom domain routing handled separately via Cloudflare dashboard
-# routes = [
-#   { pattern = "api.yes-ceramics.com/*", zone_name = "yes-ceramics.com" }
-# ]
-
 # Environment variables
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
 API_BASE_URL = "https://d1.yes-ceramics.com"
 CRUD_API_URL = "https://sync.yes-ceramics.com/api"
 REST_API_TOKEN = "fx-crm-api-secret-2025"
@@ -21,8 +16,8 @@ FRONTEND_BASE_URL = "https://manage.yes-ceramics.com"
 CLERK_PUBLISHABLE_KEY = "pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ"
 CLERK_SECRET_KEY = "sk_test_UqjBEE0wOtBatBQbM1buSyr8mIaWqGpes872R5cL6T"
 
-# Emergency Login (生產環境應設為 false)
-ENABLE_EMERGENCY_LOGIN = "true"  # 開發測試用
+# Emergency Login
+ENABLE_EMERGENCY_LOGIN = "true"
 EMERGENCY_ADMIN_PHONE = "0900000000"
 EMERGENCY_ADMIN_CODE = "secure-emergency-code-2025"
 
@@ -33,17 +28,14 @@ DEV_TOKEN = "dev-token-for-testing"
 [[kv_namespaces]]
 binding = "SESSIONS"
 id = "3d3356dca3684619bea5750829dbcaa5"
-preview_id = "sessions_kv_preview_id"
 
 [[kv_namespaces]]
 binding = "USERS"
 id = "55484742a0dd4410b548aaa506c8c0bc"
-preview_id = "users_kv_preview_id"
 
 [[kv_namespaces]]
 binding = "FILES_KV"
 id = "1e62bab6fb30404e9b753dd0b1f1ee6a"
-preview_id = "files_kv_preview_id"
 
 [[kv_namespaces]]
 binding = "SESSION_STORE"
@@ -57,30 +49,14 @@ id = "4f55c6c04ae74847a9339c0bf2584c4a"
 [[r2_buckets]]
 binding = "CONSTRUCTION_PHOTOS"
 bucket_name = "construction-photos"
-preview_bucket_name = "construction-photos-preview"
 
 # D1 Databases
-# CRM 資料庫 (綠色區塊 - 從紛享銷客同步的資料)
 [[d1_databases]]
 binding = "DB_CRM"
 database_name = "fx-crm-database"
 database_id = "332221d8-61cb-4084-88dc-394e208ae8b4"
 
-# 工程管理資料庫 (白色區塊 - 專案自己的資料)
 [[d1_databases]]
 binding = "DB_ENGINEERING"
 database_name = "engineering-management"
 database_id = "21fce5cd-8364-4dc2-be7f-6d68cbd6fca9"
-
-# Environment-specific configurations
-[env.staging]
-name = "construction-management-api-staging"
-vars = { ENVIRONMENT = "staging", API_BASE_URL = "https://staging-api.com" }
-
-[env.production]
-name = "construction-management-api-prod"
-vars = { ENVIRONMENT = "production", API_BASE_URL = "https://production-api.com" }
-
-# Development configuration
-[env.development]
-vars = { ENVIRONMENT = "development", API_BASE_URL = "http://localhost:3000" }

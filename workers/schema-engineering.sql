@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS projects (
   maintenance TEXT, -- JSON 儲存維修單設定
   progress_management TEXT, -- JSON 儲存進度管理公告設定
   permissions TEXT, -- JSON 儲存權限設定
+  cached_stats TEXT, -- JSON 儲存計算後的統計資料 (building_count, unit_count, completion_rate)
+  stats_updated_at DATETIME, -- 統計資料最後更新時間
   status TEXT DEFAULT 'active', -- active/completed/pending
   created_by TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

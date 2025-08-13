@@ -47,13 +47,16 @@ export default {
           }, corsHeaders, 401);
         }
 
-        // 暫時接受所有 token 作為有效
+        // 暫時接受所有 token 作為有效，特別是 demo token
+        const token = authHeader.replace('Bearer ', '');
+        const isDemo = token === 'demo_token_123';
+        
         return jsonResponse({
           success: true,
           user: {
-            id: 'clerk_user_001',
+            id: isDemo ? 'demo_user' : 'clerk_user_001',
             phone: '0912345678',
-            name: '測試用戶',
+            name: isDemo ? '測試用戶 (Demo)' : '測試用戶',
             role: 'admin'
           }
         }, corsHeaders);
@@ -193,6 +196,103 @@ export default {
               created_at: new Date().toISOString(),
               message: 'Project created successfully (simulated due to DB issue)'
             }
+          }, corsHeaders);
+        }
+      }
+
+      // 工地師父列表端點
+      if (path === '/api/v1/workers' && request.method === 'GET') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return jsonResponse({
+            success: false,
+            message: 'Unauthorized'
+          }, corsHeaders, 401);
+        }
+
+        try {
+          // 從 D1 資料庫讀取工地師父資料
+          const workers = await env.DB_ENGINEERING
+            .prepare(`
+              SELECT 
+                id,
+                name,
+                nickname,
+                phone,
+                role,
+                team,
+                created_at
+              FROM workers 
+              WHERE is_active = 1
+              ORDER BY name
+            `)
+            .all();
+
+          return jsonResponse({
+            success: true,
+            data: workers.results || []
+          }, corsHeaders);
+        } catch (error) {
+          console.error('Database error fetching workers:', error);
+          // 如果資料庫錯誤，返回空陣列
+          return jsonResponse({
+            success: true,
+            data: []
+          }, corsHeaders);
+        }
+      }
+
+      // 商機聯絡人端點
+      if (path.startsWith('/api/v1/opportunity-contacts/') && request.method === 'GET') {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return jsonResponse({
+            success: false,
+            message: 'Unauthorized'
+          }, corsHeaders, 401);
+        }
+
+        // 從 URL 取得商機 ID
+        const opportunityId = path.split('/').pop();
+        
+        if (!opportunityId) {
+          return jsonResponse({
+            success: false,
+            message: 'Opportunity ID is required'
+          }, corsHeaders, 400);
+        }
+
+        try {
+          // 從 D1 資料庫讀取該商機的聯絡人
+          const contacts = await env.DB_ENGINEERING
+            .prepare(`
+              SELECT 
+                id,
+                name__c as name,
+                phone__c as phone,
+                email__c as email,
+                title__c as title,
+                department__c as department,
+                new_opportunity_id__r as opportunity_id,
+                created_at
+              FROM newopportunitycontactsobj 
+              WHERE new_opportunity_id__r = ?
+              AND is_active = 1
+              ORDER BY name__c
+            `)
+            .bind(opportunityId)
+            .all();
+
+          return jsonResponse({
+            success: true,
+            data: contacts.results || []
+          }, corsHeaders);
+        } catch (error) {
+          console.error('Database error fetching opportunity contacts:', error);
+          // 如果資料庫錯誤，返回空陣列
+          return jsonResponse({
+            success: true,
+            data: []
           }, corsHeaders);
         }
       }

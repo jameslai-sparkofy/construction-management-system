@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>編輯專案 - 元心建材管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+
+        .form-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #4f46e5;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>編輯專案</h1>
+    </div>
+
+    <div class="container">
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>載入專案資料中...</p>
+        </div>
+
+        <div class="form-container" id="formContainer" style="display: none;">
+            <form id="editForm">
+                <div class="form-group">
+                    <label class="form-label" for="projectName">專案名稱 *</label>
+                    <input type="text" id="projectName" class="form-input" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="opportunityId">商機編號</label>
+                    <input type="text" id="opportunityId" class="form-input" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="projectStatus">專案狀態</label>
+                    <select id="projectStatus" class="form-select">
+                        <option value="pending">待開始</option>
+                        <option value="active">進行中</option>
+                        <option value="completed">已完成</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="projectNotes">專案備註</label>
+                    <textarea id="projectNotes" class="form-textarea" placeholder="輸入專案相關備註..."></textarea>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn btn-secondary" onclick="goBack()">
+                        取消
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        儲存變更
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // API configuration
+        const WORKER_API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8787' 
+            : 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
+
+        let currentProject = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+            
+            if (!projectId) {
+                alert('未指定專案');
+                goBack();
+                return;
+            }
+
+            loadProject(projectId);
+        });
+
+        // Load project data
+        async function loadProject(projectId) {
+            const loadingEl = document.getElementById('loading');
+            const formEl = document.getElementById('formContainer');
+            
+            loadingEl.style.display = 'block';
+            formEl.style.display = 'none';
+
+            try {
+                // Try to load from localStorage first
+                const localProjects = JSON.parse(localStorage.getItem('local_projects') || '[]');
+                const project = localProjects.find(p => p.id === projectId);
+                
+                if (project) {
+                    currentProject = project;
+                    populateForm(project);
+                } else {
+                    // Try API
+                    const token = localStorage.getItem('auth_token');
+                    
+                    if (!token) {
+                        alert('請先登入');
+                        window.location.href = 'login-simple.html';
+                        return;
+                    }
+                    const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.project) {
+                            currentProject = data.project;
+                            populateForm(data.project);
+                        } else {
+                            throw new Error('專案未找到');
+                        }
+                    } else {
+                        throw new Error('無法載入專案');
+                    }
+                }
+
+                loadingEl.style.display = 'none';
+                formEl.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading project:', error);
+                alert('載入專案失敗：' + error.message);
+                goBack();
+            }
+        }
+
+        // Populate form with project data
+        function populateForm(project) {
+            document.getElementById('projectName').value = project.name || '';
+            document.getElementById('opportunityId').value = project.opportunity_id || project.company || '';
+            document.getElementById('projectStatus').value = project.status || 'active';
+            document.getElementById('projectNotes').value = project.notes || '';
+        }
+
+        // Handle form submission
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('projectName').value,
+                status: document.getElementById('projectStatus').value,
+                notes: document.getElementById('projectNotes').value
+            };
+
+            try {
+                // Save to localStorage
+                const localProjects = JSON.parse(localStorage.getItem('local_projects') || '[]');
+                const projectIndex = localProjects.findIndex(p => p.id === currentProject.id);
+                
+                if (projectIndex >= 0) {
+                    // Update existing project
+                    localProjects[projectIndex] = {
+                        ...localProjects[projectIndex],
+                        ...formData,
+                        updated_at: new Date().toISOString()
+                    };
+                    localStorage.setItem('local_projects', JSON.stringify(localProjects));
+                }
+
+                // TODO: Also try to save to API when available
+                
+                alert('專案已成功更新！');
+                goBack();
+
+            } catch (error) {
+                console.error('Error saving project:', error);
+                alert('儲存專案失敗：' + error.message);
+            }
+        });
+
+        // Go back to project list
+        function goBack() {
+            window.location.href = 'project-list.html';
+        }
+    </script>
+</body>
+</html>

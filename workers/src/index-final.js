@@ -1,9 +1,7 @@
 /**
  * Construction Management API - Final Version
- * 統一權限管理系統 with Clerk Integration
+ * 統一權限管理系統
  */
-
-import { verifyClerkToken, verifyEmergencyCredentials, generateEmergencyToken } from './services/clerkAuth.js';
 
 export default {
   async fetch(request, env, ctx) {
@@ -27,75 +25,19 @@ export default {
     try {
       // Health check
       if (path === '/health') {
-        return jsonResponse({ 
-          status: 'healthy', 
-          timestamp: new Date().toISOString(),
-          version: '2.0.1',
-          hasAuth: true
-        }, corsHeaders);
-      }
-      
-      // Test endpoint
-      if (path === '/api/v1/auth/test') {
-        const body = await request.text();
-        return jsonResponse({ 
-          message: 'Auth test endpoint',
-          method: request.method,
-          headers: Object.fromEntries(request.headers),
-          body: body,
-          bodyLength: body.length,
-          path: path
-        }, corsHeaders);
+        return jsonResponse({ status: 'healthy', timestamp: new Date().toISOString() }, corsHeaders);
       }
 
       // API v1 routes
       if (path.startsWith('/api/v1/')) {
         const apiPath = path.replace('/api/v1/', '');
         
-        // Public endpoints (no auth required)
-        
-        // Clerk authentication endpoint
-        if (apiPath === 'auth/clerk/verify' && method === 'POST') {
-          return await handleClerkAuth(request, env, corsHeaders);
-        }
-        
-        // Emergency login endpoint (hidden)
-        if (apiPath === 'auth/emergency' && method === 'POST') {
-          return await handleEmergencyLogin(request, env, corsHeaders);
-        }
-        
-        // Legacy simple auth (will be deprecated)
-        if (apiPath === 'auth/login' && method === 'POST') {
-          return await handleLogin(request, env, corsHeaders);
-        }
-        
-        if (apiPath === 'auth/verify' && method === 'GET') {
-          return await verifyToken(request, env, corsHeaders);
-        }
-        
-        // Protected endpoints (auth required)
-        const authResult = await authenticateRequest(request, env);
-        if (!authResult.success) {
-          return jsonResponse({ error: authResult.error }, corsHeaders, 401);
-        }
-        
         // Projects endpoints
-        if (apiPath === 'projects') {
-          if (method === 'GET') {
-            return await getProjects(env, corsHeaders, authResult.user);
-          }
-          if (method === 'POST') {
-            return await createProject(request, env, corsHeaders);
-          }
+        if (apiPath === 'projects' && method === 'POST') {
+          return await createProject(request, env, corsHeaders);
         }
         
         if (apiPath.startsWith('projects/')) {
-          // Handle special project routes first (before treating as projectId)
-          if (apiPath === 'projects/stats' && method === 'GET') {
-            return await getProjectStats(env, corsHeaders, authResult.user);
-          }
-          
-          // Then handle individual project operations
           const projectId = apiPath.split('/')[1];
           
           if (method === 'GET') {
@@ -109,11 +51,11 @@ export default {
           if (method === 'DELETE') {
             return await deleteProject(projectId, env, corsHeaders);
           }
-          
-          // Update project status
-          if (method === 'PATCH' && apiPath.endsWith('/status')) {
-            return await updateProjectStatus(projectId, request, env, corsHeaders);
-          }
+        }
+        
+        // User authentication
+        if (apiPath === 'auth/login' && method === 'POST') {
+          return await handleLogin(request, env, corsHeaders);
         }
         
         // Permissions check
@@ -135,7 +77,7 @@ export default {
 
       // Demo data creation
       if (path === '/create-demo' && method === 'GET') {
-        return await createDemoData(env, corsHeaders);
+        return await createDemoProject(env, corsHeaders);
       }
 
       return jsonResponse({ error: 'Endpoint not found' }, corsHeaders, 404);
@@ -159,104 +101,6 @@ function jsonResponse(data, headers, status = 200) {
   });
 }
 
-// Authenticate request
-async function authenticateRequest(request, env) {
-  const authHeader = request.headers.get('Authorization');
-  
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return { success: false, error: 'No authorization token' };
-  }
-  
-  const token = authHeader.replace('Bearer ', '');
-  
-  // 1. Check emergency token
-  if (token.startsWith('emergency_')) {
-    if (env.ENABLE_EMERGENCY_LOGIN === 'true') {
-      return {
-        success: true,
-        user: {
-          id: 'emergency_admin',
-          name: '緊急管理員',
-          global_role: 'admin',
-          source_type: 'emergency'
-        }
-      };
-    }
-  }
-  
-  // 2. Check development token
-  if (env.ENVIRONMENT === 'development' && token === env.DEV_TOKEN) {
-    return {
-      success: true,
-      user: {
-        id: 'dev_user',
-        name: '開發用戶',
-        global_role: 'admin',
-        source_type: 'development'
-      }
-    };
-  }
-  
-  // 3. Check if it's a legacy session token (sess_ prefix)
-  if (token.startsWith('sess_')) {
-    const user = await env.DB_ENGINEERING.prepare(`
-      SELECT id, name, phone, email, global_role, clerk_id 
-      FROM users 
-      WHERE session_token = ?
-    `).bind(token).first();
-    
-    if (user) {
-      return { success: true, user };
-    }
-  }
-  
-  // 4. Check if it's a Clerk session token
-  if (token.startsWith('clerk_sess_')) {
-    const user = await env.DB_ENGINEERING.prepare(`
-      SELECT id, name, phone, email, global_role, clerk_id 
-      FROM users 
-      WHERE session_token = ?
-    `).bind(token).first();
-    
-    if (user) {
-      return { success: true, user };
-    }
-  }
-  
-  // 5. Try verifying as Clerk token
-  const clerkResult = await verifyClerkToken(token, env);
-  if (clerkResult.success) {
-    return { success: true, user: clerkResult.user };
-  }
-  
-  // 6. Legacy session token check
-  const user = await env.DB_ENGINEERING.prepare(`
-    SELECT id, name, phone, global_role 
-    FROM users 
-    WHERE session_token = ?
-  `).bind(token).first();
-  
-  if (!user) {
-    return { success: false, error: 'Invalid token' };
-  }
-  
-  return { success: true, user };
-}
-
-// Verify token endpoint
-async function verifyToken(request, env, headers) {
-  const authResult = await authenticateRequest(request, env);
-  
-  if (!authResult.success) {
-    return jsonResponse({ success: false, error: authResult.error }, headers, 401);
-  }
-  
-  return jsonResponse({
-    success: true,
-    user: authResult.user
-  }, headers);
-}
-
 // Create new project
 async function createProject(request, env, headers) {
   const data = await request.json();
@@ -272,8 +116,8 @@ async function createProject(request, env, headers) {
     INSERT INTO projects (
       id, opportunity_id, name, 
       spc_engineering, cabinet_engineering, permissions,
-      status, project_status, start_date, end_date, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?)
+      status, created_by
+    ) VALUES (?, ?, ?, ?, ?, ?, 'active', ?)
   `).bind(
     projectId,
     data.opportunityId || '',
@@ -281,9 +125,6 @@ async function createProject(request, env, headers) {
     JSON.stringify(data.spcEngineering || {}),
     JSON.stringify(data.cabinetEngineering || {}),
     JSON.stringify(data.permissions || {}),
-    data.projectStatus || 'not_started',
-    data.startDate || null,
-    data.endDate || null,
     data.createdBy || 'system'
   ));
   
@@ -380,107 +221,6 @@ async function createProject(request, env, headers) {
     projectId,
     message: 'Project created successfully' 
   }, headers);
-}
-
-// Get all projects
-async function getProjects(env, headers, user) {
-  try {
-    // For admin users, show all projects
-    // For other users, show only their projects
-    let query;
-    if (user && user.global_role === 'admin') {
-      query = env.DB_ENGINEERING.prepare(`
-        SELECT 
-          p.id,
-          p.opportunity_id,
-          p.name,
-          p.status,
-          p.project_status,
-          p.start_date,
-          p.end_date,
-          p.created_at,
-          p.updated_at,
-          p.spc_engineering,
-          p.cabinet_engineering,
-          p.cached_stats
-        FROM projects p
-        WHERE p.status = 'active'
-        ORDER BY p.created_at DESC
-      `);
-    } else {
-      query = env.DB_ENGINEERING.prepare(`
-        SELECT DISTINCT
-          p.id,
-          p.opportunity_id,
-          p.name,
-          p.status,
-          p.project_status,
-          p.start_date,
-          p.end_date,
-          p.created_at,
-          p.updated_at,
-          p.spc_engineering,
-          p.cabinet_engineering,
-          p.cached_stats
-        FROM projects p
-        LEFT JOIN project_members pm ON p.id = pm.project_id
-        WHERE p.status = 'active' 
-          AND (pm.user_id = ? OR p.created_by = ?)
-        ORDER BY p.created_at DESC
-      `).bind(user?.id || '', user?.id || '');
-    }
-    
-    const { results } = await query.all();
-    
-    // Process each project
-    const projects = results.map(project => {
-      // Parse JSON fields
-      const spcEng = project.spc_engineering ? JSON.parse(project.spc_engineering) : {};
-      const cabinetEng = project.cabinet_engineering ? JSON.parse(project.cabinet_engineering) : {};
-      const stats = project.cached_stats ? JSON.parse(project.cached_stats) : {};
-      
-      // Determine engineering types
-      const engineeringTypes = [];
-      if (spcEng.enabled) engineeringTypes.push('SPC');
-      if (cabinetEng.enabled) engineeringTypes.push('浴櫃');
-      
-      // Calculate progress
-      const totalSites = stats.totalSites || 0;
-      const completedSites = stats.completedSites || 0;
-      const progress = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0;
-      
-      return {
-        id: project.id,
-        name: project.name,
-        opportunity_id: project.opportunity_id,
-        company: stats.company || '未設定',
-        engineeringTypes: engineeringTypes,
-        status: 'active',
-        project_status: project.project_status || 'not_started',
-        start_date: project.start_date,
-        end_date: project.end_date,
-        progress: progress,
-        unit_count: totalSites,
-        completed_count: completedSites,
-        lastUpdate: project.updated_at ? new Date(project.updated_at).toLocaleDateString('zh-TW') : new Date(project.created_at).toLocaleDateString('zh-TW'),
-        created_at: project.created_at
-      };
-    });
-    
-    return jsonResponse({
-      success: true,
-      projects: projects,
-      total: projects.length
-    }, headers);
-    
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    return jsonResponse({
-      success: false,
-      error: 'Failed to fetch projects',
-      message: error.message
-    }, headers, 500);
-  }
 }
 
 // Get project by ID
@@ -607,58 +347,6 @@ async function updateProject(projectId, request, env, headers) {
   }, headers);
 }
 
-// Update project status
-async function updateProjectStatus(projectId, request, env, headers) {
-  const data = await request.json();
-  
-  // Validate project exists
-  const existing = await env.DB_ENGINEERING.prepare(
-    'SELECT id FROM projects WHERE id = ?'
-  ).bind(projectId).first();
-  
-  if (!existing) {
-    return jsonResponse({ error: 'Project not found' }, headers, 404);
-  }
-  
-  // Validate status
-  const validStatuses = ['not_started', 'in_progress', 'maintenance', 'warranty', 'completed'];
-  if (data.project_status && !validStatuses.includes(data.project_status)) {
-    return jsonResponse({ error: 'Invalid project status' }, headers, 400);
-  }
-  
-  // Update project status
-  await env.DB_ENGINEERING.prepare(`
-    UPDATE projects SET
-      project_status = COALESCE(?, project_status),
-      start_date = COALESCE(?, start_date),
-      end_date = COALESCE(?, end_date),
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
-  `).bind(
-    data.project_status || null,
-    data.start_date || null,
-    data.end_date || null,
-    projectId
-  ).run();
-  
-  // Log activity
-  await env.DB_ENGINEERING.prepare(`
-    INSERT INTO project_activity_logs (
-      project_id, user_id, action_type, target_type, target_id, changes
-    ) VALUES (?, ?, 'update_status', 'project', ?, ?)
-  `).bind(
-    projectId,
-    data.updatedBy || 'system',
-    projectId,
-    JSON.stringify({ action: 'Status updated', data })
-  ).run();
-  
-  return jsonResponse({ 
-    success: true, 
-    message: 'Project status updated successfully' 
-  }, headers);
-}
-
 // Delete project
 async function deleteProject(projectId, env, headers) {
   // Delete will cascade to related tables
@@ -672,124 +360,13 @@ async function deleteProject(projectId, env, headers) {
   }, headers);
 }
 
-// Clerk authentication handler
-async function handleClerkAuth(request, env, headers) {
-  try {
-    const { token } = await request.json();
-    
-    if (!token) {
-      return jsonResponse({
-        success: false,
-        error: 'Token is required'
-      }, headers, 400);
-    }
-    
-    const result = await verifyClerkToken(token, env);
-    
-    if (result.success) {
-      return jsonResponse({
-        success: true,
-        user: result.user,
-        sessionToken: result.sessionToken,
-        clerkUser: result.clerkUser
-      }, headers);
-    }
-    
-    return jsonResponse({
-      success: false,
-      error: result.error
-    }, headers, 401);
-    
-  } catch (error) {
-    console.error('Clerk auth error:', error);
-    return jsonResponse({
-      success: false,
-      error: 'Authentication failed: ' + error.message
-    }, headers, 500);
-  }
-}
-
-// Emergency login handler
-async function handleEmergencyLogin(request, env, headers) {
-  // Check if emergency login is enabled
-  if (env.ENABLE_EMERGENCY_LOGIN !== 'true') {
-    return jsonResponse({ error: 'Not found' }, headers, 404);
-  }
-  
-  try {
-    const { phone, code } = await request.json();
-    
-    if (!phone || !code) {
-      return jsonResponse({
-        success: false,
-        error: 'Phone and code are required'
-      }, headers, 400);
-    }
-    
-    const result = verifyEmergencyCredentials(phone, code, env);
-    
-    if (result.success) {
-      // Log emergency login for audit
-      console.warn('EMERGENCY LOGIN:', {
-        phone: phone,
-        timestamp: new Date().toISOString(),
-        ip: request.headers.get('CF-Connecting-IP')
-      });
-      
-      return jsonResponse(result, headers);
-    }
-    
-    return jsonResponse({
-      success: false,
-      error: 'Invalid emergency credentials'
-    }, headers, 401);
-    
-  } catch (error) {
-    console.error('Emergency login error:', error);
-    return jsonResponse({
-      success: false,
-      error: 'Emergency login failed'
-    }, headers, 500);
-  }
-}
-
-// Legacy simple login (to be deprecated)
+// User login
 async function handleLogin(request, env, headers) {
-  // Clone request to avoid consuming it
-  const requestClone = request.clone();
-  let phone, password;
+  const { phone, passwordSuffix } = await request.json();
   
-  try {
-    const bodyText = await requestClone.text();
-    console.log('Login request body:', bodyText);
-    
-    if (!bodyText) {
-      return jsonResponse({ 
-        success: false,
-        error: 'Empty request body' 
-      }, headers, 400);
-    }
-    
-    const body = JSON.parse(bodyText);
-    phone = body.phone;
-    password = body.password;
-  } catch (error) {
-    return jsonResponse({ 
-      success: false,
-      error: 'Invalid JSON body: ' + error.message
-    }, headers, 400);
+  if (!phone || !passwordSuffix) {
+    return jsonResponse({ error: 'Phone and password required' }, headers, 400);
   }
-  
-  if (!phone || !password) {
-    return jsonResponse({ 
-      success: false,
-      error: 'Phone and password required',
-      debug: { phone: !!phone, password: !!password }
-    }, headers, 400);
-  }
-  
-  // Extract last 3 digits as password suffix
-  const passwordSuffix = password.slice(-3);
   
   // Find user
   const user = await env.DB_ENGINEERING.prepare(`
@@ -798,10 +375,7 @@ async function handleLogin(request, env, headers) {
   `).bind(phone, passwordSuffix).first();
   
   if (!user) {
-    return jsonResponse({ 
-      success: false,
-      error: 'Invalid credentials' 
-    }, headers, 401);
+    return jsonResponse({ error: 'Invalid credentials' }, headers, 401);
   }
   
   // Generate session token
@@ -814,17 +388,23 @@ async function handleLogin(request, env, headers) {
     WHERE id = ?
   `).bind(sessionToken, user.id).run();
   
+  // Get user's projects
+  const projects = await env.DB_ENGINEERING.prepare(`
+    SELECT DISTINCT p.*, pm.role, pm.member_type
+    FROM projects p
+    JOIN project_members pm ON p.id = pm.project_id
+    WHERE pm.user_id = ? AND p.status = 'active'
+  `).bind(user.id).all();
+  
   return jsonResponse({
-    success: true,
-    data: {
-      user: {
-        id: user.id,
-        name: user.name,
-        phone: user.phone,
-        role: user.global_role
-      },
-      token: sessionToken
-    }
+    user: {
+      id: user.id,
+      name: user.name,
+      phone: user.phone,
+      globalRole: user.global_role
+    },
+    sessionToken,
+    projects: projects.results
   }, headers);
 }
 
@@ -951,88 +531,6 @@ async function syncOwners(request, env, headers) {
     success: true,
     synced: owners.length
   }, headers);
-}
-
-// Get project statistics
-async function getProjectStats(env, headers, user) {
-  try {
-    // Simplified stats query
-    const statsQuery = env.DB_ENGINEERING.prepare(`
-      SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN project_status = 'not_started' THEN 1 END) as not_started,
-        COUNT(CASE WHEN project_status = 'in_progress' THEN 1 END) as in_progress,
-        COUNT(CASE WHEN project_status = 'maintenance' THEN 1 END) as maintenance,
-        COUNT(CASE WHEN project_status = 'warranty' THEN 1 END) as warranty,
-        COUNT(CASE WHEN project_status = 'completed' THEN 1 END) as completed
-      FROM projects
-    `);
-    
-    const stats = await statsQuery.first();
-    
-    return jsonResponse({
-      success: true,
-      stats: {
-        total: stats.total || 0,
-        by_status: {
-          not_started: stats.not_started || 0,
-          in_progress: stats.in_progress || 0,
-          maintenance: stats.maintenance || 0,
-          warranty: stats.warranty || 0,
-          completed: stats.completed || 0
-        }
-      }
-    }, headers);
-    
-  } catch (error) {
-    console.error('Error fetching project stats:', error);
-    return jsonResponse({
-      success: false,
-      error: 'Failed to fetch project statistics',
-      message: error.message
-    }, headers, 500);
-  }
-}
-
-// Create demo data including admin user
-async function createDemoData(env, headers) {
-  // First, update test account name
-  await env.DB_ENGINEERING.prepare(`
-    UPDATE users 
-    SET name = '測試帳號' 
-    WHERE phone = '0912345678'
-  `).run();
-  
-  // Create test admin if not exists
-  await env.DB_ENGINEERING.prepare(`
-    INSERT OR REPLACE INTO users (
-      id, phone, password_suffix, name, global_role, source_type, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  `).bind(
-    'admin',
-    '0912345678',
-    '678',
-    '測試帳號',
-    'admin',
-    'system'
-  ).run();
-  
-  // Create James admin account
-  await env.DB_ENGINEERING.prepare(`
-    INSERT OR REPLACE INTO users (
-      id, phone, password_suffix, name, global_role, source_type, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-  `).bind(
-    'admin_james',
-    '0963922033',
-    '033',
-    '詹姆士',
-    'admin',
-    'system'
-  ).run();
-  
-  // Continue with demo project creation
-  return await createDemoProject(env, headers);
 }
 
 // Create demo project with real 興安西 data
