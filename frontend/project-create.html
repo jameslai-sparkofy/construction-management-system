@@ -850,7 +850,17 @@
         // ========================================
         async function loadProjectForEdit(projectId) {
             try {
-                // Load project data from API
+                // 先嘗試從 localStorage 載入（用於示範）
+                const savedProject = localStorage.getItem('demo_created_project');
+                if (savedProject) {
+                    const localProject = JSON.parse(savedProject);
+                    if (localProject.id === projectId) {
+                        fillFormWithProjectData(localProject);
+                        return;
+                    }
+                }
+                
+                // 嘗試從 API 載入
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}`, {
                     headers: window.UnifiedAuth.getRequestHeaders()
                 });
@@ -860,37 +870,40 @@
                 }
                 
                 const data = await response.json();
-                const project = data.project;
+                const project = data.project || data.data || data;
                 
                 // Fill form fields with existing data
                 fillFormWithProjectData(project);
                 
             } catch (error) {
                 console.error('Failed to load project for edit:', error);
-                alert('載入專案資料失敗：' + error.message);
-                window.location.href = 'project-list.html';
+                // 不要立即跳轉，讓用戶可以手動填寫
+                alert('無法從伺服器載入專案資料，請手動輸入');
             }
         }
         
         function fillFormWithProjectData(project) {
-            // Step 1: Basic Info
-            if (project.name) {
-                document.getElementById('projectName').value = project.name;
+            // Step 1: Opportunity Selection
+            if (project.id || project.opportunity_id) {
+                const oppId = project.opportunity_id || project.id;
+                const oppName = project.opportunity_name || project.name || '';
+                const company = project.company || project.company_name || '';
+                selectOpportunity(oppId, oppName, company);
             }
             
             // Step 2: Engineering Types
             if (project.engineeringTypes && Array.isArray(project.engineeringTypes)) {
-                project.engineeringTypes.forEach(type => {
-                    const checkbox = document.querySelector(`input[value="${type}"]`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                    }
-                });
-            }
-            
-            // Step 3: Opportunity Selection
-            if (project.opportunity_id) {
-                selectOpportunity(project.opportunity_id, project.opportunity_name || project.name, project.company);
+                selectedEngineeringTypes = project.engineeringTypes;
+                // 等待工程類型載入後再選中
+                setTimeout(() => {
+                    project.engineeringTypes.forEach(type => {
+                        const card = document.querySelector(`.engineering-type-card[data-type="${type}"]`);
+                        if (card) {
+                            card.classList.add('selected');
+                        }
+                    });
+                    document.getElementById('step2-next').disabled = selectedEngineeringTypes.length === 0;
+                }, 500);
             }
             
             // Sites data

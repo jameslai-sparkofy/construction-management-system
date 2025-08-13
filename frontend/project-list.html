@@ -607,6 +607,8 @@
                         <th>狀態</th>
                         <th>進度</th>
                         <th>案場數</th>
+                        <th>開始</th>
+                        <th>結束</th>
                         <th>最後更新</th>
                     </tr>
                 </thead>
@@ -823,6 +825,8 @@
                 <td>
                     ${(project.stats && project.stats.completedSites) || project.completed_count || 0} / ${(project.stats && project.stats.totalSites) || project.unit_count || 0}
                 </td>
+                <td>${formatShortDate(project.start_date)}</td>
+                <td>${formatShortDate(project.end_date)}</td>
                 <td>${project.lastUpdate || new Date().toLocaleDateString('zh-TW')}</td>
             `;
 
@@ -971,6 +975,18 @@
             }
         }
 
+
+        // Format short date (只顯示月/日)
+        function formatShortDate(dateString) {
+            if (!dateString) return '-';
+            
+            try {
+                const date = new Date(dateString);
+                return `${date.getMonth() + 1}/${date.getDate()}`;
+            } catch (error) {
+                return dateString;
+            }
+        }
 
         // Logout
         function logout() {
