@@ -455,8 +455,8 @@
                 </div>
 
                 <div class="nav-buttons">
-                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
-                    <button class="btn btn-success" onclick="createProject()">建立專案</button>
+                    <button class="btn btn-secondary" onclick="previousStep()" id="step4-prev">上一步</button>
+                    <button class="btn btn-success" onclick="createProject()" id="step4-submit">建立專案</button>
                 </div>
             </div>
         </div>
@@ -501,10 +501,25 @@
                 // Update UI for edit mode
                 document.querySelector('.header h1').textContent = '編輯工程專案';
                 document.querySelector('.breadcrumb').textContent = '專案管理 > 專案列表 > 編輯專案';
-                document.querySelector('.btn-primary').textContent = '更新專案';
                 
                 // Load existing project data
                 await loadProjectForEdit(editProjectId);
+                
+                // 直接跳到第 4 步（設定權限）
+                jumpToStep(4);
+                
+                // 更新按鈕文字和行為
+                const submitButton = document.getElementById('step4-submit');
+                if (submitButton) {
+                    submitButton.textContent = '更新專案';
+                    submitButton.onclick = updateProject;
+                }
+                
+                // 隱藏上一步按鈕（編輯模式不需要）
+                const prevButton = document.getElementById('step4-prev');
+                if (prevButton) {
+                    prevButton.style.display = 'none';
+                }
             }
             
             await loadEngineeringTypes();
@@ -516,6 +531,31 @@
         // ========================================
         // Step Navigation
         // ========================================
+        function jumpToStep(stepNumber) {
+            // 隱藏所有步驟
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step-${i}`).classList.remove('active', 'completed');
+                document.getElementById(`step-content-${i}`).classList.remove('active');
+            }
+            
+            // 標記之前的步驟為完成
+            for (let i = 1; i < stepNumber; i++) {
+                document.getElementById(`step-${i}`).classList.add('completed');
+            }
+            
+            // 顯示目標步驟
+            currentStep = stepNumber;
+            document.getElementById(`step-${stepNumber}`).classList.add('active');
+            document.getElementById(`step-content-${stepNumber}`).classList.add('active');
+            
+            // 載入該步驟的資料
+            if (stepNumber === 3) {
+                loadStatistics();
+            } else if (stepNumber === 4) {
+                loadPermissions();
+            }
+        }
+        
         function nextStep() {
             if (currentStep < 4) {
                 // Mark current step as completed
@@ -719,12 +759,54 @@
         function loadPermissions() {
             const content = document.getElementById('permissionsContent');
             
-            // TODO: Load and render permissions UI
-            content.innerHTML = `
-                <div class="alert alert-info">
-                    權限設定將根據選擇的工程類型和工班自動配置
-                </div>
-            `;
+            // 編輯模式下顯示狀態選擇
+            if (isEditMode) {
+                const savedProject = localStorage.getItem('demo_created_project');
+                let currentStatus = 'not_started';
+                let currentStartDate = '';
+                let currentEndDate = '';
+                
+                if (savedProject) {
+                    const project = JSON.parse(savedProject);
+                    currentStatus = project.project_status || 'not_started';
+                    currentStartDate = project.start_date || '';
+                    currentEndDate = project.end_date || '';
+                }
+                
+                content.innerHTML = `
+                    <div class="form-group">
+                        <label>專案狀態</label>
+                        <select id="projectStatus" class="filter-select">
+                            <option value="not_started" ${currentStatus === 'not_started' ? 'selected' : ''}>尚未開始</option>
+                            <option value="in_progress" ${currentStatus === 'in_progress' ? 'selected' : ''}>進行中</option>
+                            <option value="maintenance" ${currentStatus === 'maintenance' ? 'selected' : ''}>維修中</option>
+                            <option value="warranty" ${currentStatus === 'warranty' ? 'selected' : ''}>保固中</option>
+                            <option value="completed" ${currentStatus === 'completed' ? 'selected' : ''}>已完工</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>開始日期</label>
+                        <input type="date" id="startDate" value="${currentStartDate}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>結束日期</label>
+                        <input type="date" id="endDate" value="${currentEndDate}">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        其他權限設定將根據選擇的工程類型和工班自動配置
+                    </div>
+                `;
+            } else {
+                // 新建模式的原始內容
+                content.innerHTML = `
+                    <div class="alert alert-info">
+                        權限設定將根據選擇的工程類型和工班自動配置
+                    </div>
+                `;
+            }
         }
 
         // ========================================
@@ -756,8 +838,51 @@
         }
 
         // ========================================
-        // Project Creation
+        // Project Creation and Update
         // ========================================
+        async function updateProject() {
+            // 編輯模式專用的更新函數
+            if (!confirm('確定要更新此專案嗎？')) return;
+            
+            try {
+                // 獲取當前儲存的專案資料
+                const savedProject = localStorage.getItem('demo_created_project');
+                if (savedProject) {
+                    const project = JSON.parse(savedProject);
+                    
+                    // 更新專案狀態和日期
+                    const statusSelect = document.getElementById('projectStatus');
+                    const startDateInput = document.getElementById('startDate');
+                    const endDateInput = document.getElementById('endDate');
+                    
+                    if (statusSelect) {
+                        project.project_status = statusSelect.value;
+                    }
+                    if (startDateInput) {
+                        project.start_date = startDateInput.value;
+                    }
+                    if (endDateInput) {
+                        project.end_date = endDateInput.value;
+                    }
+                    
+                    // 更新時間戳記
+                    project.lastUpdate = new Date().toLocaleDateString('zh-TW');
+                    project.updated_at = new Date().toISOString();
+                    
+                    // 儲存更新後的資料
+                    localStorage.setItem('demo_created_project', JSON.stringify(project));
+                    
+                    alert('專案更新成功！');
+                    window.location.href = 'project-list.html';
+                } else {
+                    throw new Error('無法找到專案資料');
+                }
+            } catch (error) {
+                console.error('Failed to update project:', error);
+                alert('專案更新失敗：' + error.message);
+            }
+        }
+        
         async function createProject() {
             const confirmMessage = isEditMode ? '確定要更新此專案嗎？' : '確定要建立此專案嗎？';
             if (!confirm(confirmMessage)) return;

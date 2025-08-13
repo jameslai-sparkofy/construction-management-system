@@ -789,17 +789,8 @@
                 return `<span class="engineering-tag ${className}">${label}</span>`;
             }).join('');
 
-            // 創建狀態選擇器
-            const statusSelect = ProjectStatus.createStatusSelect(
-                project.project_status || 'not_started',
-                {
-                    className: 'status-select-inline',
-                    onChange: (e) => {
-                        e.stopPropagation();
-                        updateProjectStatus(project.id, e.target.value);
-                    }
-                }
-            );
+            // 創建狀態標籤（不可編輯）
+            const statusBadge = ProjectStatus.createStatusBadge(project.project_status || 'not_started');
 
             row.innerHTML = `
                 <td>
@@ -830,9 +821,9 @@
                 <td>${project.lastUpdate || new Date().toLocaleDateString('zh-TW')}</td>
             `;
 
-            // 將狀態選擇器插入到狀態單元格
+            // 將狀態標籤插入到狀態單元格
             const statusCell = row.querySelector('.status-cell');
-            statusCell.appendChild(statusSelect);
+            statusCell.appendChild(statusBadge);
 
             return row;
         }
