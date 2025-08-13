@@ -1,0 +1,1 @@
+SELECT id, name, opportunity_id, created_at FROM projects;

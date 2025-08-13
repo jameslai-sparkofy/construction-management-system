@@ -6,8 +6,8 @@
 const CONFIG = {
     // API 配置
     API: {
-        // Cloudflare Workers API - 使用自訂域名
-        WORKER_API_URL: 'https://api.yes-ceramics.com',
+        // Cloudflare Workers API - 實際的 Worker URL
+        WORKER_API_URL: 'https://construction-d1-api.lai-jameslai.workers.dev',
         
         // CRM REST API
         CRM_API_URL: 'https://fx-d1-rest-api.lai-jameslai.workers.dev',
@@ -84,6 +84,13 @@ const API = {
      * 獲取授權標頭
      */
     getAuthHeaders() {
+        // 優先使用 Clerk token
+        const clerkToken = localStorage.getItem('clerk_token');
+        if (clerkToken) {
+            return { 'Authorization': `Bearer ${clerkToken}` };
+        }
+        
+        // 向後兼容舊的 auth_token
         const token = localStorage.getItem('auth_token');
         return token ? { 'Authorization': `Bearer ${token}` } : {};
     },
@@ -94,36 +101,8 @@ const API = {
     async request(method, endpoint, data = null) {
         const url = this.getUrl(endpoint);
         
-        // 如果是專案創建請求且 API 無法連接，返回模擬響應
-        if (method === 'POST' && endpoint === '/projects') {
-            try {
-                const response = await fetch(url, {
-                    method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...this.getAuthHeaders()
-                    },
-                    body: data ? JSON.stringify(data) : null
-                });
-                
-                if (response.ok) {
-                    return await response.json();
-                }
-            } catch (error) {
-                // API 失敗時返回模擬成功響應
-                console.warn('API 無法連接，使用模擬響應:', error.message);
-                return {
-                    success: true,
-                    message: '專案創建成功（模擬模式）',
-                    data: {
-                        id: data?.id || 'mock-project-' + Date.now(),
-                        name: data?.name || '新專案',
-                        status: 'active',
-                        created_at: new Date().toISOString()
-                    }
-                };
-            }
-        }
+        // 移除模擬響應，確保 API 錯誤能被正確處理
+        // 所有請求都應該真實地連接到 Worker API
         
         // 一般 API 請求
         const options = {

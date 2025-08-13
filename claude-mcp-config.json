@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "context7-mcp",
+      "args": []
+    },
+    "mcp-memory-keeper": {
+      "command": "npx",
+      "args": ["-y", "mcp-memory-keeper"]
+    }
+  }
+}

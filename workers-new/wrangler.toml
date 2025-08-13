@@ -1,0 +1,21 @@
+name = "construction-d1-api"
+main = "index.js"
+compatibility_date = "2024-11-06"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+DEV_TOKEN = "dev-token-for-testing"
+ENABLE_EMERGENCY_LOGIN = "true"
+CLERK_SECRET_KEY = "sk_test_UqjBEE0wOtBatBQbM1buSyr8mIaWqGpes872R5cL6T"
+CLERK_PUBLISHABLE_KEY = "pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ"
+
+[[d1_databases]]
+binding = "DB_ENGINEERING"
+database_name = "engineering-management"
+database_id = "21fce5cd-8364-4dc2-be7f-6d68cbd6fca9"
+
+[[d1_databases]]
+binding = "DB_CRM"
+database_name = "fx-crm-database"
+database_id = "332221d8-61cb-4084-88dc-394e208ae8b4"

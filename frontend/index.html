@@ -175,7 +175,7 @@
         <p class="subtitle">專業的建築施工管理平台</p>
         
         <div class="btn-container">
-            <a href="clerk.html" class="btn btn-primary" id="loginBtn">登入系統</a>
+            <a href="login-simple.html" class="btn btn-primary" id="loginBtn">登入系統</a>
             <button class="btn btn-secondary" onclick="showDemo()">系統演示</button>
         </div>
 
@@ -216,7 +216,7 @@
             if (token) {
                 // 驗證 token
                 try {
-                    const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/me`, {
+                    const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/verify`, {
                         headers: {
                             'Authorization': `Bearer ${token}`
                         }
@@ -275,7 +275,7 @@
                         window.location.href = 'project-list.html';
                     } else {
                         alert('演示帳號登入失敗，請手動登入');
-                        window.location.href = 'clerk.html';
+                        window.location.href = 'login-phone.html';
                     }
                 } catch (error) {
                     console.error('Demo login failed:', error);
