@@ -181,7 +181,12 @@
       "Bash(CLOUDFLARE_API_TOKEN=\"uQXqEv6Zlxt4wLxKJHAjAdHaD_RWloBBKFBcwABw\" timeout 30 npx wrangler deploy)",
       "mcp__playwright__browser_select_option",
       "Bash(CLOUDFLARE_API_TOKEN=\"uQXqEv6Zlxt4wLxKJHAjAdHaD_RWloBBKFBcwABw\" timeout 60 npx wrangler deploy)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"uQXqEv6Zlxt4wLxKJHAjAdHaD_RWloBBKFBcwABw\" npx wrangler pages deployment list --project-name construction-management-frontend --limit 5)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"uQXqEv6Zlxt4wLxKJHAjAdHaD_RWloBBKFBcwABw\" npx wrangler pages deployment list --project-name construction-management-frontend)",
+      "WebFetch(domain:46eb0abe.construction-management-frontend.pages.dev)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"uQXqEv6Zlxt4wLxKJHWJF7R5JXlrkWix4UxXzpkW4\" npx wrangler pages deployment list --project-name construction-management-frontend)",
+      "WebFetch(domain:1fbf10a2.construction-management-frontend.pages.dev)"
     ],
     "deny": []
   },

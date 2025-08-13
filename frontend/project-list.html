@@ -95,8 +95,8 @@
         /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 1rem;
             margin-bottom: 2rem;
         }
 
@@ -106,6 +106,7 @@
             border-radius: 12px;
             box-shadow: var(--shadow-sm);
             border-left: 4px solid var(--primary);
+            min-width: 150px;
         }
 
         .stat-card.clickable {
@@ -569,8 +570,33 @@
                 min-width: 800px;
             }
 
+            /* 手機版統計卡片 - 水平滑動 */
             .stats-grid {
-                grid-template-columns: 1fr;
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                gap: 1rem;
+                padding-bottom: 0.5rem;
+            }
+
+            .stats-grid::-webkit-scrollbar {
+                height: 6px;
+            }
+
+            .stats-grid::-webkit-scrollbar-track {
+                background: var(--border);
+                border-radius: 3px;
+            }
+
+            .stats-grid::-webkit-scrollbar-thumb {
+                background: var(--primary);
+                border-radius: 3px;
+            }
+
+            .stat-card {
+                flex: 0 0 auto;
+                min-width: 140px;
+                scroll-snap-align: start;
             }
         }
     </style>
@@ -905,13 +931,18 @@
             try {
                 const stats = await ProjectStatus.getProjectStats();
                 
-                // 更新統計數字
-                document.getElementById('totalProjects').textContent = stats.total;
-                document.getElementById('notStartedProjects').textContent = stats.by_status.not_started;
-                document.getElementById('inProgressProjects').textContent = stats.by_status.in_progress;
-                document.getElementById('maintenanceProjects').textContent = stats.by_status.maintenance;
-                document.getElementById('warrantyProjects').textContent = stats.by_status.warranty;
-                document.getElementById('completedProjects').textContent = stats.by_status.completed;
+                // 如果 API 返回的統計是預設值（全為 0），使用本地計算
+                if (stats.total === 0 && allProjects.length > 0) {
+                    updateStatsFromLocal(allProjects);
+                } else {
+                    // 更新統計數字
+                    document.getElementById('totalProjects').textContent = stats.total;
+                    document.getElementById('notStartedProjects').textContent = stats.by_status.not_started;
+                    document.getElementById('inProgressProjects').textContent = stats.by_status.in_progress;
+                    document.getElementById('maintenanceProjects').textContent = stats.by_status.maintenance;
+                    document.getElementById('warrantyProjects').textContent = stats.by_status.warranty;
+                    document.getElementById('completedProjects').textContent = stats.by_status.completed;
+                }
                 
             } catch (error) {
                 console.error('Failed to load project stats:', error);
@@ -924,7 +955,7 @@
         function updateStatsFromLocal(projects) {
             const stats = {
                 total: projects.length,
-                not_started: projects.filter(p => p.project_status === 'not_started').length,
+                not_started: projects.filter(p => !p.project_status || p.project_status === 'not_started').length,
                 in_progress: projects.filter(p => p.project_status === 'in_progress').length,
                 maintenance: projects.filter(p => p.project_status === 'maintenance').length,
                 warranty: projects.filter(p => p.project_status === 'warranty').length,
@@ -964,7 +995,7 @@
             });
 
             displayProjects(filteredProjects);
-            updateStats(filteredProjects);
+            updateStatsFromLocal(filteredProjects);
         }
 
         // View project details
@@ -1015,7 +1046,7 @@
                 
                 // 重新顯示列表
                 displayProjects(filteredProjects.length > 0 ? filteredProjects : allProjects);
-                updateStats(filteredProjects.length > 0 ? filteredProjects : allProjects);
+                updateStatsFromLocal(filteredProjects.length > 0 ? filteredProjects : allProjects);
                 
                 // 檢查是否還有專案
                 if (allProjects.length === 0) {
@@ -1091,10 +1122,6 @@
             }
         }
 
-        // 修復編輯按鈕功能
-        function editProject(projectId) {
-            window.location.href = `project-edit.html?id=${projectId}`;
-        }
 
         // Logout
         function logout() {
