@@ -5,8 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登入 - 元心建材工程管理系統 v1.3.0</title>
     
-    <!-- Clerk SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+    <!-- Clerk SDK - 使用穩定版本 -->
+    <script crossorigin="anonymous" data-clerk-publishable-key="pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ" 
+            onload="window.Clerk.load()" 
+            src="https://absolute-cougar-90.clerk.accounts.dev/npm/@clerk/clerk-js@4/dist/clerk.browser.js" 
+            type="text/javascript">
+    </script>
     
     <style>
         * {
@@ -182,98 +186,67 @@
         </div>
     </div>
 
-    <script src="clerk-config.js"></script>
     <script>
-        // Clerk 初始化
-        const clerkPublishableKey = 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ';
-        
-        async function initializeClerkAuth() {
+        // 等待 Clerk 載入完成
+        window.addEventListener('load', async function() {
             const loadingState = document.getElementById('loadingState');
             const signInDiv = document.getElementById('clerk-signin');
             const errorMessage = document.getElementById('errorMessage');
             
             try {
-                // 初始化 Clerk
-                const clerk = new Clerk(clerkPublishableKey);
-                await clerk.load();
+                // 等待 Clerk 載入
+                let retries = 0;
+                while (!window.Clerk && retries < 10) {
+                    console.log('Waiting for Clerk to load...', retries);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    retries++;
+                }
+                
+                if (!window.Clerk) {
+                    throw new Error('Clerk failed to load after 5 seconds');
+                }
                 
                 console.log('Clerk loaded successfully');
                 
                 // 檢查是否已登入
-                if (clerk.user) {
-                    console.log('User already signed in:', clerk.user);
+                if (window.Clerk.user) {
+                    console.log('User already signed in:', window.Clerk.user);
                     // 已登入，跳轉到專案列表
                     window.location.href = 'project-list.html';
                     return;
                 }
                 
-                // 顯示登入介面
+                // 隱藏載入狀態
                 loadingState.style.display = 'none';
                 signInDiv.style.display = 'block';
                 
-                // 掛載 Clerk SignIn 組件
-                clerk.mountSignIn(signInDiv, {
+                // 掛載 SignIn 組件
+                window.Clerk.mountSignIn(signInDiv, {
+                    afterSignInUrl: 'project-list.html',
+                    signUpUrl: 'https://absolute-cougar-90.clerk.accounts.dev/sign-up',
                     appearance: {
                         elements: {
-                            formButtonPrimary: {
-                                backgroundColor: '#764ba2',
-                                '&:hover': {
-                                    backgroundColor: '#667eea'
-                                }
-                            },
-                            formFieldInput: {
-                                borderColor: '#e2e8f0',
-                                '&:focus': {
-                                    borderColor: '#764ba2',
-                                    boxShadow: '0 0 0 3px rgba(118, 75, 162, 0.1)'
-                                }
-                            },
-                            headerTitle: {
-                                display: 'none'
-                            },
-                            headerSubtitle: {
-                                display: 'none'
-                            },
-                            card: {
-                                border: 'none',
-                                boxShadow: 'none',
-                                padding: '0'
-                            },
-                            socialButtonsBlockButton: {
-                                borderColor: '#e2e8f0',
-                                '&:hover': {
-                                    backgroundColor: '#f7fafc'
-                                }
-                            }
-                        },
-                        layout: {
-                            socialButtonsPlacement: 'top',
-                            socialButtonsVariant: 'blockButton'
+                            formButtonPrimary: 'bg-purple-600 hover:bg-purple-700',
+                            card: 'shadow-none'
                         }
-                    },
-                    routing: 'hash',
-                    afterSignInUrl: '/project-list.html',
-                    signUpUrl: null, // 暫時停用註冊
-                    redirectUrl: '/project-list.html'
+                    }
                 });
                 
-                // 監聽登入事件
-                clerk.addListener('user', (user) => {
+                // 監聽登入狀態
+                window.Clerk.addListener(({ user }) => {
                     if (user) {
                         console.log('User signed in:', user);
-                        // 儲存用戶資訊到 localStorage
+                        // 儲存基本用戶資訊
                         localStorage.setItem('clerk_user', JSON.stringify({
                             id: user.id,
                             email: user.primaryEmailAddress?.emailAddress,
-                            firstName: user.firstName,
-                            lastName: user.lastName,
-                            fullName: user.fullName
+                            name: user.fullName || user.firstName || 'User'
                         }));
                         
-                        // 跳轉到專案列表
+                        // 跳轉
                         setTimeout(() => {
                             window.location.href = 'project-list.html';
-                        }, 500);
+                        }, 1000);
                     }
                 });
                 
@@ -281,14 +254,22 @@
                 console.error('Clerk initialization error:', error);
                 loadingState.style.display = 'none';
                 errorMessage.style.display = 'block';
-                errorMessage.textContent = '認證系統載入失敗，請稍後再試或使用傳統登入方式。';
+                errorMessage.textContent = '認證系統載入失敗：' + error.message;
+                
+                // 3秒後自動跳轉到傳統登入
+                setTimeout(() => {
+                    errorMessage.innerHTML += '<br>將自動跳轉到傳統登入頁面...';
+                    setTimeout(() => {
+                        window.location.href = 'login-simple.html';
+                    }, 2000);
+                }, 1000);
             }
-        }
-        
-        // 頁面載入時初始化
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeClerkAuth();
         });
+        
+        // 添加手動跳轉功能
+        function useTraditionalLogin() {
+            window.location.href = 'login-simple.html';
+        }
     </script>
 </body>
 </html>
