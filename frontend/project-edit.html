@@ -181,11 +181,13 @@
         </div>
     </div>
 
+    <script src="js/unified-auth.js"></script>
+    <script src="js/unified-permissions.js"></script>
     <script>
         // API configuration
         const WORKER_API_URL = window.location.hostname === 'localhost' 
             ? 'http://localhost:8787' 
-            : 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
+            : 'https://construction-management-api.lai-jameslai.workers.dev';
 
         let currentProject = null;
 

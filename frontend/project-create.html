@@ -450,6 +450,24 @@
             border: 1px solid #fca5a5;
         }
     </style>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Supabase configuration (optional - only if available)
+        if (typeof window !== 'undefined') {
+            try {
+                const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+                const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+                
+                const supabase = createClient(supabaseUrl, supabaseAnonKey);
+                window.supabase = supabase;
+                
+                console.log('Supabase 已初始化（可選）');
+            } catch (error) {
+                console.log('Supabase 未配置，使用 D1 認證');
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -589,13 +607,15 @@
         let selectedOpportunity = null;
         let selectedEngineeringTypes = [];
         let availableEngineeringTypes = [];
+        let contacts = []; // 商機連絡人（全域變數）
+        let masters = []; // 工地師傅（全域變數）
         let availableTeams = [];
         let projectData = {};
         let engineeringStats = {};
 
         // API Configuration
         const API_BASE_URL = CONFIG?.API?.CRM_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
-        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
         const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || 'fx-crm-api-secret-2025';
         const USE_V2_API = false; // Use fallback data since V2 API endpoints don't exist
 
@@ -1063,14 +1083,14 @@
                     }
                 );
                 
-                let masters = [];
+                // 使用全域變數 masters
                 if (mastersResponse.ok) {
                     const mastersData = await mastersResponse.json();
                     masters = mastersData.results || [];
                 }
                 
                 // 獲取商機連絡人（從 NewOpportunityContactsObj）
-                let contacts = [];
+                contacts = []; // 使用全域變數
                 if (selectedOpportunity) {
                     const contactsResponse = await fetch(
                         `${API_BASE_URL}/rest/NewOpportunityContactsObj?opportunity_id=${selectedOpportunity.id}&limit=100`,
@@ -1316,6 +1336,116 @@
             }
         }
         
+        // 同步建立 Supabase 認證帳號
+        async function syncAuthAccounts(permissions) {
+            if (!window.supabase) return;
+            
+            try {
+                const authPromises = [];
+                
+                // 為業主建立帳號（如果有選擇）
+                if (permissions.owner) {
+                    // 從連絡人資料中獲取詳細資訊
+                    const ownerContact = contacts.find(c => c._id === permissions.owner);
+                    if (ownerContact && ownerContact.phone) {
+                        authPromises.push(createSupabaseUser({
+                            phone: ownerContact.phone,
+                            name: ownerContact.name || ownerContact.contact_name,
+                            role: 'owner',
+                            d1_user_id: permissions.owner
+                        }));
+                    }
+                }
+                
+                // 為工班負責人建立帳號
+                for (const team of permissions.teams) {
+                    if (team.leaderId) {
+                        const leader = masters.find(m => m._id === team.leaderId);
+                        if (leader && leader.phone) {
+                            authPromises.push(createSupabaseUser({
+                                phone: leader.phone,
+                                name: leader.name || leader.field_name__c,
+                                role: 'foreman',
+                                d1_user_id: team.leaderId
+                            }));
+                        }
+                    }
+                }
+                
+                // 等待所有帳號建立完成
+                const results = await Promise.allSettled(authPromises);
+                
+                // 記錄結果
+                results.forEach((result, index) => {
+                    if (result.status === 'fulfilled') {
+                        console.log(`認證帳號建立成功: ${result.value}`);
+                    } else {
+                        console.warn(`認證帳號建立失敗: ${result.reason}`);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('同步認證帳號時發生錯誤:', error);
+                // 不中斷專案建立流程
+            }
+        }
+        
+        // 建立單個 Supabase 用戶
+        async function createSupabaseUser(userData) {
+            const { phone, name, role, d1_user_id } = userData;
+            const password = phone.slice(-3); // 密碼為電話末3碼
+            
+            try {
+                // 建立或更新 Supabase 用戶
+                const { data, error } = await window.supabase.auth.signUp({
+                    email: `${phone}@construction.local`, // 使用虛擬 email
+                    password: password,
+                    options: {
+                        data: {
+                            phone: phone,
+                            full_name: name,
+                            role: role,
+                            d1_user_id: d1_user_id
+                        }
+                    }
+                });
+                
+                if (error && !error.message.includes('already registered')) {
+                    throw error;
+                }
+                
+                // 建立映射關係（通過 API 或直接寫入）
+                if (data?.user) {
+                    await createAuthMapping(data.user.id, d1_user_id, phone);
+                }
+                
+                return `${name} (${phone})`;
+            } catch (error) {
+                console.error(`建立用戶 ${phone} 失敗:`, error);
+                throw error;
+            }
+        }
+        
+        // 建立認證映射
+        async function createAuthMapping(authUserId, d1UserId, phone) {
+            // 這裡可以呼叫後端 API 來建立映射關係
+            // 或者直接寫入 Supabase 的 auth_mapping 表
+            if (window.supabase) {
+                const { error } = await window.supabase
+                    .from('auth_mapping')
+                    .upsert({
+                        auth_user_id: authUserId,
+                        d1_user_id: d1UserId,
+                        d1_user_phone: phone,
+                        last_synced_at: new Date().toISOString()
+                    });
+                
+                if (error) {
+                    console.error('建立認證映射失敗:', error);
+                }
+            }
+        }
+        
         async function createProject() {
             const confirmMessage = isEditMode ? '確定要更新此專案嗎？' : '確定要建立此專案嗎？';
             if (!confirm(confirmMessage)) return;
@@ -1325,6 +1455,11 @@
                 owner: document.getElementById('projectOwner')?.value || null,
                 teams: []
             };
+            
+            // 如果有 Supabase 整合，同步建立認證帳號
+            if (window.supabase && !isEditMode) {
+                await syncAuthAccounts(permissions);
+            }
             
             // 收集每個工班的權限設置
             const teamLeaderSelects = document.querySelectorAll('.team-leader-select');

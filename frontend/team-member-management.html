@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工班成員管理 - 元心建材工程管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: #f9fafb;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            color: #111827;
+        }
+
+        .team-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .team-badge {
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 權限警告 */
+        .permission-warning {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .permission-warning.show {
+            display: block;
+        }
+
+        /* 成員網格 */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .member-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .member-card.foreman {
+            border: 2px solid #3b82f6;
+        }
+
+        .member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .member-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .role-foreman {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-worker {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .member-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .member-details span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .member-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* 新增成員表單 */
+        .add-member-form {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .add-member-form.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.625rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .info-box {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h4 {
+            color: #166534;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box p {
+            font-size: 0.875rem;
+            color: #166534;
+        }
+
+        /* 工班切換器 */
+        .team-switcher {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-tab {
+            padding: 0.75rem 1.5rem;
+            background: #f3f4f6;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .team-tab.active {
+            background: #10b981;
+            color: white;
+        }
+
+        .team-tab:hover:not(.active) {
+            background: #e5e7eb;
+        }
+
+        /* 統計卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        /* 無權限提示 */
+        .no-permission {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-permission-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-permission h2 {
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-permission p {
+            color: #6b7280;
+        }
+
+        /* 響應式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .team-switcher {
+                flex-direction: column;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="header">
+            <h1>👥 工班成員管理</h1>
+            <button class="btn btn-secondary" onclick="history.back()">返回專案</button>
+        </div>
+
+        <!-- 權限檢查提示 -->
+        <div id="noPermission" class="no-permission" style="display: none;">
+            <div class="no-permission-icon">🔒</div>
+            <h2>無權限存取</h2>
+            <p>您沒有權限管理此工班的成員</p>
+            <button class="btn btn-primary" onclick="history.back()" style="margin-top: 1rem;">返回</button>
+        </div>
+
+        <!-- 主要內容區 -->
+        <div id="mainContent" style="display: none;">
+            <!-- 管理員：工班切換器 -->
+            <div id="teamSwitcher" class="team-switcher" style="display: none;">
+                <!-- 動態生成工班標籤 -->
+            </div>
+
+            <!-- 當前工班資訊 -->
+            <div class="team-info">
+                <div class="team-badge" id="currentTeamName">載入中...</div>
+                <div>
+                    <strong>工班負責人：</strong>
+                    <span id="foremanName">載入中...</span>
+                </div>
+                <div>
+                    <strong>專案：</strong>
+                    <span id="projectName">載入中...</span>
+                </div>
+            </div>
+
+            <!-- 統計資訊 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalMembers">0</div>
+                    <div class="stat-label">總成員數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeMembers">0</div>
+                    <div class="stat-label">在職成員</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="completedSites">0</div>
+                    <div class="stat-label">完成案場</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalArea">0</div>
+                    <div class="stat-label">總施工面積</div>
+                </div>
+            </div>
+
+            <!-- 新增成員按鈕 -->
+            <div style="margin-bottom: 1.5rem;">
+                <button class="btn btn-primary" id="addMemberBtn" onclick="toggleAddMemberForm()">
+                    ➕ 新增成員
+                </button>
+            </div>
+
+            <!-- 新增成員表單 -->
+            <div class="add-member-form" id="addMemberForm">
+                <h3 style="margin-bottom: 1.5rem;">新增工班成員</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>姓名 *</label>
+                        <input type="text" id="memberName" placeholder="請輸入姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>電話號碼 * (登入帳號)</label>
+                        <input type="tel" id="memberPhone" placeholder="0912345678">
+                    </div>
+                    <div class="form-group">
+                        <label>Email (選填)</label>
+                        <input type="email" id="memberEmail" placeholder="email@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select id="memberRole">
+                            <option value="worker">工班成員</option>
+                            <option value="foreman" id="foremanOption">工班負責人</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>📌 注意事項</h4>
+                    <p>
+                        • 電話號碼將作為登入帳號<br>
+                        • 預設密碼為電話號碼末3碼<br>
+                        • 若此電話已在其他工班，將自動加入此工班
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button class="btn btn-secondary" onclick="toggleAddMemberForm()">取消</button>
+                    <button class="btn btn-primary" onclick="addMember()">新增成員</button>
+                </div>
+            </div>
+
+            <!-- 成員列表 -->
+            <h3 style="margin-bottom: 1rem;">成員列表</h3>
+            <div class="members-grid" id="membersList">
+                <!-- 動態生成成員卡片 -->
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+        
+        // Supabase 配置
+        const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co'
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ'
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey)
+        window.supabase = supabase
+        
+        // 全域變數
+        let currentUser = null
+        let currentTeamId = null
+        let currentProjectId = null
+        let isAdmin = false
+        let isForeman = false
+        let teams = []
+        
+        // 初始化
+        async function init() {
+            // 取得 URL 參數
+            const urlParams = new URLSearchParams(window.location.search)
+            currentTeamId = urlParams.get('teamId')
+            currentProjectId = urlParams.get('projectId')
+            
+            if (!currentTeamId || !currentProjectId) {
+                alert('缺少必要參數')
+                history.back()
+                return
+            }
+            
+            // 取得當前用戶
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                alert('請先登入')
+                window.location.href = 'login-supabase-simple.html'
+                return
+            }
+            currentUser = user
+            
+            // 檢查權限
+            await checkPermissions()
+        }
+        
+        // 檢查權限
+        async function checkPermissions() {
+            try {
+                // 檢查是否為管理員
+                const { data: adminRole } = await supabase
+                    .from('user_roles')
+                    .select('roles!inner(name)')
+                    .eq('user_id', currentUser.id)
+                    .eq('roles.name', 'admin')
+                    .single()
+                
+                isAdmin = !!adminRole
+                
+                if (isAdmin) {
+                    // 管理員可以看所有工班
+                    await loadAllTeams()
+                    showContent()
+                } else {
+                    // 檢查是否為工班負責人
+                    const { data: team } = await supabase
+                        .from('teams')
+                        .select('*')
+                        .eq('id', currentTeamId)
+                        .eq('foreman_id', currentUser.id)
+                        .single()
+                    
+                    if (team) {
+                        isForeman = true
+                        teams = [team]
+                        showContent()
+                    } else {
+                        // 無權限
+                        document.getElementById('noPermission').style.display = 'block'
+                    }
+                }
+                
+            } catch (error) {
+                console.error('權限檢查失敗:', error)
+                document.getElementById('noPermission').style.display = 'block'
+            }
+        }
+        
+        // 顯示內容
+        function showContent() {
+            document.getElementById('mainContent').style.display = 'block'
+            
+            // 如果是管理員且有多個工班，顯示切換器
+            if (isAdmin && teams.length > 1) {
+                showTeamSwitcher()
+            }
+            
+            // 載入當前工班資料
+            loadTeamData(currentTeamId)
+        }
+        
+        // 載入所有工班
+        async function loadAllTeams() {
+            const { data, error } = await supabase
+                .from('teams')
+                .select('*')
+                .eq('project_id', currentProjectId)
+            
+            if (data) {
+                teams = data
+            }
+        }
+        
+        // 顯示工班切換器
+        function showTeamSwitcher() {
+            const switcher = document.getElementById('teamSwitcher')
+            switcher.style.display = 'flex'
+            switcher.innerHTML = ''
+            
+            teams.forEach(team => {
+                const tab = document.createElement('button')
+                tab.className = 'team-tab'
+                tab.textContent = team.name
+                tab.onclick = () => switchTeam(team.id)
+                
+                if (team.id === currentTeamId) {
+                    tab.classList.add('active')
+                }
+                
+                switcher.appendChild(tab)
+            })
+        }
+        
+        // 切換工班
+        function switchTeam(teamId) {
+            currentTeamId = teamId
+            
+            // 更新 URL
+            const url = new URL(window.location)
+            url.searchParams.set('teamId', teamId)
+            window.history.pushState({}, '', url)
+            
+            // 更新切換器狀態
+            document.querySelectorAll('.team-tab').forEach(tab => {
+                tab.classList.remove('active')
+                if (tab.textContent === teams.find(t => t.id === teamId)?.name) {
+                    tab.classList.add('active')
+                }
+            })
+            
+            // 重新載入資料
+            loadTeamData(teamId)
+        }
+        
+        // 載入工班資料
+        async function loadTeamData(teamId) {
+            try {
+                // 取得工班資訊
+                const { data: team } = await supabase
+                    .from('teams')
+                    .select(`
+                        *,
+                        projects (project_name),
+                        foreman:foreman_id (
+                            email,
+                            raw_user_meta_data
+                        )
+                    `)
+                    .eq('id', teamId)
+                    .single()
+                
+                if (team) {
+                    document.getElementById('currentTeamName').textContent = team.name
+                    document.getElementById('projectName').textContent = team.projects?.project_name || '未知專案'
+                    document.getElementById('foremanName').textContent = 
+                        team.foreman?.raw_user_meta_data?.full_name || 
+                        team.foreman?.email || 
+                        '未指定'
+                }
+                
+                // 載入成員列表
+                await loadMembers(teamId)
+                
+                // 更新統計
+                await updateStatistics(teamId)
+                
+            } catch (error) {
+                console.error('載入工班資料失敗:', error)
+            }
+        }
+        
+        // 載入成員列表
+        async function loadMembers(teamId) {
+            try {
+                // 從 team_workers 載入成員
+                const { data: members } = await supabase
+                    .from('team_workers')
+                    .select(`
+                        *,
+                        worker:construction_workers (
+                            *
+                        )
+                    `)
+                    .eq('team_id', teamId)
+                    .eq('is_active', true)
+                
+                const membersList = document.getElementById('membersList')
+                membersList.innerHTML = ''
+                
+                let activeCount = 0
+                
+                members?.forEach(member => {
+                    if (member.is_active) activeCount++
+                    
+                    const card = createMemberCard(member)
+                    membersList.appendChild(card)
+                })
+                
+                // 更新統計
+                document.getElementById('totalMembers').textContent = members?.length || 0
+                document.getElementById('activeMembers').textContent = activeCount
+                
+            } catch (error) {
+                console.error('載入成員失敗:', error)
+            }
+        }
+        
+        // 建立成員卡片
+        function createMemberCard(member) {
+            const div = document.createElement('div')
+            div.className = 'member-card'
+            if (member.role === 'foreman') {
+                div.classList.add('foreman')
+            }
+            
+            const worker = member.worker || {}
+            
+            div.innerHTML = `
+                <div class="member-header">
+                    <div>
+                        <div class="member-name">${worker.name || '未知'}</div>
+                        <span class="role-badge role-${member.role}">
+                            ${member.role === 'foreman' ? '工班負責人' : '工班成員'}
+                        </span>
+                    </div>
+                </div>
+                <div class="member-details">
+                    <span>📱 ${worker.phone || '無電話'}</span>
+                    ${worker.email ? `<span>✉️ ${worker.email}</span>` : ''}
+                    <span>🗓️ 加入時間：${new Date(member.joined_at).toLocaleDateString()}</span>
+                </div>
+                <div class="member-actions">
+                    ${member.role !== 'foreman' && (isAdmin || isForeman) ? `
+                        <button class="btn btn-secondary" onclick="editMember('${member.id}')">編輯</button>
+                        <button class="btn btn-danger" onclick="removeMember('${member.id}')">移除</button>
+                    ` : ''}
+                </div>
+            `
+            
+            return div
+        }
+        
+        // 更新統計
+        async function updateStatistics(teamId) {
+            // 這裡可以從實際的案場資料計算統計
+            // 暫時使用假資料
+            document.getElementById('completedSites').textContent = '0'
+            document.getElementById('totalArea').textContent = '0'
+        }
+        
+        // 切換新增成員表單
+        window.toggleAddMemberForm = function() {
+            const form = document.getElementById('addMemberForm')
+            form.classList.toggle('active')
+            
+            // 只有管理員可以新增工班負責人
+            document.getElementById('foremanOption').style.display = 
+                isAdmin ? 'block' : 'none'
+        }
+        
+        // 新增成員
+        window.addMember = async function() {
+            const name = document.getElementById('memberName').value
+            const phone = document.getElementById('memberPhone').value
+            const email = document.getElementById('memberEmail').value
+            const role = document.getElementById('memberRole').value
+            
+            if (!name || !phone) {
+                alert('請填寫姓名和電話')
+                return
+            }
+            
+            try {
+                // 使用儲存的函數新增工地師傅到工班
+                const { data, error } = await supabase
+                    .rpc('add_worker_to_team', {
+                        p_worker_phone: phone,
+                        p_worker_name: name,
+                        p_team_id: currentTeamId,
+                        p_role: role,
+                        p_added_by: currentUser.id
+                    })
+                
+                if (error) throw error
+                
+                // 建立 Supabase 用戶
+                const password = phone.slice(-3)
+                const { data: signUpData } = await supabase.auth.signUp({
+                    email: email || `${phone}@construction.local`,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            phone: phone,
+                            role: role
+                        }
+                    }
+                })
+                
+                alert(`成員新增成功！\n登入帳號：${phone}\n預設密碼：${password}`)
+                
+                toggleAddMemberForm()
+                loadMembers(currentTeamId)
+                
+            } catch (error) {
+                console.error('新增成員失敗:', error)
+                alert('新增成員失敗：' + error.message)
+            }
+        }
+        
+        // 移除成員
+        window.removeMember = async function(memberId) {
+            if (!confirm('確定要移除此成員嗎？')) return
+            
+            try {
+                const { error } = await supabase
+                    .from('team_workers')
+                    .update({ 
+                        is_active: false,
+                        left_at: new Date().toISOString()
+                    })
+                    .eq('id', memberId)
+                
+                if (error) throw error
+                
+                alert('成員已移除')
+                loadMembers(currentTeamId)
+                
+            } catch (error) {
+                console.error('移除成員失敗:', error)
+                alert('移除成員失敗：' + error.message)
+            }
+        }
+        
+        // 編輯成員
+        window.editMember = function(memberId) {
+            // TODO: 實作編輯功能
+            alert('編輯功能開發中')
+        }
+        
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', init)
+    </script>
+</body>
+</html>

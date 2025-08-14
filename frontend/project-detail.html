@@ -1373,6 +1373,34 @@
     </style>
     <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
+    <script src="js/unified-permissions.js"></script>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        window.supabase = supabase;
+        
+        // Get current user from Supabase
+        async function getCurrentSupabaseUser() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    window.currentSupabaseUser = user;
+                    return user;
+                }
+            } catch (error) {
+                console.log('無法獲取 Supabase 用戶:', error);
+            }
+            return null;
+        }
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', getCurrentSupabaseUser);
+    </script>
 </head>
 <body>
     <div class="container">
@@ -1648,7 +1676,7 @@
     <script>
         // API Configuration
         const API_BASE_URL = CONFIG?.API?.CRM_API_URL || CONFIG?.API?.D1_REST_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
-        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-clerk.lai-jameslai.workers.dev';
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
         const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || CONFIG?.API?.REST_API_TOKEN || 'fx-crm-api-secret-2025';
 
         // 欄位對應表
@@ -1861,7 +1889,7 @@
         }
         
         // Update team legend
-        function updateTeamLegend(teams) {
+        async function updateTeamLegend(teams) {
             const legendTeams = document.getElementById('legendTeams');
             if (!legendTeams) return;
             
@@ -1870,16 +1898,95 @@
                 return;
             }
             
+            // 檢查當前用戶權限
+            let isAdmin = false;
+            let userTeams = new Set(); // 用戶負責的工班
+            
+            // 優先使用 Supabase 用戶，否則使用本地用戶
+            const user = window.currentSupabaseUser || currentUser;
+            
+            if (window.supabase && user) {
+                try {
+                    // 檢查是否為管理員
+                    const { data: adminRole } = await window.supabase
+                        .from('user_roles')
+                        .select('roles!inner(name)')
+                        .eq('user_id', user.id)
+                        .eq('roles.name', 'admin')
+                        .single();
+                    
+                    isAdmin = !!adminRole;
+                    
+                    // 獲取用戶作為負責人的工班
+                    if (!isAdmin && currentProject) {
+                        const { data: foremanTeams } = await window.supabase
+                            .from('teams')
+                            .select('name')
+                            .eq('project_id', currentProject.id)
+                            .eq('foreman_id', user.id);
+                        
+                        if (foremanTeams) {
+                            foremanTeams.forEach(team => userTeams.add(team.name));
+                        }
+                    }
+                } catch (error) {
+                    console.log('權限檢查錯誤:', error);
+                }
+            }
+            
             let items = [];
             teams.forEach((abbr, name) => {
+                // 檢查是否顯示成員管理按鈕
+                const showManageButton = isAdmin || userTeams.has(name);
+                
                 items.push(`
-                    <span class="team-icon">${abbr}</span>
-                    <span>${name}</span>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="team-icon">${abbr}</span>
+                        <span>${name}</span>
+                        ${showManageButton ? `
+                            <button onclick="openTeamMemberManagement('${name}')" 
+                                    style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; 
+                                           background: #10b981; color: white; 
+                                           border: none; border-radius: 4px; 
+                                           font-size: 0.75rem; cursor: pointer;"
+                                    title="管理 ${name} 成員">
+                                管理成員
+                            </button>
+                        ` : ''}
+                    </div>
                 `);
             });
             
             // 將工班分開顯示為多個 legend-item
             legendTeams.innerHTML = items.map(item => `<div class="legend-item">${item}</div>`).join('');
+        }
+        
+        // 開啟工班成員管理頁面
+        async function openTeamMemberManagement(teamName) {
+            if (!currentProject) {
+                alert('專案資料尚未載入');
+                return;
+            }
+            
+            try {
+                // 根據工班名稱獲取工班ID
+                const { data: team } = await window.supabase
+                    .from('teams')
+                    .select('id')
+                    .eq('project_id', currentProject.id)
+                    .eq('name', teamName)
+                    .single();
+                
+                if (team) {
+                    // 導向工班成員管理頁面
+                    window.location.href = `team-member-management.html?teamId=${team.id}&projectId=${currentProject.id}`;
+                } else {
+                    alert('找不到工班資料');
+                }
+            } catch (error) {
+                console.error('開啟成員管理失敗:', error);
+                alert('開啟成員管理失敗');
+            }
         }
 
         // Render building tabs
@@ -2768,7 +2875,7 @@
                     if (projectId && confirm(`確定要刪除專案「${projectName}」嗎？此操作無法復原。`)) {
                         try {
                             const response = await fetch(
-                                `${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-clerk.lai-jameslai.workers.dev'}/api/v1/projects/${projectId}`,
+                                `${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev'}/api/v1/projects/${projectId}`,
                                 {
                                     method: 'DELETE',
                                     headers: AuthUtils.getRequestHeaders()

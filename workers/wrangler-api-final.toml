@@ -1,4 +1,4 @@
-name = "construction-management-api-clerk"
+name = "construction-management-api"
 main = "src/api-final.js"
 compatibility_date = "2024-11-06"
 

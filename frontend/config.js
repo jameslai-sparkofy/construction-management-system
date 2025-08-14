@@ -9,7 +9,11 @@ const CONFIG = {
     CRM_API_TOKEN: 'fx-crm-api-secret-2025',
     
     // Authentication
-    EMERGENCY_LOGIN_ENABLED: true
+    EMERGENCY_LOGIN_ENABLED: true,
+    
+    // Supabase Configuration
+    SUPABASE_URL: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
+    SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ'
   },
   
   UI: {

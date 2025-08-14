@@ -4,4 +4,4 @@ compatibility_date = "2024-11-06"
 
 # Environment variables for Pages
 [vars]
-API_URL = "https://construction-management-api-clerk.lai-jameslai.workers.dev"
+API_URL = "https://construction-management-api.lai-jameslai.workers.dev"

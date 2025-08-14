@@ -633,6 +633,7 @@
     <!-- Load configuration first -->
     <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
+    <script src="js/unified-permissions.js"></script>
     <script src="js/project-status.js"></script>
     
     <script>
@@ -641,7 +642,7 @@
         const API_TOKEN = 'fx-crm-api-secret-2025';
         const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || (window.location.hostname === 'localhost' 
             ? 'http://localhost:8787' 
-            : 'https://construction-management-api-clerk.lai-jameslai.workers.dev');
+            : 'https://construction-management-api.lai-jameslai.workers.dev');
         const USE_V2_API = false; // 使用 V1 API (V2 尚未實作)
 
         // User context

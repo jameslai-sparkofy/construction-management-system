@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 元心建材工程管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+            font-size: 1.75rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .password-hint {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-top: 0.25rem;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.875rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .alert {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1.25rem;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin-top: 1rem;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .test-accounts {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .test-title {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 0.75rem;
+            text-align: center;
+        }
+
+        .test-account {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            background: #f7fafc;
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .test-account button {
+            padding: 0.25rem 0.75rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .test-account button:hover {
+            background: #5a67d8;
+        }
+
+        .link-section {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .link-section a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .link-section a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Initialize Supabase
+        const supabaseUrl = window.CONFIG?.API?.SUPABASE_URL || 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+        const supabaseAnonKey = window.CONFIG?.API?.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        window.supabase = supabase;
+    </script>
+    <script src="config.js"></script>
+    <script src="js/unified-auth.js"></script>
+    <script src="js/unified-permissions.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🏗️</div>
+        <h1>元心建材工程管理系統</h1>
+        <p class="subtitle">請使用電話號碼登入</p>
+
+        <div id="alertBox"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="phone">電話號碼</label>
+                <input type="tel" id="phone" name="phone" placeholder="例如：0912345678" required>
+            </div>
+
+            <div class="form-group">
+                <label for="password">密碼</label>
+                <input type="password" id="password" name="password" placeholder="電話號碼末3碼" required>
+                <div class="password-hint">預設密碼為您的電話號碼末3碼</div>
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">登入</button>
+        </form>
+
+        <div class="loading" id="loading">
+            <div>⏳ 登入中...</div>
+        </div>
+
+        <!-- Test Accounts -->
+        <div class="test-accounts">
+            <div class="test-title">測試帳號（開發環境）</div>
+            <div class="test-account">
+                <span>🔧 管理員：0900000001 / 001</span>
+                <button onclick="quickLogin('0900000001', '001')">快速登入</button>
+            </div>
+            <div class="test-account">
+                <span>👷 工班負責人：0912345678 / 678</span>
+                <button onclick="quickLogin('0912345678', '678')">快速登入</button>
+            </div>
+            <div class="test-account">
+                <span>🏢 業主：0987654321 / 321</span>
+                <button onclick="quickLogin('0987654321', '321')">快速登入</button>
+            </div>
+        </div>
+
+        <div class="link-section">
+            <a href="index.html">← 返回首頁</a>
+        </div>
+    </div>
+
+    <script>
+        const WORKER_API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:8787'
+            : (window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev');
+        
+        // Show alert
+        function showAlert(message, type = 'error') {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.innerHTML = `
+                <div class="alert alert-${type}">
+                    ${type === 'error' ? '❌' : '✅'} ${message}
+                </div>
+            `;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    alertBox.innerHTML = '';
+                }, 2000);
+            }
+        }
+
+        // Quick login for testing
+        window.quickLogin = function(phone, password) {
+            document.getElementById('phone').value = phone;
+            document.getElementById('password').value = password;
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        }
+
+        // Handle login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value.trim();
+            
+            if (!phone || !password) {
+                showAlert('請輸入電話號碼和密碼');
+                return;
+            }
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const loading = document.getElementById('loading');
+            
+            loginBtn.disabled = true;
+            loading.classList.add('active');
+            
+            try {
+                // Try Supabase authentication first
+                const email = `${phone}@construction.local`;
+                const { data, error } = await window.supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                let loginSuccess = false;
+                let userData = null;
+                
+                if (!error && data?.user) {
+                    // Supabase login successful
+                    loginSuccess = true;
+                    
+                    // Get D1 mapping
+                    const { data: mapping } = await window.supabase
+                        .from('auth_mapping')
+                        .select('d1_user_id, d1_user_phone')
+                        .eq('auth_user_id', data.user.id)
+                        .single();
+                    
+                    userData = {
+                        id: data.user.id,
+                        email: data.user.email,
+                        phone: phone,
+                        d1_user_id: mapping?.d1_user_id,
+                        d1_user_phone: mapping?.d1_user_phone,
+                        source: 'supabase'
+                    };
+                    
+                    // Store auth info
+                    localStorage.setItem('auth_token', data.session?.access_token || '');
+                    localStorage.setItem('user_info', JSON.stringify(userData));
+                    localStorage.setItem('auth_type', 'supabase');
+                    
+                } else {
+                    // Fall back to D1 authentication
+                    const response = await fetch(`${WORKER_API_URL}/api/v1/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ phone, password })
+                    });
+                    
+                    if (response.ok) {
+                        const result = await response.json();
+                        loginSuccess = true;
+                        
+                        userData = {
+                            id: result.user?.id || phone,
+                            phone: phone,
+                            name: result.user?.name,
+                            role: result.user?.role,
+                            source: 'd1'
+                        };
+                        
+                        // Store auth info
+                        localStorage.setItem('auth_token', result.token || '');
+                        localStorage.setItem('user_info', JSON.stringify(userData));
+                        localStorage.setItem('auth_type', 'simple');
+                    }
+                }
+                
+                if (loginSuccess) {
+                    // Initialize permissions
+                    if (window.permissions) {
+                        await window.permissions.init();
+                    }
+                    
+                    showAlert('登入成功！正在跳轉...', 'success');
+                    
+                    setTimeout(() => {
+                        window.location.href = 'project-list.html';
+                    }, 1000);
+                } else {
+                    showAlert('電話號碼或密碼錯誤');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('登入失敗：' + error.message);
+            } finally {
+                loginBtn.disabled = false;
+                loading.classList.remove('active');
+            }
+        });
+        
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (window.supabase) {
+                const { data: { user } } = await window.supabase.auth.getUser();
+                if (user) {
+                    // Already logged in with Supabase
+                    window.location.href = 'project-list.html';
+                    return;
+                }
+            }
+            
+            // Check legacy auth
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                window.location.href = 'project-list.html';
+            }
+        });
+    </script>
+</body>
+</html>

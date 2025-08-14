@@ -418,9 +418,15 @@
                 </h1>
                 <div class="project-name" id="projectName">測試專案</div>
             </div>
-            <button class="btn btn-primary" onclick="showAddMemberForm()">
-                <span>➕</span> 新增成員
-            </button>
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-primary" id="ownerManageBtn" style="display: none;" 
+                        onclick="goToOwnerManagement()">
+                    <span>🏢</span> 業主管理
+                </button>
+                <button class="btn btn-primary" onclick="showAddMemberForm()">
+                    <span>➕</span> 新增成員
+                </button>
+            </div>
         </div>
 
         <!-- 統計資訊 -->
@@ -712,10 +718,44 @@
         }
         
         // 初始化
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             loadMembers()
             loadTeams()
+            
+            // 檢查是否為 admin，顯示業主管理按鈕
+            await checkAdminRole()
         })
+        
+        // 檢查是否為 admin
+        async function checkAdminRole() {
+            try {
+                // 從本地或 API 獲取用戶角色
+                const response = await fetch(`${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev'}/api/v1/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                })
+                
+                if (response.ok) {
+                    const userData = await response.json()
+                    if (userData.role === 'admin') {
+                        document.getElementById('ownerManageBtn').style.display = 'inline-flex'
+                    }
+                }
+            } catch (error) {
+                console.log('無法確認 admin 權限')
+            }
+        }
+        
+        // 前往業主管理頁面
+        window.goToOwnerManagement = function() {
+            const projectId = new URLSearchParams(window.location.search).get('projectId')
+            if (projectId) {
+                window.location.href = `owner-management.html?projectId=${projectId}`
+            } else {
+                alert('缺少專案參數')
+            }
+        }
     </script>
 
     <script>

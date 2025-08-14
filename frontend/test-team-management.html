@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試工班管理 - 元心建材工程管理系統</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            padding: 2rem;
+            background: #f9fafb;
+        }
+        .test-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        .btn:hover {
+            background: #059669;
+        }
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f3f4f6;
+            border-radius: 6px;
+            white-space: pre-wrap;
+        }
+        .team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .team-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <h1>工班管理測試頁面</h1>
+
+    <div class="test-section">
+        <h2>1. 測試 Supabase 連接</h2>
+        <button class="btn" onclick="testSupabaseConnection()">測試連接</button>
+        <div id="supabaseResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. 測試用戶權限</h2>
+        <button class="btn" onclick="testUserPermissions()">檢查權限</button>
+        <div id="permissionResult" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. 測試工班列表</h2>
+        <button class="btn" onclick="loadTeams()">載入工班</button>
+        <div id="teamsList" class="team-list"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. 測試專案連結</h2>
+        <p>測試專案ID: <input type="text" id="projectId" value="test-project-001" style="padding: 0.5rem;"></p>
+        <button class="btn" onclick="goToProjectDetail()">前往專案詳情</button>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        window.supabase = supabase;
+
+        // 測試 Supabase 連接
+        window.testSupabaseConnection = async function() {
+            const resultDiv = document.getElementById('supabaseResult');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    resultDiv.textContent = `✅ Supabase 連接成功！\n用戶ID: ${user.id}\nEmail: ${user.email}`;
+                } else {
+                    resultDiv.textContent = '⚠️ 未登入，請先登入';
+                }
+            } catch (error) {
+                resultDiv.textContent = `❌ 連接失敗: ${error.message}`;
+            }
+        }
+
+        // 測試用戶權限
+        window.testUserPermissions = async function() {
+            const resultDiv = document.getElementById('permissionResult');
+            resultDiv.style.display = 'block';
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    resultDiv.textContent = '⚠️ 請先登入';
+                    return;
+                }
+
+                // 檢查是否為管理員
+                const { data: adminRole } = await supabase
+                    .from('user_roles')
+                    .select('roles!inner(name)')
+                    .eq('user_id', user.id)
+                    .eq('roles.name', 'admin')
+                    .single();
+                
+                const isAdmin = !!adminRole;
+
+                // 檢查是否為工班負責人
+                const { data: foremanTeams } = await supabase
+                    .from('teams')
+                    .select('*')
+                    .eq('foreman_id', user.id);
+                
+                let result = `用戶權限檢查結果：\n`;
+                result += `是否為管理員: ${isAdmin ? '✅ 是' : '❌ 否'}\n`;
+                result += `負責的工班數量: ${foremanTeams?.length || 0}\n`;
+                
+                if (foremanTeams && foremanTeams.length > 0) {
+                    result += `負責的工班:\n`;
+                    foremanTeams.forEach(team => {
+                        result += `  - ${team.name}\n`;
+                    });
+                }
+                
+                resultDiv.textContent = result;
+            } catch (error) {
+                resultDiv.textContent = `❌ 檢查失敗: ${error.message}`;
+            }
+        }
+
+        // 載入工班列表
+        window.loadTeams = async function() {
+            const teamsList = document.getElementById('teamsList');
+            
+            try {
+                const { data: teams, error } = await supabase
+                    .from('teams')
+                    .select('*')
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                if (!teams || teams.length === 0) {
+                    teamsList.innerHTML = '<p>暫無工班資料</p>';
+                    return;
+                }
+                
+                teamsList.innerHTML = teams.map(team => `
+                    <div class="team-item">
+                        <strong>${team.name}</strong>
+                        <span>專案ID: ${team.project_id}</span>
+                        <button class="btn" onclick="window.location.href='team-member-management.html?teamId=${team.id}&projectId=${team.project_id}'">
+                            管理成員
+                        </button>
+                    </div>
+                `).join('');
+            } catch (error) {
+                teamsList.innerHTML = `<p style="color: red;">載入失敗: ${error.message}</p>`;
+            }
+        }
+
+        // 前往專案詳情
+        window.goToProjectDetail = function() {
+            const projectId = document.getElementById('projectId').value;
+            if (projectId) {
+                window.location.href = `project-detail.html?id=${projectId}`;
+            } else {
+                alert('請輸入專案ID');
+            }
+        }
+
+        // 頁面載入時自動測試連接
+        document.addEventListener('DOMContentLoaded', () => {
+            testSupabaseConnection();
+        });
+    </script>
+</body>
+</html>
