@@ -3,14 +3,14 @@ const SUPABASE_CONFIG = {
     // 開發環境
     development: {
         url: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNjI3MjEsImV4cCI6MjA0OTYzODcyMX0.vJmxGdlVy8A0kqAQW_CvcZm9-Bo0WqsL5y3vwg3Kkzc',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ',
         // 注意：這是 anon key (公開的)，不是 service key
     },
     
     // 生產環境
     production: {
         url: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
-        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNjI3MjEsImV4cCI6MjA0OTYzODcyMX0.vJmxGdlVy8A0kqAQW_CvcZm9-Bo0WqsL5y3vwg3Kkzc',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ',
     }
 };
 
