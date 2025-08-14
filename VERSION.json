@@ -1,8 +1,18 @@
 {
-  "version": "1.3.0",
-  "versionName": "Clerk 認證整合版",
+  "version": "1.4.0",
+  "versionName": "Supabase 認證整合版",
   "releaseDate": "2025-08-14",
   "changelog": {
+    "1.4.0": {
+      "date": "2025-08-14",
+      "changes": [
+        "改用 Supabase 認證系統（支援台灣電話）",
+        "新增電話號碼 OTP 驗證",
+        "支援 Email 註冊與登入",
+        "支援 Google/GitHub OAuth",
+        "提供更完整的認證流程"
+      ]
+    },
     "1.3.0": {
       "date": "2025-08-14",
       "changes": [
