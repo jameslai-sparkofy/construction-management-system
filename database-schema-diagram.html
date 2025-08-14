@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工程管理系統 - 資料庫架構圖</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #2d3748;
+            margin-bottom: 2rem;
+        }
+        
+        .architecture-diagram {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 3rem;
+            justify-content: center;
+        }
+        
+        .database-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            min-width: 400px;
+        }
+        
+        .supabase {
+            border-left: 5px solid #3ecf8e;
+        }
+        
+        .d1 {
+            border-left: 5px solid #f68e56;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .supabase .section-title {
+            color: #3ecf8e;
+        }
+        
+        .d1 .section-title {
+            color: #f68e56;
+        }
+        
+        .table {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            background: #edf2f7;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #2d3748;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table-field {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .table-field:last-child {
+            border-bottom: none;
+        }
+        
+        .field-name {
+            font-weight: 500;
+            color: #4a5568;
+        }
+        
+        .field-type {
+            color: #718096;
+            font-size: 0.9em;
+        }
+        
+        .primary-key {
+            color: #e53e3e;
+            font-weight: 600;
+        }
+        
+        .foreign-key {
+            color: #3182ce;
+            font-weight: 600;
+        }
+        
+        .mapping-flow {
+            text-align: center;
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .flow-step {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: #e2e8f0;
+            border-radius: 20px;
+            margin: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        .flow-arrow {
+            font-size: 1.5rem;
+            color: #718096;
+            margin: 0 0.5rem;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .roles-matrix {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-top: 2rem;
+        }
+        
+        .matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .matrix-table th,
+        .matrix-table td {
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .matrix-table th {
+            background: #edf2f7;
+            font-weight: 600;
+        }
+        
+        .matrix-table .role-admin {
+            background: #fed7d7;
+        }
+        
+        .matrix-table .role-owner {
+            background: #fefcbf;
+        }
+        
+        .matrix-table .role-foreman {
+            background: #c6f6d5;
+        }
+        
+        .matrix-table .role-worker {
+            background: #bee3f8;
+        }
+        
+        .permission-yes {
+            color: #38a169;
+            font-weight: 600;
+        }
+        
+        .permission-no {
+            color: #e53e3e;
+            font-weight: 600;
+        }
+
+        .data-flow {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+        }
+
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .flow-box {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            min-width: 150px;
+        }
+
+        .flow-box.auth {
+            border-color: #3ecf8e;
+        }
+
+        .flow-box.mapping {
+            border-color: #805ad5;
+        }
+
+        .flow-box.business {
+            border-color: #f68e56;
+        }
+
+        .arrow {
+            font-size: 1.5rem;
+            color: #718096;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ 工程管理系統 - 資料庫架構圖</h1>
+
+        <!-- 圖例 -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3ecf8e;"></div>
+                <span>Supabase (認證層)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f68e56;"></div>
+                <span>Cloudflare D1 (業務層)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #805ad5;"></div>
+                <span>關聯映射</span>
+            </div>
+        </div>
+
+        <!-- 主要架構圖 -->
+        <div class="architecture-diagram">
+            <!-- Supabase 資料庫 -->
+            <div class="database-section supabase">
+                <div class="section-title">
+                    🔐 Supabase PostgreSQL
+                    <small>(認證與基本資料)</small>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">auth.users (內建)</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">UUID (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">email</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">encrypted_password</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">raw_user_meta_data</span>
+                        <span class="field-type">JSONB</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">user_profiles</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">UUID (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">auth_user_id</span>
+                        <span class="field-type">UUID (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">phone</span>
+                        <span class="field-type">TEXT UNIQUE</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">auth_mapping ⭐</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">UUID (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">auth_user_id</span>
+                        <span class="field-type">UUID (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">d1_user_id</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">d1_user_phone</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">auth_sessions</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">UUID (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">auth_user_id</span>
+                        <span class="field-type">UUID (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">session_token</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">expires_at</span>
+                        <span class="field-type">TIMESTAMP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cloudflare D1 資料庫 -->
+            <div class="database-section d1">
+                <div class="section-title">
+                    🏗️ Cloudflare D1 SQLite
+                    <small>(業務資料與權限)</small>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">projects</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">TEXT (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">opportunity_id</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">project_code</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">project_status</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">project_permissions ⭐</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">TEXT (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">project_id</span>
+                        <span class="field-type">TEXT (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">user_id</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">phone</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">role</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">can_view</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">can_edit</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">can_manage_members</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">can_view_other_teams</span>
+                        <span class="field-type">INTEGER</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">teams</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">TEXT (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">project_id</span>
+                        <span class="field-type">TEXT (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">leader_phone</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">type</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">team_members</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">TEXT (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">team_id</span>
+                        <span class="field-type">TEXT (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">name</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">phone</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">role</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+
+                <div class="table">
+                    <div class="table-header">progress_reports</div>
+                    <div class="table-field">
+                        <span class="field-name primary-key">id</span>
+                        <span class="field-type">TEXT (PK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">project_id</span>
+                        <span class="field-type">TEXT (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name foreign-key">team_id</span>
+                        <span class="field-type">TEXT (FK)</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">description</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                    <div class="table-field">
+                        <span class="field-name">status</span>
+                        <span class="field-type">TEXT</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 資料流程圖 -->
+        <div class="data-flow">
+            <div class="section-title" style="color: #4a5568;">
+                🔄 登入與權限驗證流程
+            </div>
+            <div class="flow-diagram">
+                <div class="flow-box auth">
+                    <strong>1. 用戶登入</strong><br>
+                    Supabase Auth<br>
+                    <small>驗證 email/密碼</small>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-box mapping">
+                    <strong>2. 映射查詢</strong><br>
+                    auth_mapping<br>
+                    <small>取得 d1_user_id</small>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-box business">
+                    <strong>3. 權限查詢</strong><br>
+                    project_permissions<br>
+                    <small>檢查角色與權限</small>
+                </div>
+                <div class="arrow">→</div>
+                <div class="flow-box">
+                    <strong>4. 功能顯示</strong><br>
+                    前端介面<br>
+                    <small>根據權限顯示功能</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 權限矩陣 -->
+        <div class="roles-matrix">
+            <div class="section-title" style="color: #4a5568;">
+                🎯 角色權限矩陣
+            </div>
+            <table class="matrix-table">
+                <thead>
+                    <tr>
+                        <th>角色 / 權限</th>
+                        <th>查看專案</th>
+                        <th>編輯專案</th>
+                        <th>管理成員</th>
+                        <th>查看其他工班</th>
+                        <th>管理功能選單</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="role-admin">
+                        <td><strong>admin</strong><br><small>0900000001</small></td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 顯示</td>
+                    </tr>
+                    <tr class="role-owner">
+                        <td><strong>owner</strong><br><small>0987654321</small></td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-no">❌ 否</td>
+                        <td class="permission-no">❌ 否</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-no">❌ 隱藏</td>
+                    </tr>
+                    <tr class="role-foreman">
+                        <td><strong>foreman</strong><br><small>0912345678</small></td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-no">❌ 否</td>
+                        <td class="permission-no">❌ 隱藏</td>
+                    </tr>
+                    <tr class="role-worker">
+                        <td><strong>worker</strong><br><small>0955555555</small></td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-yes">✅ 是</td>
+                        <td class="permission-no">❌ 否</td>
+                        <td class="permission-no">❌ 否</td>
+                        <td class="permission-no">❌ 隱藏</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 關聯說明 -->
+        <div class="mapping-flow">
+            <div class="section-title" style="color: #4a5568;">
+                🔗 關鍵資料關聯
+            </div>
+            <div style="margin: 1rem 0;">
+                <div class="flow-step">Supabase User ID</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">auth_mapping.auth_user_id</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">auth_mapping.d1_user_id</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">project_permissions.user_id</div>
+                <span class="flow-arrow">→</span>
+                <div class="flow-step">權限檢查</div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; background: #edf2f7; padding: 1rem; border-radius: 8px;">
+                <strong>⭐ 重要提醒：</strong><br>
+                • <code>auth_mapping</code> 是連接兩個資料庫的關鍵橋樑<br>
+                • <code>project_permissions.role</code> 決定用戶的權限等級<br>
+                • 只有 <code>role = 'admin'</code> 的用戶才能看到管理功能選單<br>
+                • 所有業務資料都存在 D1，Supabase 只負責認證
+            </div>
+        </div>
+    </div>
+</body>
+</html>

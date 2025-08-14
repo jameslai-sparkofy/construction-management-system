@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Flow Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            line-height: 1.6;
+        }
+        .test-section {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        .test-result {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+        }
+        .success { background: #d1fae5; color: #065f46; }
+        .error { background: #fee2e2; color: #991b1b; }
+        .warning { background: #fef3c7; color: #92400e; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        button:hover { background: #2563eb; }
+        .nav-link {
+            display: inline-block;
+            background: #f3f4f6;
+            color: #374151;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin: 0.25rem;
+            border: 1px solid #d1d5db;
+        }
+        .nav-link:hover { background: #e5e7eb; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Navigation Flow Test</h1>
+    <p>測試工程管理系統的導航流程和權限檢查</p>
+
+    <div class="test-section">
+        <h2>📋 主要頁面連結測試</h2>
+        <div>
+            <a href="frontend/index.html" class="nav-link">🏠 首頁 (index.html)</a>
+            <a href="frontend/login-supabase-unified.html" class="nav-link">🔑 登入頁面</a>
+            <a href="frontend/project-list.html" class="nav-link">📋 專案列表</a>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 管理功能頁面測試</h2>
+        <div>
+            <a href="frontend/member-management.html" class="nav-link">👥 成員管理</a>
+            <a href="frontend/owner-management.html" class="nav-link">🏢 業主管理</a>
+            <a href="frontend/team-member-management.html" class="nav-link">👷 工班管理</a>
+            <a href="frontend/test-permissions.html" class="nav-link">🧪 權限測試</a>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>⚡ 自動化測試</h2>
+        <button onclick="testNavigationStructure()">測試導航結構</button>
+        <button onclick="testPermissionSystem()">測試權限系統</button>
+        <button onclick="testAPIConnectivity()">測試 API 連接</button>
+        <div id="testResults"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ 檢查清單</h2>
+        <div id="checklist">
+            <label><input type="checkbox"> 專案列表頁面管理員可見管理選單</label><br>
+            <label><input type="checkbox"> 管理頁面有返回專案列表連結</label><br>
+            <label><input type="checkbox"> 權限檢查正常工作</label><br>
+            <label><input type="checkbox"> 登入/登出流程正常</label><br>
+            <label><input type="checkbox"> API 連接正常</label><br>
+        </div>
+    </div>
+
+    <script>
+        // Load configuration
+        const CONFIG = {
+            API: {
+                WORKER_API_URL: 'https://construction-management-api.lai-jameslai.workers.dev',
+                SUPABASE_URL: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
+                SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+            }
+        };
+
+        function addTestResult(message, type = 'success') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = message;
+            document.getElementById('testResults').appendChild(div);
+        }
+
+        function testNavigationStructure() {
+            addTestResult('🔍 測試導航結構...', 'warning');
+            
+            // Test if pages exist
+            const pages = [
+                'frontend/project-list.html',
+                'frontend/member-management.html',
+                'frontend/owner-management.html',
+                'frontend/team-member-management.html'
+            ];
+            
+            pages.forEach(page => {
+                fetch(page, { method: 'HEAD' })
+                    .then(response => {
+                        if (response.ok) {
+                            addTestResult(`✅ ${page} 存在`);
+                        } else {
+                            addTestResult(`❌ ${page} 無法存取 (${response.status})`, 'error');
+                        }
+                    })
+                    .catch(error => {
+                        addTestResult(`❌ ${page} 載入失敗: ${error.message}`, 'error');
+                    });
+            });
+        }
+
+        function testPermissionSystem() {
+            addTestResult('🔐 測試權限系統...', 'warning');
+            
+            // Check if unified-permissions.js is accessible
+            fetch('frontend/js/unified-permissions.js', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        addTestResult('✅ 統一權限系統檔案存在');
+                    } else {
+                        addTestResult('❌ 統一權限系統檔案無法存取', 'error');
+                    }
+                })
+                .catch(error => {
+                    addTestResult(`❌ 權限系統載入失敗: ${error.message}`, 'error');
+                });
+        }
+
+        function testAPIConnectivity() {
+            addTestResult('🌐 測試 API 連接...', 'warning');
+            
+            // Test Worker API health
+            fetch(`${CONFIG.API.WORKER_API_URL}/health`, { 
+                method: 'GET',
+                timeout: 5000
+            })
+                .then(response => {
+                    if (response.ok) {
+                        addTestResult('✅ Worker API 連接正常');
+                    } else {
+                        addTestResult(`⚠️  Worker API 回應異常 (${response.status})`, 'warning');
+                    }
+                })
+                .catch(error => {
+                    addTestResult(`❌ Worker API 連接失敗: ${error.message}`, 'error');
+                });
+
+            // Test Supabase connectivity
+            fetch(`${CONFIG.API.SUPABASE_URL}/rest/v1/`, {
+                method: 'GET',
+                headers: {
+                    'apikey': CONFIG.API.SUPABASE_ANON_KEY
+                },
+                timeout: 5000
+            })
+                .then(response => {
+                    if (response.ok) {
+                        addTestResult('✅ Supabase API 連接正常');
+                    } else {
+                        addTestResult(`⚠️  Supabase API 回應異常 (${response.status})`, 'warning');
+                    }
+                })
+                .catch(error => {
+                    addTestResult(`❌ Supabase API 連接失敗: ${error.message}`, 'error');
+                });
+        }
+
+        // Auto-run basic tests on load
+        setTimeout(() => {
+            testNavigationStructure();
+        }, 500);
+    </script>
+</body>
+</html>

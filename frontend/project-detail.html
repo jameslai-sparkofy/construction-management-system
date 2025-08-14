@@ -121,6 +121,145 @@
             border-color: var(--primary);
         }
 
+        /* 視角切換器樣式 */
+        .perspective-switcher {
+            position: relative;
+            display: none; /* 預設隱藏，只有管理員可見 */
+        }
+
+        .perspective-switcher.show {
+            display: block;
+        }
+
+        .perspective-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .perspective-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .perspective-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 0.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            min-width: 280px;
+            z-index: 1000;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .perspective-dropdown.show {
+            display: block;
+        }
+
+        .perspective-group {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .perspective-group:last-child {
+            border-bottom: none;
+        }
+
+        .perspective-group-title {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--background);
+        }
+
+        .perspective-item {
+            padding: 0.75rem 1rem;
+            color: var(--body-text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .perspective-item:hover {
+            background: var(--background);
+            color: var(--primary);
+        }
+
+        .perspective-item.active {
+            background: #f0f9ff;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        .perspective-role-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        .role-admin {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .role-owner {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .role-foreman {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .role-worker {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* 模擬模式提示條 */
+        .simulation-banner {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            padding: 0.75rem 1rem;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .simulation-banner.show {
+            display: block;
+        }
+
+        .exit-simulation-btn {
+            background: rgba(255,255,255,0.2) !important;
+            color: white !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            padding: 0.25rem 0.5rem !important;
+            font-size: 0.75rem !important;
+            margin-left: 1rem;
+        }
+
+        .exit-simulation-btn:hover {
+            background: rgba(255,255,255,0.3) !important;
+        }
+
         /* Navigation Tabs */
         .nav-tabs {
             display: flex;
@@ -1403,6 +1542,14 @@
     </script>
 </head>
 <body>
+    <!-- 模擬模式提示條 -->
+    <div class="simulation-banner" id="simulationBanner">
+        <span id="simulationText">🎭 目前正在模擬視角：<strong id="simulatedUserName"></strong></span>
+        <button class="exit-simulation-btn" onclick="exitSimulation()">
+            ❌ 返回管理員視角
+        </button>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -1413,6 +1560,26 @@
                     <p id="projectDescription">正在載入專案資料...</p>
                 </div>
                 <div class="header-actions">
+                    <!-- 視角切換器 (僅管理員可見) -->
+                    <div class="perspective-switcher" id="perspectiveSwitcher">
+                        <button class="perspective-btn" onclick="togglePerspectiveDropdown()">
+                            <span>👤</span>
+                            <span>切換視角</span>
+                        </button>
+                        <div class="perspective-dropdown" id="perspectiveDropdown">
+                            <div class="perspective-group">
+                                <div class="perspective-group-title">管理員</div>
+                                <div class="perspective-item active" onclick="switchPerspective(null)">
+                                    <span>🔧</span>
+                                    <span>管理員視角 (當前)</span>
+                                </div>
+                            </div>
+                            <div id="perspectiveUsersList">
+                                <!-- 動態載入用戶列表 -->
+                            </div>
+                        </div>
+                    </div>
+
                     <button class="btn-report">
                         <span>📊</span>
                         <span>報表</span>
@@ -1706,6 +1873,11 @@
         let currentBuilding = 'A';
         let currentSiteId = null;
 
+        // 視角切換相關變量
+        let currentSimulatedUser = null;
+        let originalUser = null;
+        let allProjectUsers = [];
+
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
             // Get project ID from URL
@@ -1718,6 +1890,9 @@
                 showError('未提供專案 ID');
                 return;
             }
+
+            // Initialize perspective switcher for admin
+            await initializePerspectiveSwitcher(projectId);
 
             // Load user data
             await loadUserData();
@@ -1898,46 +2073,50 @@
                 return;
             }
             
-            // 檢查當前用戶權限
+            // 檢查當前用戶權限 - 使用統一權限系統
             let isAdmin = false;
             let userTeams = new Set(); // 用戶負責的工班
             
-            // 優先使用 Supabase 用戶，否則使用本地用戶
-            const user = window.currentSupabaseUser || currentUser;
-            
-            if (window.supabase && user) {
-                try {
-                    // 檢查是否為管理員
-                    const { data: adminRole } = await window.supabase
-                        .from('user_roles')
-                        .select('roles!inner(name)')
-                        .eq('user_id', user.id)
-                        .eq('roles.name', 'admin')
-                        .single();
-                    
-                    isAdmin = !!adminRole;
-                    
-                    // 獲取用戶作為負責人的工班
-                    if (!isAdmin && currentProject) {
-                        const { data: foremanTeams } = await window.supabase
-                            .from('teams')
-                            .select('name')
-                            .eq('project_id', currentProject.id)
-                            .eq('foreman_id', user.id);
-                        
-                        if (foremanTeams) {
-                            foremanTeams.forEach(team => userTeams.add(team.name));
-                        }
-                    }
-                } catch (error) {
-                    console.log('權限檢查錯誤:', error);
+            try {
+                // 使用統一權限系統檢查管理員權限
+                if (window.permissions) {
+                    await window.permissions.init();
+                    isAdmin = await window.permissions.isAdmin();
                 }
+                
+                // 如果不是管理員，獲取用戶負責的工班
+                if (!isAdmin && currentProject) {
+                    try {
+                        const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${currentProject.id}/permissions`, {
+                            headers: AuthUtils.getRequestHeaders()
+                        });
+                        
+                        if (response.ok) {
+                            const permissions = await response.json();
+                            const currentUserPhone = AuthUtils.getUser()?.phone;
+                            
+                            // 找到用戶負責的工班
+                            permissions.forEach(perm => {
+                                if (perm.phone === currentUserPhone && perm.role === 'foreman') {
+                                    // 通過工班 API 獲取工班名稱
+                                    userTeams.add(perm.name); // 暫時使用用戶名作為工班標識
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.log('獲取用戶工班失敗:', error);
+                    }
+                }
+            } catch (error) {
+                console.log('權限檢查錯誤:', error);
             }
             
             let items = [];
             teams.forEach((abbr, name) => {
-                // 檢查是否顯示成員管理按鈕
-                const showManageButton = isAdmin || userTeams.has(name);
+                // 檢查是否顯示成員管理按鈕 - 考慮模擬用戶權限
+                const currentPermissions = getCurrentUserPermissions();
+                const showManageButton = currentPermissions.isAdmin || 
+                                       (currentPermissions.can_manage_members && userTeams.has(name));
                 
                 items.push(`
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
@@ -2968,6 +3147,241 @@
                 message.textContent = `您沒有權限使用${feature}。請聯繫管理員開通權限。`;
             }
             alertModal.style.display = 'flex';
+        }
+
+        // ============================
+        // 視角切換功能實現
+        // ============================
+
+        // 初始化視角切換器
+        async function initializePerspectiveSwitcher(projectId) {
+            try {
+                // 檢查是否為管理員
+                if (window.permissions) {
+                    await window.permissions.init();
+                    const isAdmin = await window.permissions.isAdmin();
+                    
+                    if (isAdmin) {
+                        // 顯示視角切換器
+                        document.getElementById('perspectiveSwitcher').classList.add('show');
+                        
+                        // 載入專案所有用戶
+                        await loadProjectUsers(projectId);
+                        
+                        // 保存原始用戶
+                        originalUser = AuthUtils.getUser();
+                    }
+                }
+            } catch (error) {
+                console.error('初始化視角切換器失敗:', error);
+            }
+        }
+
+        // 載入專案所有用戶
+        async function loadProjectUsers(projectId) {
+            try {
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/permissions`, {
+                    headers: AuthUtils.getRequestHeaders()
+                });
+                
+                if (response.ok) {
+                    allProjectUsers = await response.json();
+                    renderPerspectiveUsersList();
+                } else {
+                    console.error('載入專案用戶失敗:', response.status);
+                }
+            } catch (error) {
+                console.error('載入專案用戶失敗:', error);
+            }
+        }
+
+        // 渲染視角切換用戶列表
+        function renderPerspectiveUsersList() {
+            const container = document.getElementById('perspectiveUsersList');
+            container.innerHTML = '';
+
+            // 按角色分組
+            const roleGroups = {
+                owner: { name: '業主', users: [], icon: '🏢' },
+                foreman: { name: '工班負責人', users: [], icon: '👷‍♂️' },
+                worker: { name: '工班成員', users: [], icon: '🔨' }
+            };
+
+            allProjectUsers.forEach(user => {
+                if (user.role !== 'admin' && roleGroups[user.role]) {
+                    roleGroups[user.role].users.push(user);
+                }
+            });
+
+            // 渲染各角色組
+            Object.entries(roleGroups).forEach(([roleKey, group]) => {
+                if (group.users.length > 0) {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'perspective-group';
+                    
+                    groupDiv.innerHTML = `
+                        <div class="perspective-group-title">${group.icon} ${group.name}</div>
+                        ${group.users.map(user => `
+                            <div class="perspective-item" onclick="switchPerspective('${user.user_id}')">
+                                <span>${group.icon}</span>
+                                <div style="flex: 1;">
+                                    <div>${user.name}</div>
+                                    <small style="color: var(--body-text); opacity: 0.7;">${user.phone}</small>
+                                </div>
+                                <span class="perspective-role-badge role-${user.role}">
+                                    ${getRoleName(user.role)}
+                                </span>
+                            </div>
+                        `).join('')}
+                    `;
+                    
+                    container.appendChild(groupDiv);
+                }
+            });
+        }
+
+        // 切換視角
+        function switchPerspective(userId) {
+            if (userId === null) {
+                // 返回管理員視角
+                exitSimulation();
+            } else {
+                // 模擬指定用戶視角
+                const targetUser = allProjectUsers.find(u => u.user_id === userId);
+                if (targetUser) {
+                    simulateUserPerspective(targetUser);
+                }
+            }
+            
+            // 關閉下拉選單
+            document.getElementById('perspectiveDropdown').classList.remove('show');
+        }
+
+        // 模擬用戶視角
+        function simulateUserPerspective(user) {
+            currentSimulatedUser = user;
+            
+            // 顯示模擬模式提示條
+            const banner = document.getElementById('simulationBanner');
+            const userName = document.getElementById('simulatedUserName');
+            userName.textContent = `${user.name} (${getRoleName(user.role)})`;
+            banner.classList.add('show');
+            
+            // 更新視角切換器狀態
+            updatePerspectiveDropdownState();
+            
+            // 重新渲染頁面內容
+            refreshPageContent();
+            
+            console.log('已切換到用戶視角:', user.name, user.role);
+        }
+
+        // 退出模擬模式
+        function exitSimulation() {
+            currentSimulatedUser = null;
+            
+            // 隱藏模擬模式提示條
+            document.getElementById('simulationBanner').classList.remove('show');
+            
+            // 更新視角切換器狀態
+            updatePerspectiveDropdownState();
+            
+            // 重新渲染頁面內容
+            refreshPageContent();
+            
+            console.log('已返回管理員視角');
+        }
+
+        // 更新視角切換器下拉選單狀態
+        function updatePerspectiveDropdownState() {
+            const items = document.querySelectorAll('.perspective-item');
+            items.forEach(item => {
+                item.classList.remove('active');
+                
+                if (currentSimulatedUser === null) {
+                    // 管理員視角
+                    if (item.onclick.toString().includes('switchPerspective(null)')) {
+                        item.classList.add('active');
+                        item.innerHTML = item.innerHTML.replace(' (當前)', '').replace('🔧', '🔧') + ' (當前)';
+                    }
+                } else {
+                    // 模擬用戶視角
+                    if (item.onclick.toString().includes(`'${currentSimulatedUser.user_id}'`)) {
+                        item.classList.add('active');
+                        if (!item.innerHTML.includes(' (當前)')) {
+                            item.innerHTML += ' <small style="color: var(--primary);font-weight: 600;">(當前)</small>';
+                        }
+                    }
+                }
+            });
+        }
+
+        // 重新整理頁面內容（根據當前視角）
+        function refreshPageContent() {
+            // 重新載入工班圖表和相關內容
+            if (window.currentProject) {
+                loadProject(window.currentProject.id).then(() => {
+                    console.log('頁面內容已根據新視角更新');
+                });
+            }
+        }
+
+        // 切換視角下拉選單顯示/隱藏
+        function togglePerspectiveDropdown() {
+            const dropdown = document.getElementById('perspectiveDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        // 點擊其他地方關閉下拉選單
+        document.addEventListener('click', function(event) {
+            const perspectiveSwitcher = document.getElementById('perspectiveSwitcher');
+            const dropdown = document.getElementById('perspectiveDropdown');
+            
+            if (!perspectiveSwitcher.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+
+        // 取得角色中文名稱
+        function getRoleName(role) {
+            const roleNames = {
+                admin: '管理員',
+                owner: '業主',
+                foreman: '工班負責人',
+                worker: '工班成員'
+            };
+            return roleNames[role] || role;
+        }
+
+        // 修改權限檢查函數，考慮模擬用戶
+        function getCurrentUserPermissions() {
+            if (currentSimulatedUser) {
+                // 返回模擬用戶的權限
+                return {
+                    isAdmin: false,
+                    role: currentSimulatedUser.role,
+                    can_view: currentSimulatedUser.can_view,
+                    can_edit: currentSimulatedUser.can_edit,
+                    can_manage_members: currentSimulatedUser.can_manage_members,
+                    can_view_other_teams: currentSimulatedUser.can_view_other_teams,
+                    user_id: currentSimulatedUser.user_id,
+                    phone: currentSimulatedUser.phone,
+                    name: currentSimulatedUser.name
+                };
+            } else {
+                // 返回原始管理員權限
+                return {
+                    isAdmin: true,
+                    role: 'admin',
+                    can_view: true,
+                    can_edit: true,
+                    can_manage_members: true,
+                    can_view_other_teams: true,
+                    user_id: originalUser?.id || 'admin',
+                    phone: originalUser?.phone || '0900000001',
+                    name: originalUser?.name || '系統管理員'
+                };
+            }
         }
     </script>
 </body>
