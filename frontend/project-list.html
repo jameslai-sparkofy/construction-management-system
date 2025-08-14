@@ -69,6 +69,68 @@
             color: var(--body-text);
         }
 
+        .admin-menu {
+            position: relative;
+            display: none; /* 預設隱藏，只有管理員可見 */
+        }
+
+        .admin-menu.show {
+            display: block;
+        }
+
+        .admin-btn {
+            padding: 0.5rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--body-text);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .admin-btn:hover, .admin-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .admin-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow-md);
+            min-width: 200px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .admin-dropdown.show {
+            display: block;
+        }
+
+        .admin-dropdown-item {
+            padding: 0.75rem 1rem;
+            color: var(--body-text);
+            text-decoration: none;
+            display: block;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .admin-dropdown-item:hover {
+            background: var(--background);
+            color: var(--primary);
+        }
+
         .logout-btn {
             padding: 0.5rem 1rem;
             background: var(--surface);
@@ -535,6 +597,17 @@
             <h1>專案管理系統 <span style="font-size: 0.6em; color: #84C7D0;">v1.2.0</span></h1>
             <div class="user-info">
                 <span class="user-name" id="userName">載入中...</span>
+                <div class="admin-menu" id="adminMenu">
+                    <button class="admin-btn" onclick="toggleAdminDropdown()" id="adminBtn">
+                        🔧 管理功能
+                    </button>
+                    <div class="admin-dropdown" id="adminDropdown">
+                        <a href="member-management.html" class="admin-dropdown-item">👥 成員管理</a>
+                        <a href="owner-management.html" class="admin-dropdown-item">🏢 業主管理</a>
+                        <a href="team-member-management.html" class="admin-dropdown-item">👷 工班管理</a>
+                        <a href="test-permissions.html" class="admin-dropdown-item">🧪 權限測試</a>
+                    </div>
+                </div>
                 <button class="logout-btn" onclick="logout()">登出</button>
             </div>
         </div>
@@ -691,7 +764,49 @@
                 currentUser = { name: '示範用戶', phone: '0912345678' };
                 document.getElementById('userName').textContent = '示範用戶';
             }
+
+            // 檢查管理員權限並顯示管理功能
+            await checkAdminPermissions();
         }
+
+        // 檢查管理員權限
+        async function checkAdminPermissions() {
+            try {
+                // 初始化統一權限系統
+                if (window.permissions) {
+                    await window.permissions.init();
+                    const isAdmin = await window.permissions.isAdmin();
+                    
+                    if (isAdmin) {
+                        const adminMenu = document.getElementById('adminMenu');
+                        adminMenu.classList.add('show');
+                    }
+                }
+            } catch (error) {
+                console.error('檢查管理員權限失敗:', error);
+            }
+        }
+
+        // 切換管理功能下拉選單
+        function toggleAdminDropdown() {
+            const dropdown = document.getElementById('adminDropdown');
+            const adminBtn = document.getElementById('adminBtn');
+            
+            dropdown.classList.toggle('show');
+            adminBtn.classList.toggle('active');
+        }
+
+        // 點擊其他地方關閉下拉選單
+        document.addEventListener('click', function(event) {
+            const adminMenu = document.getElementById('adminMenu');
+            const adminDropdown = document.getElementById('adminDropdown');
+            const adminBtn = document.getElementById('adminBtn');
+            
+            if (!adminMenu.contains(event.target)) {
+                adminDropdown.classList.remove('show');
+                adminBtn.classList.remove('active');
+            }
+        });
 
         // Load projects
         async function loadProjects() {
