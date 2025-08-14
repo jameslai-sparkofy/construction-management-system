@@ -1546,8 +1546,8 @@
 
             <!-- Modal Body -->
             <div class="modal-body">
-                <!-- 所有媒體區塊緊湊排列 -->
-                <div class="all-media-compact">
+                <!-- 平面圖和施工前照片 - 一排兩列 -->
+                <div class="all-media-compact" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <!-- 平面圖 -->
                     <div class="media-container">
                         <div class="media-header">
@@ -1569,19 +1569,6 @@
                         </div>
                         <div class="photos-wrapper" id="beforePhotos">
                             <div class="photo-box add-photo" onclick="uploadPhoto('before')">
-                                <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 完工照片 -->
-                    <div class="media-container">
-                        <div class="media-header">
-                            <span class="section-icon">✅</span>
-                            <span class="section-title">完工照片</span>
-                        </div>
-                        <div class="photos-wrapper" id="afterPhotos">
-                            <div class="photo-box add-photo" onclick="uploadPhoto('after')">
                                 <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
                             </div>
                         </div>
@@ -1625,6 +1612,21 @@
                         <div class="field-group" style="grid-column: span 2;">
                             <label class="field-label">施工日期</label>
                             <input type="date" class="field-input" id="dateInput">
+                        </div>
+                    </div>
+                    
+                    <!-- 完工照片 - 移到施工完成區塊內 -->
+                    <div class="completion-fields" id="completionPhotos" style="margin-top: 1rem; opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
+                        <div class="media-container" style="grid-column: span 2;">
+                            <div class="media-header">
+                                <span class="section-icon">✅</span>
+                                <span class="section-title">完工照片</span>
+                            </div>
+                            <div class="photos-wrapper" id="afterPhotos">
+                                <div class="photo-box add-photo" onclick="uploadPhoto('after')">
+                                    <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2082,10 +2084,21 @@
                 
                 document.getElementById('completionFields').classList.add('active');
                 document.getElementById('completionFields2').classList.add('active');
+                document.getElementById('completionPhotos').classList.add('active');
+                document.getElementById('completionPhotos').style.opacity = '1';
+                document.getElementById('completionPhotos').style.pointerEvents = 'auto';
                 document.getElementById('workerName').textContent = `- ${site[fieldMapping.worker] || ''}`;
             } else {
+                // 未完成時，預設填入今天日期、工地坪數和當前用戶
+                document.getElementById('areaInput').value = site[fieldMapping.siteArea] || '';
+                document.getElementById('workerInput').value = currentUser ? currentUser.name : '';
+                setToday();
+                
                 document.getElementById('completionFields').classList.remove('active');
                 document.getElementById('completionFields2').classList.remove('active');
+                document.getElementById('completionPhotos').classList.remove('active');
+                document.getElementById('completionPhotos').style.opacity = '0.5';
+                document.getElementById('completionPhotos').style.pointerEvents = 'none';
                 document.getElementById('workerName').textContent = '';
             }
             
@@ -2173,6 +2186,7 @@
             const checkbox = document.getElementById('completionCheck');
             const fields = document.getElementById('completionFields');
             const fields2 = document.getElementById('completionFields2');
+            const completionPhotos = document.getElementById('completionPhotos');
             const workerName = document.getElementById('workerName');
             const workerInput = document.getElementById('workerInput');
             
@@ -2181,6 +2195,9 @@
             if (checkbox.checked) {
                 fields.classList.add('active');
                 fields2.classList.add('active');
+                completionPhotos.classList.add('active');
+                completionPhotos.style.opacity = '1';
+                completionPhotos.style.pointerEvents = 'auto';
                 
                 // Auto-fill values
                 if (!document.getElementById('dateInput').value) {
@@ -2195,12 +2212,13 @@
                     }
                 }
                 
-                // Auto-fill worker name
-                workerInput.value = currentUser.name;
-                workerInput.setAttribute('value', currentUser.name);
-                
-                // Show worker name in label
-                workerName.textContent = `- ${currentUser.name}`;
+                // Auto-fill worker name from current user
+                if (currentUser && currentUser.name) {
+                    workerInput.value = currentUser.name;
+                    workerInput.setAttribute('value', currentUser.name);
+                    // Show worker name in label
+                    workerName.textContent = `- ${currentUser.name}`;
+                }
                 
                 // Vibration feedback
                 if (navigator.vibrate) {
@@ -2209,6 +2227,9 @@
             } else {
                 fields.classList.remove('active');
                 fields2.classList.remove('active');
+                completionPhotos.classList.remove('active');
+                completionPhotos.style.opacity = '0.5';
+                completionPhotos.style.pointerEvents = 'none';
                 workerName.textContent = '';
                 workerInput.value = '';
                 workerInput.removeAttribute('value');

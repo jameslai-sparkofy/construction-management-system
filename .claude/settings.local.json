@@ -190,7 +190,13 @@
       "Bash(CLOUDFLARE_API_TOKEN=\"2rj0qA0MMuCcH_4kGvS8vXIRsVhI9MDdO3GB7tGs\" timeout 60 npx wrangler deploy --config wrangler-production.toml)",
       "Bash(CLOUDFLARE_API_TOKEN=\"2rj0qA0MMuCcH_4kGvS8vXIRsVhI9MDdO3GB7tGs\" npx wrangler pages deploy ../frontend --project-name construction-management-frontend --commit-dirty=true)",
       "Bash(CLOUDFLARE_API_TOKEN=\"2rj0qA0MMuCcH_4kGvS8vXIRsVhI9MDdO3GB7tGs\" npx wrangler pages deploy --project-name construction-management-frontend --commit-dirty=true)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"2rj0qA0MMuCcH_4kGvS8vXIRsVhI9MDdO3GB7tGs\" npx wrangler pages deploy --config wrangler-pages.toml --project-name construction-management-frontend --commit-dirty=true)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"2rj0qA0MMuCcH_4kGvS8vXIRsVhI9MDdO3GB7tGs\" npx wrangler pages deploy --config wrangler-pages.toml --project-name construction-management-frontend --commit-dirty=true)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"2rj0qA0MMuCcH_4kGvS8vXIRsVhI9MDdO3GB7tGs\" npx wrangler whoami)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"q73alXXcmvfHS7LQHuzSJfPuEdPUT4P0OgHKhq09\" npx wrangler whoami)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"q73alXXcmvfHS7LQHuzSJfPuEdPUT4P0OgHKhq09\" npx wrangler pages project create construction-management-frontend-dev --production-branch development)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"q73alXXcmvfHS7LQHuzSJfPuEdPUT4P0OgHKhq09\" npx wrangler pages project create construction-management-frontend-prod --production-branch production)",
+      "WebFetch(domain:construction-management-frontend-dev.pages.dev)",
+      "WebFetch(domain:construction-management-frontend-prod.pages.dev)"
     ],
     "deny": []
   },
