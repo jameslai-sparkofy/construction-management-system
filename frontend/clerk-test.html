@@ -62,7 +62,10 @@
 
     <!-- 嘗試不同的 Clerk 載入方式 -->
     <script>
+        // 注意：原始 key 結尾的 $ 可能需要編碼或移除
         const CLERK_PUBLISHABLE_KEY = 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ';
+        // 備用：如果上面的不行，試試這個（移除 $）
+        // const CLERK_PUBLISHABLE_KEY = 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldg';
         
         // 顯示配置
         document.getElementById('config').textContent = JSON.stringify({
@@ -75,7 +78,8 @@
         function loadClerkSDK() {
             return new Promise((resolve, reject) => {
                 const script = document.createElement('script');
-                script.src = 'https://absolute-cougar-90.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+                // 使用官方 CDN 而不是域名特定的 URL
+                script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
                 script.async = true;
                 script.crossOrigin = 'anonymous';
                 

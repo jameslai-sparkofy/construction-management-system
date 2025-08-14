@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clerk 測試 v2</title>
+    
+    <!-- 使用 Clerk 官方推薦的載入方式 -->
+    <script>
+        // 設定全域 Clerk 配置
+        window.clerkSettings = {
+            publishableKey: 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ'
+        };
+    </script>
+    
+    <script 
+        async
+        crossorigin="anonymous"
+        data-clerk-publishable-key="pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ"
+        src="https://absolute-cougar-90.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js">
+    </script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #764ba2;
+            padding-bottom: 10px;
+        }
+        
+        .status-box {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+        
+        .loading {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #81c784;
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef5350;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #764ba2;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #5a3d7a;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .info-panel {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-panel h3 {
+            margin-top: 0;
+            color: #555;
+        }
+        
+        pre {
+            background: #263238;
+            color: #aed581;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .user-info {
+            display: none;
+            background: #f0f7ff;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .user-info.active {
+            display: block;
+        }
+        
+        .test-steps {
+            background: #fffbf0;
+            border: 1px solid #ffcc80;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .test-steps ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .test-steps li {
+            margin: 5px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Clerk 認證系統測試 v2</h1>
+        
+        <div id="status" class="status-box loading">
+            ⏳ 正在載入 Clerk SDK...
+        </div>
+        
+        <div class="info-panel">
+            <h3>📋 配置資訊</h3>
+            <pre id="config">正在載入配置...</pre>
+        </div>
+        
+        <div class="button-group">
+            <button id="btnSignIn" disabled>登入</button>
+            <button id="btnSignUp" disabled>註冊</button>
+            <button id="btnSignOut" disabled>登出</button>
+            <button id="btnCheck" disabled>檢查狀態</button>
+            <button id="btnGoToApp" disabled>進入系統</button>
+        </div>
+        
+        <div id="userInfo" class="user-info">
+            <h3>👤 用戶資訊</h3>
+            <pre id="userData">未登入</pre>
+        </div>
+        
+        <div class="test-steps">
+            <h3>🧪 測試步驟</h3>
+            <ol>
+                <li>等待 Clerk SDK 載入完成（狀態變為綠色）</li>
+                <li>點擊「檢查狀態」確認連線</li>
+                <li>點擊「登入」或「註冊」開始認證</li>
+                <li>完成認證後會自動顯示用戶資訊</li>
+                <li>點擊「進入系統」進入專案列表</li>
+            </ol>
+        </div>
+        
+        <div class="info-panel">
+            <h3>🔍 調試日誌</h3>
+            <pre id="logs">等待初始化...</pre>
+        </div>
+    </div>
+    
+    <script>
+        // 日誌輸出
+        const log = (message, data = null) => {
+            const logsEl = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            if (data) {
+                logEntry += '\n' + JSON.stringify(data, null, 2);
+            }
+            logsEl.textContent = logEntry + '\n' + logsEl.textContent;
+            console.log(message, data);
+        };
+        
+        // 更新狀態
+        const updateStatus = (message, type = 'loading') => {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = message;
+            statusEl.className = `status-box ${type}`;
+        };
+        
+        // 顯示配置
+        const showConfig = () => {
+            document.getElementById('config').textContent = JSON.stringify({
+                publishableKey: 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ',
+                domain: 'absolute-cougar-90.clerk.accounts.dev',
+                sdkUrl: 'https://absolute-cougar-90.clerk.accounts.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js',
+                environment: 'test'
+            }, null, 2);
+        };
+        
+        // 啟用按鈕
+        const enableButtons = () => {
+            document.querySelectorAll('button').forEach(btn => {
+                btn.disabled = false;
+            });
+        };
+        
+        // 顯示用戶資訊
+        const showUser = (user) => {
+            const userInfoEl = document.getElementById('userInfo');
+            const userDataEl = document.getElementById('userData');
+            
+            if (user) {
+                userInfoEl.classList.add('active');
+                userDataEl.textContent = JSON.stringify({
+                    id: user.id,
+                    email: user.primaryEmailAddress?.emailAddress,
+                    phone: user.primaryPhoneNumber?.phoneNumber,
+                    name: user.fullName || user.firstName || 'User',
+                    username: user.username,
+                    createdAt: user.createdAt
+                }, null, 2);
+                
+                // 更新按鈕狀態
+                document.getElementById('btnSignIn').disabled = true;
+                document.getElementById('btnSignUp').disabled = true;
+                document.getElementById('btnSignOut').disabled = false;
+                document.getElementById('btnGoToApp').disabled = false;
+            } else {
+                userInfoEl.classList.remove('active');
+                userDataEl.textContent = '未登入';
+                
+                // 更新按鈕狀態
+                document.getElementById('btnSignIn').disabled = false;
+                document.getElementById('btnSignUp').disabled = false;
+                document.getElementById('btnSignOut').disabled = true;
+                document.getElementById('btnGoToApp').disabled = true;
+            }
+        };
+        
+        // 初始化 Clerk
+        const initClerk = async () => {
+            showConfig();
+            log('開始初始化 Clerk...');
+            
+            try {
+                // 等待 Clerk 物件可用
+                let attempts = 0;
+                const maxAttempts = 30; // 15 秒
+                
+                while (!window.Clerk && attempts < maxAttempts) {
+                    log(`等待 Clerk 載入... (${attempts + 1}/${maxAttempts})`);
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    attempts++;
+                }
+                
+                if (!window.Clerk) {
+                    throw new Error('Clerk 載入超時（15秒）');
+                }
+                
+                log('Clerk 物件已載入', { Clerk: typeof window.Clerk });
+                
+                // 等待 Clerk 初始化
+                await window.Clerk.load();
+                
+                log('Clerk 初始化成功！');
+                updateStatus('✅ Clerk 已就緒', 'success');
+                enableButtons();
+                
+                // 檢查初始登入狀態
+                if (window.Clerk.user) {
+                    log('檢測到已登入用戶', { userId: window.Clerk.user.id });
+                    showUser(window.Clerk.user);
+                }
+                
+                // 監聽用戶狀態變化
+                window.Clerk.addListener((resources) => {
+                    log('Clerk 狀態變化', {
+                        user: resources.user ? resources.user.id : null,
+                        session: resources.session ? resources.session.id : null
+                    });
+                    showUser(resources.user);
+                });
+                
+            } catch (error) {
+                log('Clerk 初始化失敗', { error: error.message });
+                updateStatus(`❌ ${error.message}`, 'error');
+                
+                // 提供備用方案
+                setTimeout(() => {
+                    if (confirm('Clerk 載入失敗，是否使用傳統登入？')) {
+                        window.location.href = 'login-simple.html';
+                    }
+                }, 3000);
+            }
+        };
+        
+        // 按鈕事件處理
+        document.getElementById('btnSignIn').onclick = async () => {
+            try {
+                log('開啟登入視窗...');
+                await window.Clerk.openSignIn({
+                    afterSignInUrl: window.location.href
+                });
+            } catch (error) {
+                log('登入錯誤', { error: error.message });
+                alert('登入失敗：' + error.message);
+            }
+        };
+        
+        document.getElementById('btnSignUp').onclick = async () => {
+            try {
+                log('開啟註冊視窗...');
+                await window.Clerk.openSignUp({
+                    afterSignUpUrl: window.location.href
+                });
+            } catch (error) {
+                log('註冊錯誤', { error: error.message });
+                alert('註冊失敗：' + error.message);
+            }
+        };
+        
+        document.getElementById('btnSignOut').onclick = async () => {
+            try {
+                log('執行登出...');
+                await window.Clerk.signOut();
+                log('登出成功');
+                window.location.reload();
+            } catch (error) {
+                log('登出錯誤', { error: error.message });
+                alert('登出失敗：' + error.message);
+            }
+        };
+        
+        document.getElementById('btnCheck').onclick = () => {
+            if (!window.Clerk) {
+                log('Clerk 未載入');
+                alert('Clerk 尚未載入');
+                return;
+            }
+            
+            const status = {
+                isReady: window.Clerk.isReady ? window.Clerk.isReady() : false,
+                user: window.Clerk.user ? {
+                    id: window.Clerk.user.id,
+                    email: window.Clerk.user.primaryEmailAddress?.emailAddress
+                } : null,
+                session: window.Clerk.session ? {
+                    id: window.Clerk.session.id,
+                    status: window.Clerk.session.status
+                } : null,
+                client: window.Clerk.client ? {
+                    sessionCount: window.Clerk.client.sessions?.length || 0
+                } : null
+            };
+            
+            log('當前狀態', status);
+            alert('狀態已輸出到調試日誌');
+        };
+        
+        document.getElementById('btnGoToApp').onclick = () => {
+            if (window.Clerk?.user) {
+                log('跳轉到專案列表...');
+                
+                // 儲存用戶資訊
+                localStorage.setItem('clerk_user', JSON.stringify({
+                    id: window.Clerk.user.id,
+                    email: window.Clerk.user.primaryEmailAddress?.emailAddress,
+                    name: window.Clerk.user.fullName || window.Clerk.user.firstName || 'User'
+                }));
+                
+                window.location.href = 'project-list.html';
+            } else {
+                alert('請先登入');
+            }
+        };
+        
+        // 頁面載入時初始化
+        window.addEventListener('load', () => {
+            setTimeout(initClerk, 100);
+        });
+    </script>
+</body>
+</html>

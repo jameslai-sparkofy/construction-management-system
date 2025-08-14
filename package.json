@@ -4,6 +4,7 @@
     "puppeteer": "^24.16.0"
   },
   "devDependencies": {
-    "playwright": "^1.54.2"
+    "playwright": "^1.54.2",
+    "wrangler": "^4.29.1"
   }
 }
