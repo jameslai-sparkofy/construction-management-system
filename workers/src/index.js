@@ -127,53 +127,143 @@ export default {
       }), { status: 401, headers: corsHeaders });
     }
 
-    // Projects permissions endpoint
-    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/permissions$/) && method === 'GET') {
+    // Get all users in project with their team contexts
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/users$/) && method === 'GET') {
       const projectId = path.split('/')[4];
       
-      // Return test permissions
+      // Return users with team-based context permissions
       return new Response(JSON.stringify([
         {
           user_id: 'admin_001',
           name: '系統管理員',
           phone: '0900000001',
-          role: 'admin',
-          can_view: true,
-          can_edit: true,
-          can_manage_members: true,
-          can_view_other_teams: true
-        },
-        {
-          user_id: 'foreman_001',
-          name: '張工班長',
-          phone: '0912345678',
-          role: 'foreman',
-          can_view: true,
-          can_edit: true,
-          can_manage_members: true,
-          can_view_other_teams: false
+          user_type: 'admin',
+          // Admin 不屬於工班，但有所有權限
+          team_contexts: [],
+          global_permissions: {
+            can_view: true,
+            can_edit: true,
+            can_manage_members: true,
+            can_view_other_teams: true
+          }
         },
         {
           user_id: 'owner_001',
           name: '王業主',
           phone: '0987654321',
-          role: 'owner',
-          can_view: true,
-          can_edit: false,
-          can_manage_members: false,
-          can_view_other_teams: true
+          user_type: 'owner',
+          // 業主不屬於工班，但可查看所有
+          team_contexts: [],
+          global_permissions: {
+            can_view: true,
+            can_edit: false,
+            can_manage_members: false,
+            can_view_other_teams: true
+          }
         },
         {
           user_id: 'worker_001',
+          name: '張師傅',
+          phone: '0912345678',
+          user_type: 'worker',
+          // 張師傅在不同工班有不同角色
+          team_contexts: [
+            {
+              team_id: 'team_A',
+              team_name: '泥作工班A',
+              role: 'leader',
+              // 在A工班是工班長，有管理權限
+              permissions: {
+                can_view: true,
+                can_edit: true,
+                can_manage_members: true,
+                can_view_other_teams: false
+              }
+            },
+            {
+              team_id: 'team_B',
+              team_name: '水電工班B',
+              role: 'member',
+              // 在B工班是成員，沒有管理權限
+              permissions: {
+                can_view: true,
+                can_edit: true,
+                can_manage_members: false,
+                can_view_other_teams: false
+              }
+            }
+          ]
+        },
+        {
+          user_id: 'worker_002',
           name: '李師傅',
           phone: '0955555555',
-          role: 'worker',
-          can_view: true,
-          can_edit: true,
-          can_manage_members: false,
-          can_view_other_teams: false
+          user_type: 'worker',
+          team_contexts: [
+            {
+              team_id: 'team_B',
+              team_name: '水電工班B',
+              role: 'leader',
+              permissions: {
+                can_view: true,
+                can_edit: true,
+                can_manage_members: true,
+                can_view_other_teams: false
+              }
+            }
+          ]
+        },
+        {
+          user_id: 'worker_003',
+          name: '陳師傅',
+          phone: '0911111111',
+          user_type: 'worker',
+          team_contexts: [
+            {
+              team_id: 'team_A',
+              team_name: '泥作工班A',
+              role: 'member',
+              permissions: {
+                can_view: true,
+                can_edit: true,
+                can_manage_members: false,
+                can_view_other_teams: false
+              }
+            }
+          ]
         }
       ]), { headers: corsHeaders });
+    }
+
+    // Get permissions for a specific site (based on team context)
+    if (path.match(/^\/api\/v1\/sites\/([^\/]+)\/permissions$/) && method === 'GET') {
+      const siteId = path.split('/')[4];
+      
+      // 模擬查詢案場資料和工班分配
+      // 實際應查詢 D1 的 user_site_permissions 視圖
+      const siteTeamMapping = {
+        'site_001': 'team_A',  // A棟案場分配給A工班
+        'site_002': 'team_A',
+        'site_003': 'team_B',  // B棟案場分配給B工班
+        'site_004': 'team_B'
+      };
+      
+      const teamId = siteTeamMapping[siteId] || 'team_A';
+      const authHeader = request.headers.get('Authorization');
+      
+      // 模擬用戶身份驗證
+      // 實際應從 token 解析用戶
+      
+      // 返回基於工班上下文的權限
+      return new Response(JSON.stringify({
+        site_id: siteId,
+        team_id: teamId,
+        // 權限取決於用戶在該工班的角色
+        can_view: true,
+        can_edit: true,
+        can_manage_members: false,  // 根據工班角色決定
+        can_view_other_teams: false
+      }), { headers: corsHeaders });
     }
 
     // Projects list endpoint

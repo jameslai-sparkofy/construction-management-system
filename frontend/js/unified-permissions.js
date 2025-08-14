@@ -1,6 +1,7 @@
 /**
- * 統一權限查詢系統
- * 整合 Supabase 認證和 D1 權限資料
+ * 統一權限管理系統
+ * 處理真實用戶權限和 Admin 視角切換
+ * 多重角色自動合併為最高權限
  */
 
 class UnifiedPermissions {
@@ -8,6 +9,7 @@ class UnifiedPermissions {
         this.supabase = window.supabase || null;
         this.workerApiUrl = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
         this.currentUser = null;
+        this.simulatedUser = null; // Admin 模擬的用戶
         this.userPermissions = new Map(); // 快取權限資料
     }
 
@@ -74,11 +76,27 @@ class UnifiedPermissions {
     }
 
     /**
+     * 獲取當前 context 的用戶（可能是真實或模擬）
+     */
+    getCurrentContextUser() {
+        // 如果 Admin 正在模擬其他用戶，返回模擬用戶
+        if (this.simulatedUser) {
+            return this.simulatedUser;
+        }
+        // 否則返回真實登入用戶
+        return this.currentUser;
+    }
+
+    /**
      * 獲取用戶在專案中的權限
+     * 統一處理真實和模擬用戶
      */
     async getProjectPermissions(projectId) {
+        const contextUser = this.getCurrentContextUser();
+        if (!contextUser) return null;
+        
         // 檢查快取
-        const cacheKey = `${projectId}_${this.currentUser?.id}`;
+        const cacheKey = `${projectId}_${contextUser.id}`;
         if (this.userPermissions.has(cacheKey)) {
             return this.userPermissions.get(cacheKey);
         }
@@ -86,7 +104,7 @@ class UnifiedPermissions {
         try {
             const token = localStorage.getItem('auth_token');
             const response = await fetch(
-                `${this.workerApiUrl}/api/v1/projects/${projectId}/permissions`,
+                `${this.workerApiUrl}/api/v1/projects/${projectId}/users`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -95,13 +113,12 @@ class UnifiedPermissions {
             );
             
             if (response.ok) {
-                const permissions = await response.json();
+                const users = await response.json();
                 
-                // 查找當前用戶的權限
-                const userId = this.currentUser?.d1_user_id || this.currentUser?.id;
-                const userPermission = permissions.find(p => 
-                    p.user_id === userId || 
-                    p.phone === this.currentUser?.phone
+                // 查找 context 用戶的權限
+                const userPermission = users.find(u => 
+                    u.user_id === contextUser.id || 
+                    u.phone === contextUser.phone
                 );
                 
                 if (userPermission) {
@@ -118,9 +135,64 @@ class UnifiedPermissions {
     }
 
     /**
-     * 檢查用戶是否為管理員
+     * 獲取用戶在特定案場的權限（基於工班上下文）
+     */
+    async getSitePermissions(siteId, teamId) {
+        const contextUser = this.getCurrentContextUser();
+        if (!contextUser) return null;
+        
+        try {
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(
+                `${this.workerApiUrl}/api/v1/sites/${siteId}/permissions`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            
+            if (response.ok) {
+                const permissions = await response.json();
+                return permissions;
+            }
+        } catch (error) {
+            console.error('獲取案場權限失敗:', error);
+        }
+        
+        // 預設權限邏輯
+        if (contextUser.user_type === 'admin') {
+            return { can_view: true, can_edit: true, can_manage_members: true, can_view_other_teams: true };
+        }
+        if (contextUser.user_type === 'owner') {
+            return { can_view: true, can_edit: false, can_manage_members: false, can_view_other_teams: true };
+        }
+        
+        // 工人權限取決於在該工班的角色
+        const projectPerms = await this.getProjectPermissions();
+        if (projectPerms && projectPerms.team_contexts) {
+            const teamContext = projectPerms.team_contexts.find(tc => tc.team_id === teamId);
+            if (teamContext) {
+                return {
+                    can_view: true,
+                    can_edit: true,
+                    can_manage_members: teamContext.role === 'leader',
+                    can_view_other_teams: false
+                };
+            }
+        }
+        
+        return { can_view: false, can_edit: false, can_manage_members: false, can_view_other_teams: false };
+    }
+
+    /**
+     * 檢查當前真實用戶是否為管理員（不受模擬影響）
      */
     async isAdmin() {
+        // 注意：這裡故意使用 currentUser 而非 getCurrentContextUser()
+        // 因為只有真實的 admin 才能進行視角切換
+        if (!this.currentUser) return false;
+        
         try {
             const token = localStorage.getItem('auth_token');
             const response = await fetch(`${this.workerApiUrl}/api/v1/users/me`, {
@@ -131,7 +203,7 @@ class UnifiedPermissions {
             
             if (response.ok) {
                 const userData = await response.json();
-                return userData.role === 'admin';
+                return userData.role === 'admin' || userData.user_type === 'admin';
             }
         } catch (error) {
             console.error('檢查 admin 權限失敗:', error);
@@ -141,14 +213,26 @@ class UnifiedPermissions {
     }
 
     /**
+     * 檢查是否正在模擬
+     */
+    isSimulating() {
+        return this.simulatedUser !== null;
+    }
+
+    /**
      * 檢查特定權限
+     * 使用 context user（可能是模擬的）
      */
     async hasPermission(projectId, permission) {
-        // 管理員擁有所有權限
-        if (await this.isAdmin()) {
+        const contextUser = this.getCurrentContextUser();
+        if (!contextUser) return false;
+        
+        // 如果 context user 是 admin（不是正在模擬），擁有所有權限
+        if (!this.isSimulating() && contextUser.user_type === 'admin') {
             return true;
         }
         
+        // 否則檢查實際權限
         const projectPerms = await this.getProjectPermissions(projectId);
         if (!projectPerms) return false;
         
@@ -167,11 +251,98 @@ class UnifiedPermissions {
     }
 
     /**
-     * 獲取用戶角色
+     * 獲取用戶在特定工班的角色
      */
-    async getUserRole(projectId) {
+    async getUserRoleInTeam(projectId, teamId) {
         const permissions = await this.getProjectPermissions(projectId);
-        return permissions?.role || 'guest';
+        
+        // Admin 和 Owner 不屬於工班
+        if (permissions?.user_type === 'admin') return 'admin';
+        if (permissions?.user_type === 'owner') return 'owner';
+        
+        // 工人在不同工班有不同角色
+        if (permissions?.team_contexts && Array.isArray(permissions.team_contexts)) {
+            const teamContext = permissions.team_contexts.find(tc => tc.team_id === teamId);
+            if (teamContext) {
+                return teamContext.role === 'leader' ? 'foreman' : 'worker';
+            }
+        }
+        
+        return 'guest';
+    }
+    
+    /**
+     * 獲取用戶的主要角色（用於顯示）
+     */
+    async getUserDisplayRole(projectId) {
+        const permissions = await this.getProjectPermissions(projectId);
+        
+        if (permissions?.user_type === 'admin') return 'admin';
+        if (permissions?.user_type === 'owner') return 'owner';
+        
+        // 如果在任何工班是工班長，顯示為工班長
+        if (permissions?.team_contexts && Array.isArray(permissions.team_contexts)) {
+            const hasLeaderRole = permissions.team_contexts.some(tc => tc.role === 'leader');
+            if (hasLeaderRole) return 'foreman';
+        }
+        
+        return 'worker';
+    }
+
+    /**
+     * Admin 切換視角（模擬其他用戶）
+     */
+    async switchPerspective(targetUserId, projectId) {
+        // 只有真實 admin 才能切換視角
+        if (!await this.isAdmin()) {
+            console.error('只有管理員可以切換視角');
+            return false;
+        }
+        
+        if (targetUserId === null) {
+            // 返回真實視角
+            this.simulatedUser = null;
+            this.clearCache();
+            return true;
+        }
+        
+        try {
+            // 獲取目標用戶資料
+            const token = localStorage.getItem('auth_token');
+            const response = await fetch(
+                `${this.workerApiUrl}/api/v1/projects/${projectId}/users`,
+                {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }
+            );
+            
+            if (response.ok) {
+                const users = await response.json();
+                const targetUser = users.find(u => u.user_id === targetUserId);
+                
+                if (targetUser) {
+                    // 設定模擬用戶
+                    this.simulatedUser = {
+                        id: targetUser.user_id,
+                        name: targetUser.name,
+                        phone: targetUser.phone,
+                        user_type: targetUser.user_type,
+                        roles: targetUser.roles,
+                        teams: targetUser.teams
+                    };
+                    
+                    // 清除權限快取以強制重新載入
+                    this.clearCache();
+                    return true;
+                }
+            }
+        } catch (error) {
+            console.error('切換視角失敗:', error);
+        }
+        
+        return false;
     }
 
     /**
