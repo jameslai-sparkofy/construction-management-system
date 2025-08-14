@@ -35,7 +35,7 @@ const CONFIG = {
         NAME: '元心建材工程管理系統',
         
         // 版本號
-        VERSION: '1.0.0',
+        VERSION: '1.1.0',
         
         // Session 持續時間（小時）
         SESSION_DURATION: 24,

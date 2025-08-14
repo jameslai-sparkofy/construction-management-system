@@ -21,7 +21,7 @@ const CONFIG = {
     ENABLE_MOCK_DATA: false
   },
   
-  VERSION: '1.0.0-develop',
+  VERSION: '1.1.0-develop',
   ENVIRONMENT: 'development'
 };
 
