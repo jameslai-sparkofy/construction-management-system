@@ -2,15 +2,15 @@
 const SUPABASE_CONFIG = {
     // 開發環境
     development: {
-        url: 'https://your-project.supabase.co',
-        anonKey: 'your-anon-key-here',
-        // 這些需要你從 Supabase Dashboard 取得
+        url: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNjI3MjEsImV4cCI6MjA0OTYzODcyMX0.vJmxGdlVy8A0kqAQW_CvcZm9-Bo0WqsL5y3vwg3Kkzc',
+        // 注意：這是 anon key (公開的)，不是 service key
     },
     
     // 生產環境
     production: {
-        url: 'https://your-project.supabase.co',
-        anonKey: 'your-anon-key-here',
+        url: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
+        anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNjI3MjEsImV4cCI6MjA0OTYzODcyMX0.vJmxGdlVy8A0kqAQW_CvcZm9-Bo0WqsL5y3vwg3Kkzc',
     }
 };
 
@@ -26,8 +26,8 @@ function getSupabaseConfig() {
 async function initSupabase() {
     const config = getSupabaseConfig();
     
-    if (!config.url || config.url === 'https://your-project.supabase.co') {
-        console.warn('請先設定 Supabase 專案資訊');
+    if (!config.url || !config.anonKey) {
+        console.warn('Supabase 配置錯誤');
         return null;
     }
     
