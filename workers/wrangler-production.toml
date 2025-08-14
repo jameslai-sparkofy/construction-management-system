@@ -6,6 +6,10 @@ compatibility_date = "2024-11-06"
 ENVIRONMENT = "production"
 DEV_TOKEN = "prod-token-for-api"
 API_BASE_URL = "https://construction-api-production.lai-jameslai.workers.dev"
+# Clerk 測試環境配置 (TODO: 生產環境需更換為正式 key)
+CLERK_SECRET_KEY = "sk_test_UqjBEE0wOtBatBQbM1buSyr8mIaWqGpes872R5cL6T"
+CLERK_PUBLISHABLE_KEY = "pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ"
+CLERK_DOMAIN = "https://absolute-cougar-90.clerk.accounts.dev"
 
 # KV Namespaces (使用相同的 KV)
 [[kv_namespaces]]

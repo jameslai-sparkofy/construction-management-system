@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 元心建材工程管理系統 v1.3.0</title>
+    
+    <!-- Clerk SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 3rem;
+            max-width: 450px;
+            width: 90%;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+        }
+
+        h1 {
+            color: #1a202c;
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: #764ba2;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .auth-container {
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #clerk-signin {
+            width: 100%;
+        }
+
+        .loading {
+            text-align: center;
+            color: #718096;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #764ba2;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .fallback-login {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .fallback-link {
+            color: #764ba2;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .fallback-link:hover {
+            text-decoration: underline;
+        }
+
+        .test-info {
+            background: #fef5e7;
+            border: 1px solid #f9c74f;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1.5rem;
+        }
+
+        .test-info h3 {
+            color: #f9844a;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-info p {
+            color: #90742d;
+            font-size: 0.813rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-section">
+            <div class="logo">🏗️</div>
+            <h1>元心建材工程管理系統</h1>
+            <div class="version-badge">v1.3.0 - Clerk 認證版</div>
+            <p class="subtitle">專業的建築施工管理平台</p>
+        </div>
+
+        <div class="auth-container">
+            <div class="loading" id="loadingState">
+                <div class="spinner"></div>
+                <p>正在載入認證系統...</p>
+            </div>
+            <div id="clerk-signin" style="display: none;"></div>
+        </div>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="test-info">
+            <h3>⚠️ 測試環境提示</h3>
+            <p>
+                目前使用 Clerk 測試環境 (test keys)。<br>
+                如需測試帳號，請使用 Email 或 Google 登入。
+            </p>
+        </div>
+
+        <div class="fallback-login">
+            <a href="login-simple.html" class="fallback-link">使用傳統登入方式 →</a>
+        </div>
+    </div>
+
+    <script src="clerk-config.js"></script>
+    <script>
+        // Clerk 初始化
+        const clerkPublishableKey = 'pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ';
+        
+        async function initializeClerkAuth() {
+            const loadingState = document.getElementById('loadingState');
+            const signInDiv = document.getElementById('clerk-signin');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            try {
+                // 初始化 Clerk
+                const clerk = new Clerk(clerkPublishableKey);
+                await clerk.load();
+                
+                console.log('Clerk loaded successfully');
+                
+                // 檢查是否已登入
+                if (clerk.user) {
+                    console.log('User already signed in:', clerk.user);
+                    // 已登入，跳轉到專案列表
+                    window.location.href = 'project-list.html';
+                    return;
+                }
+                
+                // 顯示登入介面
+                loadingState.style.display = 'none';
+                signInDiv.style.display = 'block';
+                
+                // 掛載 Clerk SignIn 組件
+                clerk.mountSignIn(signInDiv, {
+                    appearance: {
+                        elements: {
+                            formButtonPrimary: {
+                                backgroundColor: '#764ba2',
+                                '&:hover': {
+                                    backgroundColor: '#667eea'
+                                }
+                            },
+                            formFieldInput: {
+                                borderColor: '#e2e8f0',
+                                '&:focus': {
+                                    borderColor: '#764ba2',
+                                    boxShadow: '0 0 0 3px rgba(118, 75, 162, 0.1)'
+                                }
+                            },
+                            headerTitle: {
+                                display: 'none'
+                            },
+                            headerSubtitle: {
+                                display: 'none'
+                            },
+                            card: {
+                                border: 'none',
+                                boxShadow: 'none',
+                                padding: '0'
+                            },
+                            socialButtonsBlockButton: {
+                                borderColor: '#e2e8f0',
+                                '&:hover': {
+                                    backgroundColor: '#f7fafc'
+                                }
+                            }
+                        },
+                        layout: {
+                            socialButtonsPlacement: 'top',
+                            socialButtonsVariant: 'blockButton'
+                        }
+                    },
+                    routing: 'hash',
+                    afterSignInUrl: '/project-list.html',
+                    signUpUrl: null, // 暫時停用註冊
+                    redirectUrl: '/project-list.html'
+                });
+                
+                // 監聽登入事件
+                clerk.addListener('user', (user) => {
+                    if (user) {
+                        console.log('User signed in:', user);
+                        // 儲存用戶資訊到 localStorage
+                        localStorage.setItem('clerk_user', JSON.stringify({
+                            id: user.id,
+                            email: user.primaryEmailAddress?.emailAddress,
+                            firstName: user.firstName,
+                            lastName: user.lastName,
+                            fullName: user.fullName
+                        }));
+                        
+                        // 跳轉到專案列表
+                        setTimeout(() => {
+                            window.location.href = 'project-list.html';
+                        }, 500);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Clerk initialization error:', error);
+                loadingState.style.display = 'none';
+                errorMessage.style.display = 'block';
+                errorMessage.textContent = '認證系統載入失敗，請稍後再試或使用傳統登入方式。';
+            }
+        }
+        
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeClerkAuth();
+        });
+    </script>
+</body>
+</html>

@@ -1,8 +1,18 @@
 {
-  "version": "1.2.0",
-  "versionName": "施工管理優化版",
+  "version": "1.3.0",
+  "versionName": "Clerk 認證整合版",
   "releaseDate": "2025-08-14",
   "changelog": {
+    "1.3.0": {
+      "date": "2025-08-14",
+      "changes": [
+        "整合 Clerk 認證系統",
+        "新增 Clerk 登入頁面",
+        "支援 Google OAuth 登入",
+        "加入測試環境 keys 配置",
+        "保留傳統登入方式作為備用"
+      ]
+    },
     "1.2.0": {
       "date": "2025-08-14",
       "changes": [

@@ -6,6 +6,10 @@ compatibility_date = "2024-11-06"
 ENVIRONMENT = "development"
 DEV_TOKEN = "dev-token-for-testing"
 API_BASE_URL = "https://construction-api-development.lai-jameslai.workers.dev"
+# Clerk 測試環境配置
+CLERK_SECRET_KEY = "sk_test_UqjBEE0wOtBatBQbM1buSyr8mIaWqGpes872R5cL6T"
+CLERK_PUBLISHABLE_KEY = "pk_test_YWJzb2x1dGUtY291Z2FyLTkwLmNsZXJrLmFjY291bnRzLmRldiQ"
+CLERK_DOMAIN = "https://absolute-cougar-90.clerk.accounts.dev"
 
 # KV Namespaces (使用相同的 KV，資料會共享)
 [[kv_namespaces]]
