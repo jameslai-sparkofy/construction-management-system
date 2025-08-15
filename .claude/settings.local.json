@@ -203,7 +203,12 @@
       "Bash(sed:*)",
       "mcp__playwright__browser_navigate_back",
       "Bash(CLOUDFLARE_API_TOKEN=\"q73alXXcmvfHS7LQHuzSJfPuEdPUT4P0OgHKhq09\" npx wrangler pages deployment list --project-name construction-management-frontend-dev --limit 1)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"q73alXXcmvfHS7LQHuzSJfPuEdPUT4P0OgHKhq09\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"q73alXXcmvfHS7LQHuzSJfPuEdPUT4P0OgHKhq09\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)",
+      "mcp__puppeteer__puppeteer_connect_active_tab",
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler pages deploy frontend --project-name construction-management-frontend --commit-dirty=true)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebSearch",
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" timeout 60 npx wrangler deploy --config wrangler-final.toml)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

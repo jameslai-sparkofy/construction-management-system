@@ -1092,6 +1092,7 @@
                 // 獲取商機連絡人（從 NewOpportunityContactsObj）
                 contacts = []; // 使用全域變數
                 if (selectedOpportunity) {
+                    console.log('Fetching contacts for opportunity:', selectedOpportunity.id);
                     const contactsResponse = await fetch(
                         `${API_BASE_URL}/rest/NewOpportunityContactsObj?opportunity_id=${selectedOpportunity.id}&limit=100`,
                         {
@@ -1104,6 +1105,23 @@
                     if (contactsResponse.ok) {
                         const contactsData = await contactsResponse.json();
                         contacts = contactsData.results || [];
+                        console.log(`Found ${contacts.length} contacts for opportunity`);
+                        
+                        // 如果沒有聯絡人，嘗試從商機本身獲取
+                        if (contacts.length === 0 && selectedOpportunity) {
+                            console.log('No contacts found, checking opportunity details');
+                            // 可以從商機本身的聯絡人欄位獲取
+                            if (selectedOpportunity.contact_name || selectedOpportunity.contact_phone) {
+                                contacts.push({
+                                    _id: `opp_contact_${selectedOpportunity.id}`,
+                                    name: selectedOpportunity.contact_name || selectedOpportunity.company,
+                                    phone: selectedOpportunity.contact_phone || '',
+                                    title: '業主'
+                                });
+                            }
+                        }
+                    } else {
+                        console.error('Failed to fetch contacts:', contactsResponse.status);
                     }
                 }
                 
@@ -1186,12 +1204,20 @@
                         <h3>業主設定</h3>
                         <div class="form-group">
                             <label>選擇業主（從商機連絡人）</label>
-                            <select id="projectOwner" class="filter-select">
-                                <option value="">請選擇業主</option>
-                                ${contacts.map(contact => `
-                                    <option value="${contact._id}">${contact.name || contact.contact_name || '未命名'}</option>
-                                `).join('')}
+                            <select id="projectOwner" class="filter-select" multiple style="height: 120px;">
+                                ${contacts.length > 0 ? 
+                                    contacts.map(contact => {
+                                        // 顯示更多聯絡人資訊
+                                        const displayName = contact.name || contact.contact_name || '未命名';
+                                        const phone = contact.phone || contact.contact_phone__c || '';
+                                        const title = contact.title || contact.contact_title__c || '';
+                                        const label = `${displayName}${title ? ` (${title})` : ''}${phone ? ` - ${phone}` : ''}`;
+                                        return `<option value="${contact._id}" data-phone="${phone}" data-name="${displayName}" data-title="${title}">${label}</option>`;
+                                    }).join('') : 
+                                    '<option value="" disabled>無商機聯絡人資料</option>'
+                                }
                             </select>
+                            <small style="color: #6b7280;">按住 Ctrl/Cmd 可多選業主</small>
                         </div>
                     </div>
                 `;
@@ -1216,12 +1242,42 @@
                                         <tr>
                                             <td>${team}</td>
                                             <td>
-                                                <select class="team-leader-select" data-team="${team}">
-                                                    <option value="">請選擇負責人</option>
-                                                    ${masters.map(master => `
-                                                        <option value="${master._id}">${master.name || master.field_name__c || '未命名'}</option>
-                                                    `).join('')}
-                                                </select>
+                                                <div style="position: relative;">
+                                                    <input type="text" 
+                                                           class="team-leader-search" 
+                                                           data-team="${team}"
+                                                           placeholder="搜尋並選擇負責人..."
+                                                           style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;"
+                                                           onclick="toggleLeaderDropdown('${team}')">
+                                                    <div class="team-leader-dropdown" 
+                                                         id="dropdown-${team}"
+                                                         data-team="${team}"
+                                                         style="position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #d1d5db; border-radius: 4px; max-height: 200px; overflow-y: auto; display: none; z-index: 1000; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                                        ${masters.map(master => {
+                                                            const name = master.name || master.field_name__c || '未命名';
+                                                            const phone = master.phone || master.field_phone__c || '';
+                                                            return `
+                                                                <div class="team-leader-option" 
+                                                                     data-team="${team}"
+                                                                     data-id="${master._id}"
+                                                                     data-name="${name}"
+                                                                     data-phone="${phone}"
+                                                                     style="padding: 8px; cursor: pointer; border-bottom: 1px solid #f3f4f6;"
+                                                                     onmouseover="this.style.backgroundColor='#f3f4f6'"
+                                                                     onmouseout="this.style.backgroundColor='white'">
+                                                                    <input type="checkbox" 
+                                                                           class="team-leader-checkbox"
+                                                                           data-team="${team}"
+                                                                           value="${master._id}"
+                                                                           style="margin-right: 8px;"
+                                                                           onchange="updateSelectedLeaders('${team}')">
+                                                                    ${name}${phone ? ` (${phone})` : ''}
+                                                                </div>
+                                                            `;
+                                                        }).join('')}
+                                                    </div>
+                                                    <div class="selected-leaders" id="selected-${team}" data-team="${team}" style="margin-top: 8px; color: #4f46e5; font-size: 0.9rem;"></div>
+                                                </div>
                                             </td>
                                             <td>
                                                 <label class="switch">
@@ -1451,8 +1507,18 @@
             if (!confirm(confirmMessage)) return;
             
             // 收集權限設置
+            const ownerSelect = document.getElementById('projectOwner');
+            const selectedOwners = ownerSelect ? Array.from(ownerSelect.selectedOptions).map(opt => ({
+                userId: opt.value,
+                name: opt.getAttribute('data-name'),
+                phone: opt.getAttribute('data-phone'),
+                role: 'owner'
+            })) : [];
+            
             const permissions = {
-                owner: document.getElementById('projectOwner')?.value || null,
+                owners: selectedOwners,
+                teamLeaders: [],
+                teamMembers: [],
                 teams: []
             };
             
@@ -1465,14 +1531,35 @@
             const teamLeaderSelects = document.querySelectorAll('.team-leader-select');
             const teamViewOthersCheckboxes = document.querySelectorAll('.team-view-others');
             
-            teamLeaderSelects.forEach((select, index) => {
-                const teamName = select.getAttribute('data-team');
-                const leaderId = select.value;
-                const canViewOthers = teamViewOthersCheckboxes[index]?.checked || false;
+            // 收集每個工班的多個負責人
+            const teams = new Set();
+            document.querySelectorAll('[data-team]').forEach(elem => {
+                const teamName = elem.getAttribute('data-team');
+                if (teamName) teams.add(teamName);
+            });
+            
+            teams.forEach(teamName => {
+                // 獲取該工班選中的所有負責人
+                const checkboxes = document.querySelectorAll(`.team-leader-checkbox[data-team="${teamName}"]:checked`);
+                const leaders = Array.from(checkboxes).map(cb => {
+                    const option = cb.closest('.team-leader-option');
+                    return {
+                        userId: cb.value,
+                        name: option.getAttribute('data-name'),
+                        phone: option.getAttribute('data-phone'),
+                        role: 'team_leader',
+                        teamId: teamName
+                    };
+                });
+                
+                // 將負責人加入 teamLeaders 陣列
+                permissions.teamLeaders.push(...leaders);
+                
+                const canViewOthers = document.querySelector(`.team-view-others[data-team="${teamName}"]`)?.checked || false;
                 
                 permissions.teams.push({
                     name: teamName,
-                    leaderId: leaderId,
+                    leaders: leaders.map(l => l.userId),
                     canViewOthers: canViewOthers
                 });
             });
@@ -1680,6 +1767,76 @@
                 minimumFractionDigits: 0
             }).format(amount);
         }
+        
+        // 切換工班負責人下拉選單
+        function toggleLeaderDropdown(teamName) {
+            const dropdown = document.getElementById(`dropdown-${teamName}`);
+            if (dropdown) {
+                dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            }
+            
+            // 關閉其他下拉選單
+            document.querySelectorAll('.team-leader-dropdown').forEach(dd => {
+                if (dd.id !== `dropdown-${teamName}`) {
+                    dd.style.display = 'none';
+                }
+            });
+        }
+        
+        // 更新選中的負責人顯示
+        function updateSelectedLeaders(teamName) {
+            const checkboxes = document.querySelectorAll(`.team-leader-checkbox[data-team="${teamName}"]:checked`);
+            const selectedDiv = document.getElementById(`selected-${teamName}`);
+            
+            if (selectedDiv) {
+                const names = Array.from(checkboxes).map(cb => {
+                    const option = cb.closest('.team-leader-option');
+                    return option.getAttribute('data-name');
+                });
+                
+                if (names.length > 0) {
+                    selectedDiv.textContent = `已選擇: ${names.join(', ')}`;
+                } else {
+                    selectedDiv.textContent = '';
+                }
+            }
+            
+            // 更新搜尋框顯示
+            const searchInput = document.querySelector(`.team-leader-search[data-team="${teamName}"]`);
+            if (searchInput) {
+                searchInput.value = `已選擇 ${checkboxes.length} 位負責人`;
+            }
+        }
+        
+        // 搜尋工班負責人
+        document.addEventListener('DOMContentLoaded', () => {
+            // 為每個搜尋框添加事件
+            document.querySelectorAll('.team-leader-search').forEach(input => {
+                input.addEventListener('input', function() {
+                    const teamName = this.getAttribute('data-team');
+                    const searchText = this.value.toLowerCase();
+                    const options = document.querySelectorAll(`.team-leader-option[data-team="${teamName}"]`);
+                    
+                    options.forEach(option => {
+                        const name = option.getAttribute('data-name').toLowerCase();
+                        if (name.includes(searchText) || searchText === '') {
+                            option.style.display = 'block';
+                        } else {
+                            option.style.display = 'none';
+                        }
+                    });
+                });
+            });
+            
+            // 點擊外部關閉下拉選單
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.team-leader-search') && !e.target.closest('.team-leader-dropdown')) {
+                    document.querySelectorAll('.team-leader-dropdown').forEach(dd => {
+                        dd.style.display = 'none';
+                    });
+                }
+            });
+        });
     </script>
 </body>
 </html>

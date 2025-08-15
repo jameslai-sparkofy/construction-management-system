@@ -1408,6 +1408,45 @@
             align-items: center;
             gap: 1rem;
         }
+        
+        /* Team icon styling */
+        .team-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: #84C7D0;
+            color: white;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            margin: 0 0.25rem;
+        }
+        
+        .team-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(132, 199, 208, 0.4);
+        }
+        
+        .team-icon .member-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #ef4444;
+            color: white;
+            border-radius: 10px;
+            padding: 0 4px;
+            font-size: 0.625rem;
+            min-width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
         .legend-title {
             font-weight: 600;
@@ -1839,6 +1878,22 @@
     <div id="lightbox" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; cursor: zoom-out;" onclick="closeLightbox()">
         <img id="lightboxImg" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); max-width: 90%; max-height: 90%; object-fit: contain;">
     </div>
+    
+    <!-- Team Management Modal -->
+    <div id="teamModal" class="team-modal">
+        <div class="team-modal-content">
+            <div class="team-modal-header">
+                <h2 class="team-modal-title" id="teamModalTitle">工班成員管理</h2>
+                <button class="team-modal-close" onclick="closeTeamModal()">✕</button>
+            </div>
+            <div class="team-modal-body">
+                <div class="team-members-list" id="teamMembersList">
+                    <!-- Members will be loaded here -->
+                </div>
+                <button class="add-member-btn" onclick="showAddMemberForm()">+ 新增成員</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // API Configuration
@@ -1898,6 +1953,9 @@
             // Load project data
             await loadProject(projectId);
             
+            // Load teams data
+            await loadProjectTeams(projectId);
+            
             // If site_id is provided, open the modal
             if (siteId) {
                 await openSiteModal(siteId);
@@ -1934,6 +1992,142 @@
             }
         }
 
+        // Load teams for the project
+        async function loadProjectTeams(projectId) {
+            try {
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    console.error('Failed to load teams');
+                    return;
+                }
+                
+                const data = await response.json();
+                if (data.success) {
+                    displayTeams(data.teams);
+                    window.projectTeams = data.teams;
+                }
+            } catch (error) {
+                console.error('Error loading teams:', error);
+            }
+        }
+        
+        // Display team icons
+        function displayTeams(teams) {
+            const legendTeams = document.getElementById('legendTeams');
+            if (!legendTeams) return;
+            
+            legendTeams.innerHTML = '';
+            
+            if (!teams || teams.length === 0) {
+                legendTeams.innerHTML = '<span style="color: #9ca3af;">尚無工班</span>';
+                return;
+            }
+            
+            teams.forEach(team => {
+                const teamIcon = document.createElement('div');
+                teamIcon.className = 'team-icon';
+                teamIcon.innerHTML = `
+                    ${team.name.substring(0, 1).toUpperCase()}
+                    <span class="member-count">${team.memberCount || 0}</span>
+                `;
+                teamIcon.title = `${team.name} (${team.memberCount || 0} 人)`;
+                teamIcon.onclick = () => showTeamModal(team);
+                legendTeams.appendChild(teamIcon);
+            });
+        }
+        
+        // Show team management modal
+        function showTeamModal(team) {
+            const modal = document.getElementById('teamModal');
+            const title = document.getElementById('teamModalTitle');
+            const membersList = document.getElementById('teamMembersList');
+            
+            title.textContent = `${team.name} - 成員管理`;
+            window.currentTeam = team;
+            
+            // Display team members
+            membersList.innerHTML = '';
+            
+            if (!team.members || team.members.length === 0) {
+                membersList.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 2rem;">尚無成員</div>';
+            } else {
+                team.members.forEach(member => {
+                    const memberItem = document.createElement('div');
+                    memberItem.className = 'team-member-item';
+                    memberItem.innerHTML = `
+                        <div class="team-member-info">
+                            <div class="team-member-name">${member.name}</div>
+                            <div class="team-member-phone">${member.phone}</div>
+                            ${member.role === 'team_leader' ? '<span class="team-member-role">負責人</span>' : ''}
+                        </div>
+                        <div class="team-member-actions">
+                            <button class="team-action-btn" onclick="editMember('${member.userId}')" title="編輯">
+                                ✏️
+                            </button>
+                            <button class="team-action-btn delete" onclick="deleteMember('${member.userId}')" title="刪除">
+                                🗑️
+                            </button>
+                        </div>
+                    `;
+                    membersList.appendChild(memberItem);
+                });
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        // Close team modal
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.remove('active');
+        }
+        
+        // Delete team member
+        async function deleteMember(userId) {
+            if (!confirm('確定要移除此成員嗎？')) return;
+            
+            const projectId = window.currentProject?.id;
+            const teamId = window.currentTeam?.id;
+            
+            if (!projectId || !teamId) return;
+            
+            try {
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams/${teamId}/members/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                    }
+                });
+                
+                if (response.ok) {
+                    alert('成員已移除');
+                    loadProjectTeams(projectId);
+                    closeTeamModal();
+                } else {
+                    alert('移除失敗');
+                }
+            } catch (error) {
+                console.error('Error deleting member:', error);
+                alert('移除失敗');
+            }
+        }
+        
+        // Show add member form (placeholder)
+        function showAddMemberForm() {
+            alert('新增成員功能開發中...');
+            // TODO: Implement add member form
+        }
+        
+        // Edit member (placeholder)
+        function editMember(userId) {
+            alert('編輯成員功能開發中...');
+            // TODO: Implement edit member form
+        }
+
         // Load project data
         async function loadProject(projectId) {
             try {
@@ -1957,6 +2151,7 @@
                 
                 if (result.success && result.project) {
                     currentProject = result.project;
+                    window.currentProject = result.project; // Save globally for team functions
                     updateProjectInfo();
                     await loadSites();
                 } else {

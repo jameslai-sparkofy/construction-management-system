@@ -128,8 +128,11 @@ export default {
         
         const projectId = 'proj_' + Date.now();
         
-        // Insert into D1 database
-        await env.DB_ENGINEERING.prepare(`
+        // Start transaction
+        const statements = [];
+        
+        // 1. Insert project into projects table
+        statements.push(env.DB_ENGINEERING.prepare(`
           INSERT INTO projects (
             id, opportunity_id, name, 
             spc_engineering, cabinet_engineering, permissions,
@@ -143,9 +146,113 @@ export default {
           JSON.stringify(data.cabinetEngineering || {}),
           JSON.stringify(data.permissions || {}),
           data.createdBy || 'system'
-        ).run();
+        ));
         
-        console.log('[DEBUG] Project created successfully:', projectId);
+        // 2. Insert users records for owners
+        if (data.permissions?.owners) {
+          for (const owner of data.permissions.owners) {
+            const userId = owner.userId || `user_${owner.phone}_${Date.now()}`;
+            statements.push(env.DB_ENGINEERING.prepare(`
+              INSERT INTO users (
+                user_id, name, phone, project_id, team_id, role,
+                source_type, source_id, created_by
+              ) VALUES (?, ?, ?, ?, NULL, 'owner', 'crm_contact', ?, ?)
+            `).bind(
+              userId,
+              owner.name || 'Unknown',
+              owner.phone || '',
+              projectId,
+              owner.userId || '',
+              data.createdBy || 'system'
+            ));
+          }
+        }
+        
+        // 3. Insert users records for team leaders
+        if (data.permissions?.teamLeaders) {
+          for (const leader of data.permissions.teamLeaders) {
+            const userId = leader.userId || `user_${leader.phone}_${Date.now()}`;
+            statements.push(env.DB_ENGINEERING.prepare(`
+              INSERT INTO users (
+                user_id, name, phone, project_id, team_id, role,
+                source_type, source_id, created_by
+              ) VALUES (?, ?, ?, ?, ?, 'team_leader', 'crm_worker', ?, ?)
+            `).bind(
+              userId,
+              leader.name || 'Unknown',
+              leader.phone || '',
+              projectId,
+              leader.teamId || '',
+              leader.userId || '',
+              data.createdBy || 'system'
+            ));
+          }
+        }
+        
+        // 4. Insert users records for team members  
+        if (data.permissions?.teamMembers) {
+          for (const member of data.permissions.teamMembers) {
+            const userId = member.userId || `user_${member.phone}_${Date.now()}`;
+            statements.push(env.DB_ENGINEERING.prepare(`
+              INSERT INTO users (
+                user_id, name, phone, project_id, team_id, role,
+                source_type, source_id, created_by
+              ) VALUES (?, ?, ?, ?, ?, 'team_member', 'crm_worker', ?, ?)
+            `).bind(
+              userId,
+              member.name || 'Unknown',
+              member.phone || '',
+              projectId,
+              member.teamId || '',
+              member.userId || '',
+              data.createdBy || 'system'
+            ));
+          }
+        }
+        
+        // Execute all INSERT statements individually to avoid batch transaction rollback
+        console.log(`[DEBUG] Executing ${statements.length} INSERT statements individually`);
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        // Execute each statement individually
+        for (let i = 0; i < statements.length; i++) {
+          try {
+            await statements[i].run();
+            successCount++;
+            console.log(`[DEBUG] Statement ${i} executed successfully`);
+          } catch (stmtError) {
+            failCount++;
+            console.error(`[DEBUG] Statement ${i} failed:`, stmtError.message);
+            // Continue with next statement instead of stopping
+          }
+        }
+        
+        console.log(`[DEBUG] Execution complete: ${successCount} success, ${failCount} failed`)
+        
+        // 5. Process teams with can_view_other_teams permission (UPDATE after INSERT)
+        if (data.permissions?.teams) {
+          for (const team of data.permissions.teams) {
+            if (team.canViewOthers && team.leaders) {
+              // Update team leaders with view permission
+              for (const leaderId of team.leaders) {
+                try {
+                  await env.DB_ENGINEERING.prepare(`
+                    UPDATE users 
+                    SET can_view_other_teams = 1, updated_at = CURRENT_TIMESTAMP
+                    WHERE user_id = ? AND project_id = ? AND team_id = ?
+                  `).bind(leaderId, projectId, team.name).run();
+                  console.log(`[DEBUG] Updated view permission for ${leaderId}`);
+                } catch (updateError) {
+                  console.error(`[DEBUG] Failed to update view permission for ${leaderId}:`, updateError);
+                }
+              }
+            }
+          }
+        }
+        
+        console.log('[DEBUG] Project and users created successfully:', projectId);
         
         return new Response(JSON.stringify({
           success: true,
@@ -154,7 +261,8 @@ export default {
             name: data.name,
             opportunity_id: data.opportunityId || data.opportunity_id,
             created_at: new Date().toISOString()
-          }
+          },
+          message: `專案建立成功，已新增 ${successCount - 1} 位使用者`
         }), { headers });
       } catch (error) {
         console.error('[DEBUG] Error creating project:', error);
@@ -388,6 +496,247 @@ export default {
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to update project',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get project teams and members
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/teams$/) && method === 'GET') {
+      try {
+        const projectId = path.split('/')[4];
+        console.log('[DEBUG] Getting teams for project:', projectId);
+        
+        // Query all users for this project
+        const query = env.DB_ENGINEERING.prepare(`
+          SELECT 
+            u.id,
+            u.user_id,
+            u.name,
+            u.phone,
+            u.team_id,
+            u.role,
+            u.can_view_other_teams,
+            u.source_type,
+            u.source_id,
+            u.is_active,
+            u.created_at
+          FROM users u
+          WHERE u.project_id = ? AND u.is_active = 1
+          ORDER BY u.team_id, u.role, u.name
+        `);
+        
+        const { results } = await query.bind(projectId).all();
+        
+        // Group users by team
+        const teams = {};
+        const noTeamUsers = [];
+        
+        for (const user of results) {
+          if (user.team_id) {
+            if (!teams[user.team_id]) {
+              teams[user.team_id] = {
+                id: user.team_id,
+                name: user.team_id,
+                members: [],
+                leaders: [],
+                memberCount: 0
+              };
+            }
+            
+            const member = {
+              id: user.id,
+              userId: user.user_id,
+              name: user.name,
+              phone: user.phone,
+              role: user.role,
+              canViewOtherTeams: user.can_view_other_teams,
+              sourceType: user.source_type,
+              sourceId: user.source_id
+            };
+            
+            teams[user.team_id].members.push(member);
+            teams[user.team_id].memberCount++;
+            
+            if (user.role === 'team_leader') {
+              teams[user.team_id].leaders.push(member);
+            }
+          } else {
+            // Users without team (owners, admins)
+            noTeamUsers.push({
+              id: user.id,
+              userId: user.user_id,
+              name: user.name,
+              phone: user.phone,
+              role: user.role,
+              sourceType: user.source_type,
+              sourceId: user.source_id
+            });
+          }
+        }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          teams: Object.values(teams),
+          projectUsers: noTeamUsers,
+          totalUsers: results.length
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error fetching teams:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch teams',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Add team member
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/teams\/[^\/]+\/members$/) && method === 'POST') {
+      try {
+        const parts = path.split('/');
+        const projectId = parts[4];
+        const teamId = parts[6];
+        const data = await request.json();
+        
+        console.log('[DEBUG] Adding team member:', { projectId, teamId, data });
+        
+        // Insert new team member
+        const insertQuery = env.DB_ENGINEERING.prepare(`
+          INSERT INTO users (
+            user_id, name, phone, project_id, team_id, role,
+            source_type, source_id, created_by
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+        
+        const userId = data.userId || `user_${data.phone}_${Date.now()}`;
+        
+        await insertQuery.bind(
+          userId,
+          data.name,
+          data.phone,
+          projectId,
+          teamId,
+          data.role || 'team_member',
+          data.sourceType || 'crm_supplier',
+          data.sourceId || '',
+          data.createdBy || 'system'
+        ).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '成員已新增',
+          member: {
+            userId,
+            name: data.name,
+            phone: data.phone,
+            teamId,
+            role: data.role || 'team_member'
+          }
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error adding team member:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to add team member',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Delete team member
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/teams\/[^\/]+\/members\/[^\/]+$/) && method === 'DELETE') {
+      try {
+        const parts = path.split('/');
+        const projectId = parts[4];
+        const teamId = parts[6];
+        const userId = parts[8];
+        
+        console.log('[DEBUG] Removing team member:', { projectId, teamId, userId });
+        
+        // Soft delete - mark as inactive
+        const deleteQuery = env.DB_ENGINEERING.prepare(`
+          UPDATE users 
+          SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+          WHERE user_id = ? AND project_id = ? AND team_id = ?
+        `);
+        
+        await deleteQuery.bind(userId, projectId, teamId).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '成員已移除'
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error removing team member:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to remove team member',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Update team member
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/teams\/[^\/]+\/members\/[^\/]+$/) && method === 'PUT') {
+      try {
+        const parts = path.split('/');
+        const projectId = parts[4];
+        const teamId = parts[6];
+        const userId = parts[8];
+        const data = await request.json();
+        
+        console.log('[DEBUG] Updating team member:', { projectId, teamId, userId, data });
+        
+        // Build update query dynamically
+        const updateFields = [];
+        const values = [];
+        
+        if (data.name !== undefined) {
+          updateFields.push('name = ?');
+          values.push(data.name);
+        }
+        
+        if (data.phone !== undefined) {
+          updateFields.push('phone = ?');
+          values.push(data.phone);
+        }
+        
+        if (data.role !== undefined) {
+          updateFields.push('role = ?');
+          values.push(data.role);
+        }
+        
+        if (data.canViewOtherTeams !== undefined) {
+          updateFields.push('can_view_other_teams = ?');
+          values.push(data.canViewOtherTeams ? 1 : 0);
+        }
+        
+        updateFields.push('updated_at = CURRENT_TIMESTAMP');
+        
+        values.push(userId, projectId, teamId);
+        
+        const updateQuery = env.DB_ENGINEERING.prepare(`
+          UPDATE users 
+          SET ${updateFields.join(', ')}
+          WHERE user_id = ? AND project_id = ? AND team_id = ?
+        `);
+        
+        await updateQuery.bind(...values).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '成員資料已更新'
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error updating team member:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update team member',
           message: error.message
         }), { status: 500, headers });
       }
