@@ -283,6 +283,40 @@ Authorization: Bearer {token}
 
 ## CRM 同步 API
 
+### 資料表說明
+
+1. **案場資料**: `object_8W9cb__c` (SPC工程)
+   - `shift_time__c`: 工班名稱
+2. **工地師父**: `object_50HJ8__c`
+   - `shift_type_multi_select__c`: 工班 ID 陣列
+   - `shift_type_multi_select__c__r`: 關聯的工班詳細資訊
+3. **供應商/工班**: `SupplierObj`
+   - `_id`: 工班 ID
+   - `name`: 工班名稱
+
+### 工班映射機制
+
+系統會動態查詢 `SupplierObj` 表來建立工班名稱到 ID 的映射。
+
+#### 查詢工班資料
+**端點**: `GET /rest/SupplierObj`
+
+**回應範例**:
+```json
+{
+  "results": [
+    {
+      "_id": "6510b636909f550001cc8f54",
+      "name": "周華龍工班"
+    },
+    {
+      "_id": "65f67913d1ba220001dbdc87",
+      "name": "樂邁(工班)-愛德美特有限公司"
+    }
+  ]
+}
+```
+
 ### 1. 同步工地師父資料
 
 **端點**: `GET /rest/object_50HJ8__c`
@@ -304,7 +338,11 @@ Authorization: Bearer fx-crm-api-secret-2025
       "account__c": "0912345678",
       "password__c": "678",
       "abbreviation__c": "張",
-      "shift_type_multi_select__c": ["周華龍工班", "李明工班"]
+      "shift_type_multi_select__c": ["6510b636909f550001cc8f54", "66f2207293d22a000131602d"],
+      "shift_type_multi_select__c__r": [
+        {"name": "周華龍工班", "_id": "6510b636909f550001cc8f54"},
+        {"name": "王大誠工班", "_id": "66f2207293d22a000131602d"}
+      ]
     }
   ]
 }
@@ -317,14 +355,19 @@ Authorization: Bearer fx-crm-api-secret-2025
 **請求體**:
 ```json
 {
+  "_id": "689f3aaedffa99cab941d667",
   "name": "新師傅",
   "phone_number__c": "0945678901",
   "account__c": "0945678901",
   "password__c": "901",
   "abbreviation__c": "新",
-  "shift_type_multi_select__c": ["周華龍工班"]
+  "shift_type_multi_select__c": ["6510b636909f550001cc8f54"],
+  "record_type": "default__c",
+  "life_status": "normal"
 }
 ```
+
+**注意**: `_id` 必須是 MongoDB ObjectId 格式（24個16進位字元）
 
 ### 3. 更新工地師父工班
 
@@ -333,9 +376,11 @@ Authorization: Bearer fx-crm-api-secret-2025
 **請求體**:
 ```json
 {
-  "shift_type_multi_select__c": ["周華龍工班", "新工班"]
+  "shift_type_multi_select__c": ["6510b636909f550001cc8f54", "65f67913d1ba220001dbdc87"]
 }
 ```
+
+**注意**: 工班欄位必須使用工班 ID，而非工班名稱
 
 ## 權限 API
 

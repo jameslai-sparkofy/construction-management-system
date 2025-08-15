@@ -2196,8 +2196,59 @@
         // 視角切換相關變量
         let allProjectUsers = []; // 專案中的所有用戶
 
+        // Team name to ID mapping cache
+        let teamNameToIdMap = {};
+        let teamIdToNameMap = {};
+        
+        // Load team mappings from SupplierObj
+        async function loadTeamMappings() {
+            try {
+                console.log('Loading team mappings from SupplierObj...');
+                const response = await fetch(`${API_BASE_URL}/rest/SupplierObj?limit=500`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const suppliers = data.results || [];
+                    
+                    // Build mapping for teams (suppliers with "工班" or specific company names)
+                    suppliers.forEach(supplier => {
+                        const name = supplier.name;
+                        const id = supplier._id;
+                        
+                        // Check if this is likely a team/construction company
+                        if (name && (name.includes('工班') || name.includes('師傅') || 
+                                     name.includes('有限公司') || name.includes('企業'))) {
+                            teamNameToIdMap[name] = id;
+                            teamIdToNameMap[id] = name;
+                        }
+                    });
+                    
+                    console.log('Team mappings loaded:', Object.keys(teamNameToIdMap).length, 'teams');
+                }
+            } catch (error) {
+                console.error('Failed to load team mappings:', error);
+            }
+        }
+        
+        // Helper function to get team ID from name
+        function getTeamIdFromName(teamName) {
+            return teamNameToIdMap[teamName] || teamName;
+        }
+        
+        // Helper function to get team name from ID
+        function getTeamNameFromId(teamId) {
+            return teamIdToNameMap[teamId] || teamId;
+        }
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            // Load team mappings first
+            await loadTeamMappings();
+            
             // Get project ID from URL
             const urlParams = new URLSearchParams(window.location.search);
             const projectId = urlParams.get('id');
@@ -2286,25 +2337,15 @@
                 // Combine site team info with user data
                 const combinedTeams = [];
                 
-                // Process teams from sites
-                window.projectTeamsFromSites.forEach((teamInfo, teamName) => {
-                    // Find matching team from users data
-                    // Try to match with both original and decoded name
+                // Process teams from sites (now using team ID as key)
+                window.projectTeamsFromSites.forEach((teamInfo, teamId) => {
+                    // Find matching team from users data using team ID
                     const teamWithMembers = data.teams?.find(t => {
-                        // Direct match
-                        if (t.name === teamName) return true;
-                        
-                        // Try decoding if needed
-                        try {
-                            if (t.name && t.name.includes('%')) {
-                                return decodeURIComponent(t.name) === teamName;
-                            }
-                        } catch (e) {
-                            // Ignore decode errors
-                        }
-                        return false;
+                        // Match by team ID
+                        return t.id === teamId;
                     }) || {
-                        name: teamName,
+                        id: teamId,
+                        name: teamInfo.name,
                         members: [],
                         leaders: [],
                         memberCount: 0
@@ -2313,7 +2354,8 @@
                     // Combine the data
                     combinedTeams.push({
                         ...teamWithMembers,
-                        name: teamName,
+                        id: teamId,  // Use team ID
+                        name: teamInfo.name || teamWithMembers.name || `工班 ${teamId}`,
                         siteCount: teamInfo.siteCount,
                         sites: teamInfo.sites
                     });
@@ -3296,7 +3338,9 @@
             // Filter workers to only show those belonging to the current team
             let filteredWorkers = workers;
             if (window.currentTeam) {
-                const currentTeamId = window.currentTeam.id || window.currentTeam.name;
+                const currentTeamId = window.currentTeam.id;  // 使用工班 ID
+                console.log('Filtering workers for team ID:', currentTeamId);
+                
                 filteredWorkers = workers.filter(worker => {
                     // Check if worker belongs to current team
                     let workerTeamIds = worker.shift_type_multi_select__c || [];
@@ -3310,7 +3354,13 @@
                     if (!Array.isArray(workerTeamIds)) {
                         workerTeamIds = [];
                     }
-                    return workerTeamIds.includes(currentTeamId);
+                    
+                    // 檢查工班 ID 是否在陣列中
+                    const belongsToTeam = workerTeamIds.includes(currentTeamId);
+                    if (belongsToTeam) {
+                        console.log(`Worker ${worker.name} belongs to team ${currentTeamId}`);
+                    }
+                    return belongsToTeam;
                 });
             }
             
@@ -3636,13 +3686,20 @@
                 // No existing worker, create new one
                 const password = phone.slice(-3);
                 
+                // Generate a MongoDB ObjectId-like string for _id
+                // Format: 8 hex chars (timestamp) + 16 hex chars (random)
+                const timestamp = Math.floor(Date.now() / 1000).toString(16).padStart(8, '0');
+                const randomHex = Array.from({length: 16}, () => Math.floor(Math.random() * 16).toString(16)).join('');
+                const generatedId = timestamp + randomHex;
+                
                 const workerData = {
+                    _id: generatedId,  // Add the generated ID
                     name: name,
                     phone_number__c: phone,
                     account__c: phone,
                     password__c: password,
                     abbreviation__c: abbreviation || name.slice(0, 1),
-                    shift_type_multi_select__c: [window.currentTeam?.name || teamId], // Use team name for shift_type field
+                    shift_type_multi_select__c: JSON.stringify([window.currentTeam?.id || teamId]), // Use team ID (not URL-encoded) for shift_type field as JSON string
                     record_type: 'default__c',
                     life_status: 'normal'
                 };
@@ -3742,12 +3799,12 @@
                     existingTeams = [];
                 }
                 
-                // Use team name instead of ID for the field value
-                const teamName = window.currentTeam?.name || teamId;
+                // Use team ID for consistency (not URL-encoded, just the actual ID)
+                const teamIdToUse = window.currentTeam?.id || teamId;
                 
                 // Add new team if not already present
-                if (!existingTeams.includes(teamName)) {
-                    existingTeams.push(teamName);
+                if (!existingTeams.includes(teamIdToUse)) {
+                    existingTeams.push(teamIdToUse);
                 }
                 
                 // Update worker with new team list
@@ -3758,7 +3815,7 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        shift_type_multi_select__c: existingTeams
+                        shift_type_multi_select__c: JSON.stringify(existingTeams)
                     })
                 });
                 
@@ -3893,27 +3950,26 @@
                 buildings[building].push(site);
                 
                 // 收集工班資訊及統計案場數
-                const teamId = site[fieldMapping.team];
-                // 檢查是否有工班名稱欄位，如果沒有就使用 ID
-                const teamName = site.team_name || site['shift_time__c.name'] || teamId;
+                const teamNameFromSite = site[fieldMapping.team];  // 這可能是工班名稱
+                const teamId = getTeamIdFromName(teamNameFromSite);  // 轉換為工班 ID
+                const teamName = teamIdToNameMap[teamId] || teamNameFromSite;  // 獲取正確的工班名稱
                 
-                if (teamId && teamId !== '-') {
-                    // 使用 teamName 作為 key，而非 teamId（避免URL編碼問題）
-                    const mapKey = teamName || teamId;
-                    if (!teamsMap.has(mapKey)) {
-                        teamsMap.set(mapKey, {
+                if (teamNameFromSite && teamNameFromSite !== '-') {
+                    // 使用 teamId 作為 key，確保統一使用 ID
+                    if (!teamsMap.has(teamId)) {
+                        teamsMap.set(teamId, {
                             id: teamId,
-                            name: teamName || `工班 ${teamId}`,
+                            name: teamName,
                             siteCount: 0,
                             sites: []
                         });
                     }
-                    const teamData = teamsMap.get(mapKey);
+                    const teamData = teamsMap.get(teamId);
                     teamData.siteCount++;
                     teamData.sites.push(site._id);
                     
-                    // 記錄此棟別有此工班
-                    buildingTeams[building].add(teamName || teamId);
+                    // 記錄此棟別有此工班（使用 ID）
+                    buildingTeams[building].add(teamId);
                 }
             });
             
