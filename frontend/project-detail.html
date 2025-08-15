@@ -2091,16 +2091,17 @@
             }
             
             teams.forEach(team => {
+                const teamWrapper = document.createElement('div');
+                teamWrapper.style.cssText = 'display: inline-flex; align-items: center; margin-right: 1rem;';
+                
                 const teamIcon = document.createElement('div');
                 teamIcon.className = 'team-icon';
+                teamIcon.style.cssText = 'cursor: pointer; padding: 0.5rem 1rem; background: #84C7D0; color: white; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s; margin-right: 0.5rem;';
                 
-                // Get team abbreviation (first character or custom abbreviation)
-                const teamAbbr = team.abbreviation || team.name.substring(0, 1).toUpperCase();
-                
-                // Show site count instead of member count
+                // Show full team name with site count badge
                 teamIcon.innerHTML = `
-                    ${teamAbbr}
-                    <span class="member-count">${team.siteCount || 0}</span>
+                    <span style="margin-right: 0.25rem;">${team.name}</span>
+                    <span style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 8px; font-size: 0.75rem; min-width: 24px; text-align: center; display: inline-block;">${team.siteCount || 0}</span>
                 `;
                 
                 // Tooltip shows both site count and member count
@@ -2108,8 +2109,20 @@
                 const memberText = team.memberCount ? `${team.memberCount} 位成員` : '無成員';
                 teamIcon.title = `${team.name}\n${siteText}\n${memberText}`;
                 
+                // Add hover effect
+                teamIcon.onmouseenter = () => {
+                    teamIcon.style.transform = 'scale(1.05)';
+                    teamIcon.style.boxShadow = '0 4px 12px rgba(132, 199, 208, 0.4)';
+                };
+                teamIcon.onmouseleave = () => {
+                    teamIcon.style.transform = 'scale(1)';
+                    teamIcon.style.boxShadow = 'none';
+                };
+                
                 teamIcon.onclick = () => showTeamModal(team);
-                legendTeams.appendChild(teamIcon);
+                
+                teamWrapper.appendChild(teamIcon);
+                legendTeams.appendChild(teamWrapper);
             });
         }
         
@@ -2313,33 +2326,43 @@
             // Group sites by building
             const buildings = {};
             const teamsMap = new Map(); // 收集所有工班及其案場數
+            const buildingTeams = {}; // 記錄每個棟別的工班
             
             currentSites.forEach(site => {
                 const building = site[fieldMapping.building] || 'A';
                 if (!buildings[building]) {
                     buildings[building] = [];
+                    buildingTeams[building] = new Set(); // 記錄該棟的工班
                 }
                 buildings[building].push(site);
                 
                 // 收集工班資訊及統計案場數
-                const team = site[fieldMapping.team];
-                if (team && team !== '-') {
-                    if (!teamsMap.has(team)) {
-                        teamsMap.set(team, {
-                            name: team,
+                const teamId = site[fieldMapping.team];
+                // 檢查是否有工班名稱欄位，如果沒有就使用 ID
+                const teamName = site.team_name || site['shift_time__c.name'] || teamId;
+                
+                if (teamId && teamId !== '-') {
+                    if (!teamsMap.has(teamId)) {
+                        teamsMap.set(teamId, {
+                            id: teamId,
+                            name: teamName || `工班 ${teamId}`,
                             siteCount: 0,
                             sites: []
                         });
                     }
-                    const teamData = teamsMap.get(team);
+                    const teamData = teamsMap.get(teamId);
                     teamData.siteCount++;
                     teamData.sites.push(site._id);
+                    
+                    // 記錄此棟別有此工班
+                    buildingTeams[building].add(teamName || teamId);
                 }
             });
             
             // Store processed data
             window.sitesGroupedByBuilding = buildings;
             window.projectTeamsFromSites = teamsMap; // 儲存從案場提取的工班資訊
+            window.buildingTeamsMap = buildingTeams; // 儲存每個棟別的工班列表
             
             // 自動選擇第一個有資料的棟別作為預設
             const sortedBuildings = Object.keys(buildings).sort();
@@ -2466,13 +2489,30 @@
         function renderBuildingTabs() {
             const tabsContainer = document.getElementById('buildingTabs');
             const buildings = Object.keys(window.sitesGroupedByBuilding || {}).sort();
+            const buildingTeams = window.buildingTeamsMap || {};
             
-            tabsContainer.innerHTML = buildings.map(building => `
-                <button class="building-btn ${building === currentBuilding ? 'active' : ''}" 
-                        data-building="${building}">
-                    ${building}棟
-                </button>
-            `).join('');
+            tabsContainer.innerHTML = buildings.map(building => {
+                // 取得此棟的工班列表
+                const teams = buildingTeams[building] ? Array.from(buildingTeams[building]) : [];
+                let teamDisplay = '';
+                
+                if (teams.length > 0) {
+                    // 取每個工班名稱的第一個字
+                    const teamAbbrs = teams.map(team => {
+                        // 如果是數字 ID，顯示 "工班"；否則顯示第一個字
+                        return isNaN(team) ? team.charAt(0) : '班';
+                    });
+                    teamDisplay = ' | ' + teamAbbrs.join(' ');
+                }
+                
+                return `
+                    <button class="building-btn ${building === currentBuilding ? 'active' : ''}" 
+                            data-building="${building}"
+                            style="padding: 0.75rem 1.25rem;">
+                        <span>${building}棟${teamDisplay}</span>
+                    </button>
+                `;
+            }).join('');
         }
 
         // Render floor grid

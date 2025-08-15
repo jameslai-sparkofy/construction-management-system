@@ -209,7 +209,8 @@
       "WebFetch(domain:developers.cloudflare.com)",
       "WebSearch",
       "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" timeout 60 npx wrangler deploy --config wrangler-final.toml)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler pages deploy . --project-name construction-management-frontend-dev --commit-dirty=true)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler pages deploy . --project-name construction-management-frontend-dev --commit-dirty=true)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler pages deploy . --project-name construction-management-frontend-dev)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
