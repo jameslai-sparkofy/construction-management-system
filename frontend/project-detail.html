@@ -2021,9 +2021,10 @@
                 <div class="team-members-list" id="teamMembersList">
                     <!-- Members will be loaded here -->
                 </div>
-                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                    <button class="add-member-btn" onclick="showAddMemberForm('team_member')">+ 新增成員</button>
-                    <button class="add-member-btn" style="background: #10b981;" onclick="showAddMemberForm('team_leader')">+ 新增負責人</button>
+                <div style="margin-top: 1rem;">
+                    <button class="add-member-btn" onclick="showAddMemberForm()" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">
+                        + 新增成員
+                    </button>
                 </div>
             </div>
         </div>
@@ -2035,7 +2036,7 @@
             <div class="team-modal-header">
                 <h2 class="team-modal-title">
                     <span id="addMemberTitle">新增成員</span>
-                    <span id="addMemberTeamName" style="color: #ef4444; font-size: 0.9rem; margin-left: 0.5rem;"></span>
+                    <span id="addMemberTeamName" style="color: #3b82f6; font-size: 0.9rem; margin-left: 0.5rem;"></span>
                 </h2>
                 <button class="team-modal-close" onclick="closeAddMemberModal()">✕</button>
             </div>
@@ -2074,6 +2075,30 @@
                     <!-- New member form -->
                     <div id="newMemberSection" style="display: none;">
                         <div style="display: grid; gap: 1rem;">
+                            <!-- 角色選擇 -->
+                            <div style="background: #f9fafb; padding: 1rem; border-radius: 8px;">
+                                <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; color: #374151;">設定角色</label>
+                                <div style="display: flex; gap: 1rem;">
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;" 
+                                           id="memberRoleLabel"
+                                           onclick="selectRole('team_member')">
+                                        <input type="radio" id="roleMember" name="memberRole" value="team_member" checked style="margin-right: 0.5rem;">
+                                        <span style="flex: 1;">
+                                            <strong style="color: #1f2937;">一般成員</strong>
+                                            <div style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem;">可查看及更新案場資料</div>
+                                        </span>
+                                    </label>
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
+                                           id="leaderRoleLabel"
+                                           onclick="selectRole('team_leader')">
+                                        <input type="radio" id="roleLeader" name="memberRole" value="team_leader" style="margin-right: 0.5rem;">
+                                        <span style="flex: 1;">
+                                            <strong style="color: #1f2937;">負責人</strong>
+                                            <div style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem;">可管理工班成員及案場</div>
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
                             <!-- 電話/帳號 和 密碼 在同一行 -->
                             <div style="display: flex; gap: 1rem;">
                                 <div style="flex: 2;">
@@ -2649,27 +2674,52 @@
                 </div>
             `;
             
-            // Display team members
-            if (!team.members || team.members.length === 0) {
+            // Get current user permissions
+            const currentUserRole = getCurrentUserRole();
+            const canEdit = currentUserRole === 'admin' || 
+                           (currentUserRole === 'team_leader' && isCurrentUserTeamLeader(team));
+            
+            // Display team members (leaders first, then members)
+            const leaders = team.leaders || [];
+            const members = team.members || [];
+            const allMembers = [...leaders.map(l => ({...l, role: 'team_leader'})), ...members];
+            
+            if (allMembers.length === 0) {
                 membersList.innerHTML += '<div style="text-align: center; color: #9ca3af; padding: 2rem;">尚無成員</div>';
             } else {
-                team.members.forEach(member => {
+                allMembers.forEach(member => {
                     const memberItem = document.createElement('div');
                     memberItem.className = 'team-member-item';
+                    memberItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 0.5rem;';
+                    
+                    // Role badge color and text
+                    const roleBadge = member.role === 'team_leader' 
+                        ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">負責人</span>'
+                        : '<span style="background: #3b82f6; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">成員</span>';
+                    
                     memberItem.innerHTML = `
-                        <div class="team-member-info">
-                            <div class="team-member-name">${member.name}</div>
-                            <div class="team-member-phone">${member.phone}</div>
-                            ${member.role === 'team_leader' ? '<span class="team-member-role">負責人</span>' : ''}
+                        <div class="team-member-info" style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="font-weight: 600; color: #1f2937;">${member.name || member.abbreviation || '未知'}</span>
+                                ${roleBadge}
+                            </div>
+                            <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">${member.phone}</div>
+                            ${member.abbreviation ? `<div style="color: #9ca3af; font-size: 0.75rem;">簡稱: ${member.abbreviation}</div>` : ''}
                         </div>
-                        <div class="team-member-actions">
-                            <button class="team-action-btn" onclick="editMember('${member.userId}')" title="編輯">
+                        ${canEdit ? `
+                        <div class="team-member-actions" style="display: flex; gap: 0.5rem;">
+                            <button class="team-action-btn" onclick="editMember('${member.userId || member.id}', ${JSON.stringify(member).replace(/"/g, '&quot;')})" 
+                                    style="padding: 0.5rem; background: #f3f4f6; border: none; border-radius: 4px; cursor: pointer;" 
+                                    title="編輯">
                                 ✏️
                             </button>
-                            <button class="team-action-btn delete" onclick="deleteMember('${member.userId}')" title="刪除">
+                            <button class="team-action-btn delete" onclick="deleteMember('${member.userId || member.id}', '${member.name}')" 
+                                    style="padding: 0.5rem; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;" 
+                                    title="刪除">
                                 🗑️
                             </button>
                         </div>
+                        ` : ''}
                     `;
                     membersList.appendChild(memberItem);
                 });
@@ -2683,14 +2733,182 @@
             document.getElementById('teamModal').classList.remove('active');
         }
         
-        // Delete team member
-        async function deleteMember(userId) {
-            if (!confirm('確定要移除此成員嗎？')) return;
+        // Get current user role (mock for now, should be from session)
+        function getCurrentUserRole() {
+            // TODO: Get from actual session/auth
+            return 'admin'; // Default to admin for testing
+        }
+        
+        // Check if current user is team leader of this team
+        function isCurrentUserTeamLeader(team) {
+            // TODO: Check if current user is in team.leaders
+            const currentUserId = sessionStorage.getItem('userId');
+            return team.leaders?.some(leader => leader.userId === currentUserId);
+        }
+        
+        // Edit team member
+        function editMember(userId, memberData) {
+            // Parse member data if it's a string
+            if (typeof memberData === 'string') {
+                try {
+                    memberData = JSON.parse(memberData);
+                } catch (e) {
+                    console.error('Failed to parse member data:', e);
+                    return;
+                }
+            }
+            
+            // Show edit modal
+            showEditMemberModal(userId, memberData);
+        }
+        
+        // Show edit member modal
+        function showEditMemberModal(userId, memberData) {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('editMemberModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'editMemberModal';
+                modal.className = 'team-modal';
+                modal.innerHTML = `
+                    <div class="team-modal-content" style="max-width: 500px;">
+                        <div class="team-modal-header">
+                            <h2 class="team-modal-title">編輯成員資料</h2>
+                            <button class="team-modal-close" onclick="closeEditMemberModal()">✕</button>
+                        </div>
+                        <div class="team-modal-body" id="editMemberForm">
+                            <!-- Form will be populated here -->
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
+            
+            // Populate form
+            const formContainer = document.getElementById('editMemberForm');
+            formContainer.innerHTML = `
+                <div style="display: grid; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">姓名</label>
+                        <input type="text" id="editMemberName" value="${memberData.name || ''}" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">電話 (不可編輯)</label>
+                        <input type="text" value="${memberData.phone || ''}" readonly
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; background: #f3f4f6;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">簡稱</label>
+                        <input type="text" id="editMemberAbbreviation" value="${memberData.abbreviation || ''}" 
+                               style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">角色</label>
+                        <select id="editMemberRole" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <option value="team_member" ${memberData.role !== 'team_leader' ? 'selected' : ''}>成員</option>
+                            <option value="team_leader" ${memberData.role === 'team_leader' ? 'selected' : ''}>負責人</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-top: 1.5rem; text-align: right;">
+                    <button onclick="closeEditMemberModal()" 
+                            style="padding: 0.5rem 1rem; margin-right: 0.5rem; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer;">
+                        取消
+                    </button>
+                    <button onclick="saveEditMember('${userId}')" 
+                            style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        儲存
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('active');
+        }
+        
+        // Close edit member modal
+        function closeEditMemberModal() {
+            const modal = document.getElementById('editMemberModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+        
+        // Save edited member data
+        async function saveEditMember(userId) {
+            const name = document.getElementById('editMemberName').value.trim();
+            const abbreviation = document.getElementById('editMemberAbbreviation').value.trim();
+            const role = document.getElementById('editMemberRole').value;
+            
+            if (!name) {
+                alert('請輸入姓名');
+                return;
+            }
             
             const projectId = window.currentProject?.id;
-            const teamId = window.currentTeam?.id;
+            const teamId = window.currentTeam?.id || window.currentTeam?.name;
             
-            if (!projectId || !teamId) return;
+            if (!projectId || !teamId) {
+                alert('無法取得專案或工班資訊');
+                return;
+            }
+            
+            try {
+                // Update member data
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams/${teamId}/members/${userId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                    },
+                    body: JSON.stringify({
+                        name,
+                        abbreviation,
+                        role
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('成員資料已更新');
+                    closeEditMemberModal();
+                    // Reload team data
+                    await loadProjectTeams(projectId);
+                    // Refresh modal
+                    const updatedTeam = window.projectTeams?.find(t => 
+                        t.id === teamId || t.name === teamId
+                    );
+                    if (updatedTeam) {
+                        showTeamModal(updatedTeam);
+                    }
+                } else {
+                    const error = await response.json();
+                    alert('更新失敗: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error updating member:', error);
+                alert('更新失敗: ' + error.message);
+            }
+        }
+        
+        // Delete team member
+        async function deleteMember(userId, memberName) {
+            if (!confirm(`確定要移除 ${memberName || '此成員'} 嗎？`)) return;
+            
+            const projectId = window.currentProject?.id;
+            const teamId = window.currentTeam?.id || window.currentTeam?.name;
+            
+            if (!projectId || !teamId) {
+                alert('無法取得專案或工班資訊');
+                return;
+            }
+            
+            // Check permissions
+            const currentUserRole = getCurrentUserRole();
+            if (currentUserRole !== 'admin' && 
+                !(currentUserRole === 'team_leader' && isCurrentUserTeamLeader(window.currentTeam))) {
+                alert('您沒有權限執行此操作');
+                return;
+            }
             
             try {
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams/${teamId}/members/${userId}`, {
@@ -2702,10 +2920,18 @@
                 
                 if (response.ok) {
                     alert('成員已移除');
-                    loadProjectTeams(projectId);
-                    closeTeamModal();
+                    // Reload team data
+                    await loadProjectTeams(projectId);
+                    // Refresh modal
+                    const updatedTeam = window.projectTeams?.find(t => 
+                        t.id === teamId || t.name === teamId
+                    );
+                    if (updatedTeam) {
+                        showTeamModal(updatedTeam);
+                    }
                 } else {
-                    alert('移除失敗');
+                    const error = await response.json();
+                    alert('移除失敗: ' + (error.message || 'Unknown error'));
                 }
             } catch (error) {
                 console.error('Error deleting member:', error);
@@ -2717,6 +2943,35 @@
         let selectedWorker = null;
         let addMemberRole = 'team_member';
         let currentMemberTab = 'existing';
+        
+        // Function to select role in the modal
+        function selectRole(role) {
+            addMemberRole = role;
+            
+            // Update UI to show selected role
+            const memberLabel = document.getElementById('memberRoleLabel');
+            const leaderLabel = document.getElementById('leaderRoleLabel');
+            const memberRadio = document.getElementById('roleMember');
+            const leaderRadio = document.getElementById('roleLeader');
+            
+            if (!memberLabel || !leaderLabel) return;
+            
+            if (role === 'team_member') {
+                memberLabel.style.borderColor = '#3b82f6';
+                memberLabel.style.background = 'rgba(59, 130, 246, 0.05)';
+                leaderLabel.style.borderColor = '#e5e7eb';
+                leaderLabel.style.background = 'transparent';
+                if (memberRadio) memberRadio.checked = true;
+                if (leaderRadio) leaderRadio.checked = false;
+            } else {
+                leaderLabel.style.borderColor = '#10b981';
+                leaderLabel.style.background = 'rgba(16, 185, 129, 0.05)';
+                memberLabel.style.borderColor = '#e5e7eb';
+                memberLabel.style.background = 'transparent';
+                if (leaderRadio) leaderRadio.checked = true;
+                if (memberRadio) memberRadio.checked = false;
+            }
+        }
         
         async function showAddMemberForm(role) {
             // Check if data is still loading
@@ -2741,13 +2996,22 @@
                 return;
             }
             
-            addMemberRole = role;
+            // If no role specified, default to team_member
+            if (!role) {
+                addMemberRole = 'team_member';
+            } else {
+                addMemberRole = role;
+            }
+            
+            // Initialize role selection UI
+            selectRole(addMemberRole);
+            
             const modal = document.getElementById('addMemberModal');
             const title = document.getElementById('addMemberTitle');
             const teamNameSpan = document.getElementById('addMemberTeamName');
             
-            // Update title based on role
-            title.textContent = role === 'team_leader' ? '新增負責人' : '新增成員';
+            // Update title - generic since role is selected in modal
+            title.textContent = '新增工班成員';
             
             // Show team name
             if (window.currentTeam) {
@@ -3378,7 +3642,7 @@
                     account__c: phone,
                     password__c: password,
                     abbreviation__c: abbreviation || name.slice(0, 1),
-                    shift_type_multi_select__c: [teamId], // Add team to shift_type_multi_select__c
+                    shift_type_multi_select__c: [window.currentTeam?.name || teamId], // Use team name for shift_type field
                     record_type: 'default__c',
                     life_status: 'normal'
                 };
@@ -3478,9 +3742,12 @@
                     existingTeams = [];
                 }
                 
+                // Use team name instead of ID for the field value
+                const teamName = window.currentTeam?.name || teamId;
+                
                 // Add new team if not already present
-                if (!existingTeams.includes(teamId)) {
-                    existingTeams.push(teamId);
+                if (!existingTeams.includes(teamName)) {
+                    existingTeams.push(teamName);
                 }
                 
                 // Update worker with new team list
