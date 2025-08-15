@@ -1673,6 +1673,12 @@
                 font-size: 0.75rem;
             }
         }
+
+        /* Loading spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
     <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
@@ -2015,7 +2021,116 @@
                 <div class="team-members-list" id="teamMembersList">
                     <!-- Members will be loaded here -->
                 </div>
-                <button class="add-member-btn" onclick="showAddMemberForm()">+ 新增成員</button>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button class="add-member-btn" onclick="showAddMemberForm('team_member')">+ 新增成員</button>
+                    <button class="add-member-btn" style="background: #10b981;" onclick="showAddMemberForm('team_leader')">+ 新增負責人</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Member Modal -->
+    <div id="addMemberModal" class="team-modal" style="display: none;">
+        <div class="team-modal-content" style="max-width: 700px;">
+            <div class="team-modal-header">
+                <h2 class="team-modal-title">
+                    <span id="addMemberTitle">新增成員</span>
+                    <span id="addMemberTeamName" style="color: #ef4444; font-size: 0.9rem; margin-left: 0.5rem;"></span>
+                </h2>
+                <button class="team-modal-close" onclick="closeAddMemberModal()">✕</button>
+            </div>
+            <div class="team-modal-body">
+                <!-- Loading indicator -->
+                <div id="memberModalLoading" style="display: none; text-align: center; padding: 2rem; color: #6b7280;">
+                    <div style="display: inline-block; width: 32px; height: 32px; border: 3px solid #f3f4f6; border-top: 3px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                    <div style="margin-top: 1rem;">載入中...</div>
+                </div>
+                
+                <!-- Tab selection for existing/new member -->
+                <div id="memberModalContent" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
+                    <button id="existingMemberTab" onclick="switchMemberTab('existing')" 
+                            style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid #3b82f6; color: #3b82f6; cursor: pointer; font-weight: 600;">
+                        選擇現有師傅
+                    </button>
+                    <button id="newMemberTab" onclick="switchMemberTab('new')" 
+                            style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: #6b7280; cursor: pointer; font-weight: 600;">
+                        建立新師傅
+                    </button>
+                </div>
+                
+                    <!-- Existing member selection -->
+                    <div id="existingMemberSection">
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">搜尋師傅</label>
+                            <input type="text" id="workerSearchInput" placeholder="輸入姓名或電話搜尋..." 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;"
+                                   onkeyup="searchWorkers()">
+                        </div>
+                        <div id="workersList" style="max-height: 350px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;">
+                            <div style="text-align: center; color: #9ca3af; padding: 2rem;">載入中...</div>
+                        </div>
+                    </div>
+                    
+                    <!-- New member form -->
+                    <div id="newMemberSection" style="display: none;">
+                        <div style="display: grid; gap: 1rem;">
+                            <!-- 電話/帳號 和 密碼 在同一行 -->
+                            <div style="display: flex; gap: 1rem;">
+                                <div style="flex: 2;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">電話/帳號 <span style="color: red;">*</span></label>
+                                    <input type="tel" id="newMemberPhone" placeholder="輸入手機號碼" 
+                                           onblur="checkDuplicatePhone()"
+                                           oninput="updatePasswordDisplay()"
+                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">密碼</label>
+                                    <input type="text" id="memberPassword" readonly 
+                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; background: #f3f4f6;">
+                                </div>
+                            </div>
+                            <!-- 姓名 和 簡稱 在同一行 -->
+                            <div style="display: flex; gap: 1rem;">
+                                <div style="flex: 2;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">姓名 <span style="color: red;">*</span></label>
+                                    <input type="text" id="newMemberName" placeholder="輸入師傅姓名" 
+                                           oninput="updateAbbreviation()"
+                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">簡稱 <span style="color: red;">*</span></label>
+                                    <input type="text" id="newMemberAbbreviation" placeholder="自動填入" maxlength="2"
+                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                </div>
+                            </div>
+                            <!-- 重複提示區域 -->
+                            <div id="duplicateWarning" style="display: none; padding: 1rem; background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px;">
+                                <p style="color: #92400e; font-weight: 600; margin: 0 0 0.5rem 0;">
+                                    此電話號碼已存在！
+                                </p>
+                                <p style="color: #92400e; margin: 0;">
+                                    姓名：<span id="existingWorkerName"></span><br>
+                                    簡稱：<span id="existingWorkerAbbr"></span><br>
+                                    所屬工班：<span id="existingWorkerTeams" style="color: #ef4444;"></span>
+                                </p>
+                                <p style="color: #92400e; margin: 0.5rem 0 0 0; font-size: 0.875rem;">
+                                    按確認將把此師傅加入到當前工班。
+                                </p>
+                            </div>
+                            <div style="padding: 1rem; background: #fef3c7; border-radius: 8px; margin-top: 0.5rem;">
+                                <p style="color: #92400e; font-size: 0.875rem; margin: 0;">
+                                    <strong>提示：</strong>新建師傅將自動加入到 object_50HJ8__c 工地師父資料表和 users 表中，
+                                    並將此工班資訊寫入 shift_type_multi_select__c 欄位。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; text-align: right;">
+                        <button onclick="closeAddMemberModal()" style="padding: 0.5rem 1rem; margin-right: 0.5rem; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer;">取消</button>
+                        <button id="confirmAddMemberBtn" onclick="confirmAddMember()" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>確認新增</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2051,6 +2166,8 @@
         let currentSites = [];
         let currentUser = null;
         let currentBuilding = 'A';
+        let isDataLoading = true;
+        let isTeamsReady = false;
         let currentSiteId = null;
 
         // 視角切換相關變量
@@ -2178,6 +2295,8 @@
                 
                 displayTeams(combinedTeams);
                 window.projectTeams = combinedTeams;
+                isTeamsReady = true;
+                console.log('[DEBUG] Teams loaded and ready:', combinedTeams.length);
                 
             } catch (error) {
                 console.error('Error loading teams:', error);
@@ -2215,12 +2334,182 @@
                 return;
             }
             
-            // Create a container for all team icons
-            const teamsContainer = document.createElement('div');
-            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
+            // Check if mobile
+            const isMobile = window.innerWidth <= 768;
+            
+            // Create wrapper for carousel on mobile
+            if (isMobile) {
+                const carouselWrapper = document.createElement('div');
+                carouselWrapper.style.cssText = 'position: relative; overflow: hidden;';
+                
+                // Create carousel controls
+                const prevBtn = document.createElement('button');
+                prevBtn.innerHTML = '◀';
+                prevBtn.style.cssText = `
+                    position: absolute;
+                    left: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: rgba(255, 255, 255, 0.95);
+                    border: 1px solid #e5e7eb;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    z-index: 10;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                `;
+                
+                const nextBtn = document.createElement('button');
+                nextBtn.innerHTML = '▶';
+                nextBtn.style.cssText = `
+                    position: absolute;
+                    right: 0;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: rgba(255, 255, 255, 0.95);
+                    border: 1px solid #e5e7eb;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    z-index: 10;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                `;
+                
+                // Create scrollable container
+                const scrollContainer = document.createElement('div');
+                scrollContainer.style.cssText = `
+                    overflow-x: auto;
+                    overflow-y: hidden;
+                    scroll-behavior: smooth;
+                    padding: 5px 40px;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
+                `;
+                
+                // Add CSS to hide scrollbar
+                const style = document.createElement('style');
+                style.textContent = `
+                    #legendTeams ::-webkit-scrollbar {
+                        display: none;
+                    }
+                    #legendTeams {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                `;
+                if (!document.querySelector('style[data-carousel-style]')) {
+                    style.setAttribute('data-carousel-style', 'true');
+                    document.head.appendChild(style);
+                }
+                
+                const teamsContainer = document.createElement('div');
+                teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: nowrap; align-items: center;';
+                teamsContainer.id = 'teamsCarousel';
+                
+                // Add scroll event handlers
+                prevBtn.onclick = () => {
+                    scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
+                };
+                
+                nextBtn.onclick = () => {
+                    scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
+                };
+                
+                // Update button states based on scroll position
+                const updateScrollButtons = () => {
+                    const scrollLeft = scrollContainer.scrollLeft;
+                    const scrollWidth = scrollContainer.scrollWidth;
+                    const clientWidth = scrollContainer.clientWidth;
+                    
+                    prevBtn.style.opacity = scrollLeft <= 0 ? '0.3' : '1';
+                    prevBtn.style.cursor = scrollLeft <= 0 ? 'not-allowed' : 'pointer';
+                    
+                    nextBtn.style.opacity = scrollLeft >= scrollWidth - clientWidth - 10 ? '0.3' : '1';
+                    nextBtn.style.cursor = scrollLeft >= scrollWidth - clientWidth - 10 ? 'not-allowed' : 'pointer';
+                };
+                
+                scrollContainer.addEventListener('scroll', updateScrollButtons);
+                
+                // Build carousel structure
+                scrollContainer.appendChild(teamsContainer);
+                carouselWrapper.appendChild(prevBtn);
+                carouselWrapper.appendChild(nextBtn);
+                carouselWrapper.appendChild(scrollContainer);
+                
+                legendTeams.appendChild(carouselWrapper);
+                
+                // Add scroll indicator
+                const scrollIndicator = document.createElement('div');
+                scrollIndicator.style.cssText = `
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-top: 10px;
+                    gap: 4px;
+                `;
+                
+                // Calculate number of pages
+                const updateScrollIndicator = () => {
+                    const scrollWidth = scrollContainer.scrollWidth;
+                    const clientWidth = scrollContainer.clientWidth;
+                    const scrollLeft = scrollContainer.scrollLeft;
+                    const numPages = Math.ceil(scrollWidth / clientWidth);
+                    const currentPage = Math.floor((scrollLeft + clientWidth / 2) / clientWidth);
+                    
+                    scrollIndicator.innerHTML = '';
+                    for (let i = 0; i < numPages; i++) {
+                        const dot = document.createElement('span');
+                        dot.style.cssText = `
+                            width: ${i === currentPage ? '20px' : '6px'};
+                            height: 6px;
+                            border-radius: 3px;
+                            background: ${i === currentPage ? '#84C7D0' : '#d1d5db'};
+                            transition: all 0.3s;
+                            cursor: pointer;
+                        `;
+                        dot.onclick = () => {
+                            scrollContainer.scrollTo({ left: i * clientWidth, behavior: 'smooth' });
+                        };
+                        scrollIndicator.appendChild(dot);
+                    }
+                };
+                
+                scrollContainer.addEventListener('scroll', () => {
+                    updateScrollButtons();
+                    updateScrollIndicator();
+                });
+                
+                legendTeams.appendChild(scrollIndicator);
+                
+                // Initial states
+                setTimeout(() => {
+                    updateScrollButtons();
+                    updateScrollIndicator();
+                }, 100);
+            } else {
+                // Desktop layout
+                const teamsContainer = document.createElement('div');
+                teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
+                legendTeams.appendChild(teamsContainer);
+            }
+            
+            // Get the container to add teams to
+            const teamsContainer = isMobile ? 
+                document.getElementById('teamsCarousel') : 
+                legendTeams.querySelector('div');
             
             teams.forEach(team => {
                 const teamButton = document.createElement('button');
+                const buttonWidth = isMobile ? '160px' : '80px';
                 teamButton.style.cssText = `
                     cursor: pointer; 
                     padding: 0.625rem 1rem; 
@@ -2234,8 +2523,9 @@
                     align-items: center; 
                     gap: 0.5rem; 
                     transition: all 0.2s;
-                    min-width: 80px;
+                    min-width: ${buttonWidth};
                     white-space: nowrap;
+                    flex-shrink: 0;
                 `;
                 
                 // Show full team name with site count badge
@@ -2290,8 +2580,26 @@
             legendTeams.appendChild(teamsContainer);
         }
         
+        // Handle window resize
+        let resizeTimeout;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                // Re-render teams display on resize
+                if (window.projectTeams && window.projectTeams.length > 0) {
+                    displayTeams(window.projectTeams);
+                }
+            }, 250);
+        });
+        
         // Show team management modal
         function showTeamModal(team) {
+            // Check if data is ready
+            if (isDataLoading || !window.currentProject) {
+                alert('數據載入中，請稍候...');
+                return;
+            }
+            
             const modal = document.getElementById('teamModal');
             const title = document.getElementById('teamModalTitle');
             const membersList = document.getElementById('teamMembersList');
@@ -2379,10 +2687,713 @@
             }
         }
         
-        // Show add member form (placeholder)
-        function showAddMemberForm() {
-            alert('新增成員功能開發中...');
-            // TODO: Implement add member form
+        // Show add member form
+        let selectedWorker = null;
+        let addMemberRole = 'team_member';
+        let currentMemberTab = 'existing';
+        
+        async function showAddMemberForm(role) {
+            // Check if data is still loading
+            if (isDataLoading || !isTeamsReady) {
+                alert('無法取得專案或工班資訊，請稍候再試');
+                console.error('Data still loading:', {
+                    isDataLoading,
+                    isTeamsReady,
+                    currentProject: window.currentProject,
+                    currentTeam: window.currentTeam
+                });
+                return;
+            }
+            
+            // Validate that we have required data
+            if (!window.currentProject || !window.currentTeam) {
+                alert('無法取得專案或工班資訊，請稍候再試');
+                console.error('Missing required data:', {
+                    currentProject: window.currentProject,
+                    currentTeam: window.currentTeam
+                });
+                return;
+            }
+            
+            addMemberRole = role;
+            const modal = document.getElementById('addMemberModal');
+            const title = document.getElementById('addMemberTitle');
+            const teamNameSpan = document.getElementById('addMemberTeamName');
+            
+            // Update title based on role
+            title.textContent = role === 'team_leader' ? '新增負責人' : '新增成員';
+            
+            // Show team name
+            if (window.currentTeam) {
+                teamNameSpan.textContent = `(${window.currentTeam.name || window.currentTeam.id})`;
+            }
+            
+            // Reset to existing tab
+            switchMemberTab('existing');
+            
+            // Show modal
+            modal.style.display = 'block';
+            modal.classList.add('active');
+            
+            // Load workers from object_50HJ8__c
+            await loadWorkers();
+        }
+        
+        // Switch between existing/new member tabs
+        function switchMemberTab(tab) {
+            currentMemberTab = tab;
+            
+            const existingTab = document.getElementById('existingMemberTab');
+            const newTab = document.getElementById('newMemberTab');
+            const existingSection = document.getElementById('existingMemberSection');
+            const newSection = document.getElementById('newMemberSection');
+            const confirmBtn = document.getElementById('confirmAddMemberBtn');
+            
+            if (tab === 'existing') {
+                // Show existing member selection
+                existingTab.style.borderBottom = '3px solid #3b82f6';
+                existingTab.style.color = '#3b82f6';
+                newTab.style.borderBottom = '3px solid transparent';
+                newTab.style.color = '#6b7280';
+                
+                existingSection.style.display = 'block';
+                newSection.style.display = 'none';
+                
+                // Show loading and load workers if needed
+                if (!window.allWorkers || window.allWorkers.length === 0) {
+                    showMemberModalLoading();
+                    loadWorkers().then(() => {
+                        hideMemberModalLoading();
+                    }).catch(error => {
+                        console.error('Failed to load workers:', error);
+                        hideMemberModalLoading();
+                    });
+                } else {
+                    hideMemberModalLoading();
+                }
+                
+                // Enable confirm button only if a worker is selected
+                confirmBtn.disabled = !selectedWorker;
+            } else {
+                // Show new member form
+                existingTab.style.borderBottom = '3px solid transparent';
+                existingTab.style.color = '#6b7280';
+                newTab.style.borderBottom = '3px solid #3b82f6';
+                newTab.style.color = '#3b82f6';
+                
+                existingSection.style.display = 'none';
+                newSection.style.display = 'block';
+                
+                // Enable confirm button based on form validation
+                validateNewMemberForm();
+            }
+        }
+        
+        // Validate new member form
+        function validateNewMemberForm() {
+            const name = document.getElementById('newMemberName').value.trim();
+            const phone = document.getElementById('newMemberPhone').value.trim();
+            const abbreviation = document.getElementById('newMemberAbbreviation').value.trim();
+            const confirmBtn = document.getElementById('confirmAddMemberBtn');
+            
+            // Name and abbreviation are required
+            confirmBtn.disabled = !(name && phone && abbreviation);
+        }
+        
+        // Auto-update password display when phone number changes
+        function updatePasswordDisplay() {
+            const phone = document.getElementById('newMemberPhone').value;
+            const passwordField = document.getElementById('memberPassword');
+            if (phone.length >= 3) {
+                passwordField.value = phone.slice(-3);
+            } else {
+                passwordField.value = '';
+            }
+        }
+        
+        // Auto-fill abbreviation from name's last character
+        function updateAbbreviation() {
+            const name = document.getElementById('newMemberName').value;
+            const abbrField = document.getElementById('newMemberAbbreviation');
+            if (name.length > 0 && !abbrField.value) {
+                // Only auto-fill if abbreviation is empty
+                abbrField.value = name.slice(-1);
+            }
+            validateNewMemberForm();
+        }
+        
+        // Check for duplicate phone numbers
+        async function checkDuplicatePhone() {
+            const phone = document.getElementById('newMemberPhone').value.trim();
+            const duplicateWarning = document.getElementById('duplicateWarning');
+            const existingWorkerInfo = document.getElementById('existingWorkerInfo');
+            
+            if (!phone) {
+                duplicateWarning.style.display = 'none';
+                return;
+            }
+            
+            try {
+                // Check in object_50HJ8__c for existing workers
+                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?phone_number__c=${encodeURIComponent(phone)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const existingWorkers = data.results || [];
+                    
+                    if (existingWorkers.length > 0) {
+                        const existingWorker = existingWorkers[0];
+                        
+                        // Show duplicate warning
+                        duplicateWarning.style.display = 'block';
+                        existingWorkerInfo.innerHTML = `
+                            <strong>現有師傅資料：</strong><br>
+                            姓名：${existingWorker.name || '未命名'}<br>
+                            簡稱：${existingWorker.abbreviation__c || '無'}
+                        `;
+                        
+                        // Auto-fill name and abbreviation with existing data
+                        document.getElementById('newMemberName').value = existingWorker.name || '';
+                        document.getElementById('newMemberAbbreviation').value = existingWorker.abbreviation__c || '';
+                        
+                        // Validate the form
+                        validateNewMemberForm();
+                    } else {
+                        // No duplicate found
+                        duplicateWarning.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking duplicate phone:', error);
+                duplicateWarning.style.display = 'none';
+            }
+        }
+        
+        // Add event listeners for new member form
+        document.addEventListener('DOMContentLoaded', () => {
+            const nameInput = document.getElementById('newMemberName');
+            const phoneInput = document.getElementById('newMemberPhone');
+            const abbrInput = document.getElementById('newMemberAbbreviation');
+            
+            if (nameInput) {
+                nameInput.addEventListener('input', () => {
+                    updateAbbreviation();
+                    validateNewMemberForm();
+                });
+            }
+            if (phoneInput) {
+                phoneInput.addEventListener('input', () => {
+                    updatePasswordDisplay();
+                    validateNewMemberForm();
+                });
+                phoneInput.addEventListener('blur', checkDuplicatePhone);
+            }
+            if (abbrInput) {
+                abbrInput.addEventListener('input', validateNewMemberForm);
+            }
+        });
+        
+        // Close add member modal
+        function closeAddMemberModal() {
+            const modal = document.getElementById('addMemberModal');
+            modal.style.display = 'none';
+            modal.classList.remove('active');
+            selectedWorker = null;
+            
+            // Clear existing member search
+            document.getElementById('workerSearchInput').value = '';
+            
+            // Clear new member form
+            document.getElementById('newMemberName').value = '';
+            document.getElementById('newMemberPhone').value = '';
+            document.getElementById('newMemberAbbreviation').value = '';
+            
+            // Disable confirm button
+            document.getElementById('confirmAddMemberBtn').disabled = true;
+        }
+        
+        // Show loading indicator in member modal
+        function showMemberModalLoading() {
+            const loading = document.getElementById('memberModalLoading');
+            const content = document.getElementById('memberModalContent');
+            if (loading && content) {
+                loading.style.display = 'block';
+                content.style.display = 'none';
+            }
+        }
+        
+        // Hide loading indicator in member modal
+        function hideMemberModalLoading() {
+            const loading = document.getElementById('memberModalLoading');
+            const content = document.getElementById('memberModalContent');
+            if (loading && content) {
+                loading.style.display = 'none';
+                content.style.display = 'block';
+            }
+        }
+        
+        // Load workers from object_50HJ8__c
+        async function loadWorkers() {
+            const workersList = document.getElementById('workersList');
+            workersList.innerHTML = ''; // Clear list while loading
+            
+            try {
+                // Debug logging
+                console.log('Loading workers from:', `${API_BASE_URL}/rest/object_50HJ8__c`);
+                console.log('Using token:', API_TOKEN);
+                
+                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?limit=500`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`Failed to load workers: ${response.status} ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Workers data:', data);
+                
+                const workers = data.records || data || [];
+                
+                // If data structure is different, try to adapt
+                if (Array.isArray(data)) {
+                    displayWorkers(data);
+                    window.allWorkers = data;
+                } else if (data.results) {
+                    displayWorkers(data.results);
+                    window.allWorkers = data.results;
+                } else if (data.records) {
+                    displayWorkers(data.records);
+                    window.allWorkers = data.records;
+                } else {
+                    console.warn('Unexpected data structure:', data);
+                    displayWorkers([]);
+                    window.allWorkers = [];
+                }
+                
+            } catch (error) {
+                console.error('Error loading workers:', error);
+                workersList.innerHTML = `
+                    <div style="text-align: center; color: #ef4444; padding: 2rem;">
+                        <div>載入失敗</div>
+                        <div style="font-size: 0.75rem; margin-top: 0.5rem; color: #6b7280;">
+                            ${error.message}
+                        </div>
+                        <button onclick="loadWorkers()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            重試
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Display workers list
+        function displayWorkers(workers) {
+            const workersList = document.getElementById('workersList');
+            
+            // Filter workers to only show those belonging to the current team
+            let filteredWorkers = workers;
+            if (window.currentTeam) {
+                const currentTeamId = window.currentTeam.id || window.currentTeam.name;
+                filteredWorkers = workers.filter(worker => {
+                    // Check if worker belongs to current team
+                    let workerTeamIds = worker.shift_type_multi_select__c || [];
+                    if (typeof workerTeamIds === 'string') {
+                        try {
+                            workerTeamIds = JSON.parse(workerTeamIds);
+                        } catch {
+                            workerTeamIds = [];
+                        }
+                    }
+                    if (!Array.isArray(workerTeamIds)) {
+                        workerTeamIds = [];
+                    }
+                    return workerTeamIds.includes(currentTeamId);
+                });
+            }
+            
+            if (filteredWorkers.length === 0) {
+                workersList.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 2rem;">此工班尚無可選擇的師傅</div>';
+                return;
+            }
+            
+            workersList.innerHTML = '';
+            filteredWorkers.forEach(worker => {
+                const workerItem = document.createElement('div');
+                workerItem.style.cssText = `
+                    padding: 0.75rem 1rem;
+                    border-bottom: 1px solid #e5e7eb;
+                    cursor: pointer;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    transition: background 0.2s;
+                `;
+                
+                // Get teams the worker belongs to - use the resolved names
+                let workerTeams = worker.shift_type_multi_select__c__r || [];
+                if (typeof workerTeams === 'string') {
+                    try {
+                        workerTeams = JSON.parse(workerTeams);
+                    } catch {
+                        workerTeams = [];
+                    }
+                }
+                if (!Array.isArray(workerTeams)) {
+                    workerTeams = [];
+                }
+                
+                // Extract team names from the resolved array
+                const teamNames = workerTeams.map(team => 
+                    typeof team === 'object' && team.name ? team.name : team
+                ).filter(name => name);
+                
+                const teamsDisplay = teamNames.length > 0 
+                    ? `<span style="color: #ef4444; font-size: 0.75rem;">(${teamNames.join(', ')})</span>`
+                    : '';
+                
+                workerItem.innerHTML = `
+                    <div>
+                        <div style="font-weight: 500;">
+                            ${worker.name || '未命名'} 
+                            ${teamsDisplay}
+                        </div>
+                        <div style="color: #6b7280; font-size: 0.875rem;">${worker.phone_number__c || worker.account__c || '無電話'}</div>
+                    </div>
+                    <input type="radio" name="workerSelect" value="${worker._id}" style="cursor: pointer;">
+                `;
+                
+                workerItem.onmouseenter = () => workerItem.style.background = '#f9fafb';
+                workerItem.onmouseleave = () => workerItem.style.background = 'white';
+                
+                workerItem.onclick = () => {
+                    // Clear previous selection
+                    document.querySelectorAll('input[name="workerSelect"]').forEach(radio => radio.checked = false);
+                    // Select this worker
+                    workerItem.querySelector('input[type="radio"]').checked = true;
+                    selectedWorker = worker;
+                    document.getElementById('confirmAddMemberBtn').disabled = false;
+                };
+                
+                workersList.appendChild(workerItem);
+            });
+        }
+        
+        // Search workers
+        function searchWorkers() {
+            const searchTerm = document.getElementById('workerSearchInput').value.toLowerCase();
+            
+            if (!window.allWorkers) return;
+            
+            const filtered = window.allWorkers.filter(worker => {
+                const name = (worker.name || '').toLowerCase();
+                const phone = (worker.phone_number__c || worker.account__c || '').toLowerCase();
+                return name.includes(searchTerm) || phone.includes(searchTerm);
+            });
+            
+            displayWorkers(filtered);
+        }
+        
+        // Confirm add member
+        async function confirmAddMember() {
+            const projectId = window.currentProject?.id;
+            const teamId = window.currentTeam?.id || window.currentTeam?.name;
+            
+            console.log('[DEBUG] confirmAddMember called');
+            console.log('[DEBUG] Current project:', window.currentProject);
+            console.log('[DEBUG] Current team:', window.currentTeam);
+            console.log('[DEBUG] Project ID:', projectId);
+            console.log('[DEBUG] Team ID:', teamId);
+            console.log('[DEBUG] isDataLoading:', isDataLoading);
+            console.log('[DEBUG] isTeamsReady:', isTeamsReady);
+            
+            if (!projectId) {
+                alert('專案資料尚未載入完成，請稍候再試');
+                console.error('[ERROR] Missing project ID');
+                return;
+            }
+            
+            if (!teamId) {
+                alert('無法取得工班資訊，請重新選擇工班');
+                console.error('[ERROR] Missing team ID');
+                return;
+            }
+            
+            try {
+                let memberData;
+                
+                if (currentMemberTab === 'existing') {
+                    // Adding existing worker
+                    if (!selectedWorker) return;
+                    
+                    memberData = {
+                        userId: selectedWorker._id,
+                        name: selectedWorker.name || '未命名',
+                        phone: selectedWorker.phone_number__c || selectedWorker.account__c || '',
+                        role: addMemberRole,
+                        sourceType: 'crm_worker',
+                        sourceId: selectedWorker._id,
+                        createdBy: 'admin'
+                    };
+                    
+                    // Update shift_type_multi_select__c for existing worker
+                    await updateWorkerTeamField(selectedWorker._id, teamId);
+                    
+                } else {
+                    // Creating new worker
+                    const name = document.getElementById('newMemberName').value.trim();
+                    const phone = document.getElementById('newMemberPhone').value.trim();
+                    const abbreviation = document.getElementById('newMemberAbbreviation').value.trim();
+                    
+                    if (!name || !phone) {
+                        alert('請填寫必填欄位');
+                        return;
+                    }
+                    
+                    // First create worker in object_50HJ8__c (or update if exists)
+                    const result = await createNewWorker(name, phone, abbreviation, teamId);
+                    
+                    if (!result) {
+                        alert('建立師傅失敗');
+                        return;
+                    }
+                    
+                    const newWorkerId = result.id || result;
+                    const wasExisting = result.existing || false;
+                    
+                    if (wasExisting) {
+                        console.log('使用現有師傅，已更新其工班資訊');
+                    }
+                    
+                    memberData = {
+                        userId: newWorkerId,
+                        name: name,
+                        phone: phone,
+                        role: addMemberRole,
+                        sourceType: 'crm_worker',
+                        sourceId: newWorkerId,
+                        createdBy: 'admin'
+                    };
+                }
+                
+                // Add member to team
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams/${teamId}/members`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                    },
+                    body: JSON.stringify(memberData)
+                });
+                
+                if (response.ok) {
+                    // Customize message based on whether it was a new or existing worker
+                    let message;
+                    if (currentMemberTab === 'new' && wasExisting) {
+                        const workerName = result.name || '師傅';
+                        message = `${workerName} 已加入工班！\n(該電話號碼已存在，已更新其工班資訊)`;
+                    } else {
+                        message = addMemberRole === 'team_leader' ? '負責人已新增' : '成員已新增';
+                    }
+                    alert(message);
+                    closeAddMemberModal();
+                    // Reload team members
+                    await loadProjectTeams(projectId);
+                    // Refresh the modal
+                    if (window.currentTeam) {
+                        const updatedTeam = window.projectTeams?.find(t => t.id === teamId);
+                        if (updatedTeam) {
+                            showTeamModal(updatedTeam);
+                        }
+                    }
+                } else {
+                    const error = await response.json();
+                    alert('新增失敗: ' + (error.message || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error adding member:', error);
+                alert('新增失敗: ' + error.message);
+            }
+        }
+        
+        // Create new worker in object_50HJ8__c
+        async function createNewWorker(name, phone, abbreviation, teamId) {
+            try {
+                // First check if a worker with this phone already exists
+                console.log('Checking for existing worker with phone:', phone);
+                
+                const checkResponse = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?phone_number__c=${encodeURIComponent(phone)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (checkResponse.ok) {
+                    const checkData = await checkResponse.json();
+                    const existingWorkers = checkData.results || [];
+                    
+                    if (existingWorkers.length > 0) {
+                        // Worker with this phone already exists, just update their teams
+                        const existingWorker = existingWorkers[0];
+                        console.log('Found existing worker:', existingWorker.name, 'Phone:', existingWorker.phone_number__c);
+                        
+                        // Update the worker's team field
+                        await updateWorkerTeamField(existingWorker._id, teamId);
+                        
+                        // Return the existing worker info
+                        return {
+                            id: existingWorker._id,
+                            existing: true,
+                            name: existingWorker.name
+                        };
+                    }
+                }
+                
+                // No existing worker, create new one
+                const password = phone.slice(-3);
+                
+                const workerData = {
+                    name: name,
+                    phone_number__c: phone,
+                    account__c: phone,
+                    password__c: password,
+                    abbreviation__c: abbreviation || name.slice(0, 1),
+                    shift_type_multi_select__c: [teamId], // Add team to shift_type_multi_select__c
+                    record_type: 'default__c',
+                    life_status: 'normal'
+                };
+                
+                console.log('Creating new worker:', workerData);
+                
+                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(workerData)
+                });
+                
+                if (!response.ok) {
+                    const error = await response.text();
+                    console.error('Failed to create worker:', error);
+                    throw new Error('Failed to create worker');
+                }
+                
+                const result = await response.json();
+                console.log('Worker created:', result);
+                
+                // Also create user in engineering management users table
+                try {
+                    const userData = {
+                        name: name,
+                        phone: phone,
+                        password: password,
+                        role: 'worker',
+                        teams: [teamId]
+                    };
+                    
+                    const userResponse = await fetch(`${WORKER_API_URL}/api/v1/users`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                        },
+                        body: JSON.stringify(userData)
+                    });
+                    
+                    if (userResponse.ok) {
+                        const userResult = await userResponse.json();
+                        console.log('User also created in engineering management:', userResult);
+                    } else {
+                        console.warn('Failed to create user in engineering management, but worker was created in CRM');
+                    }
+                } catch (userError) {
+                    console.warn('Error creating user in engineering management:', userError);
+                    // Don't fail the whole operation if engineering management user creation fails
+                }
+                
+                // Return the new worker ID
+                return result._id || result.id || result.insertId;
+                
+            } catch (error) {
+                console.error('Error creating worker:', error);
+                return null;
+            }
+        }
+        
+        // Update worker's shift_type_multi_select__c to add team
+        async function updateWorkerTeamField(workerId, teamId) {
+            try {
+                // First get existing worker data
+                const getResponse = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?_id=${workerId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (!getResponse.ok) {
+                    console.error('Failed to get worker data');
+                    return;
+                }
+                
+                const data = await getResponse.json();
+                const worker = data.results?.[0] || data[0];
+                
+                if (!worker) {
+                    console.error('Worker not found');
+                    return;
+                }
+                
+                // Get existing teams or initialize empty array
+                let existingTeams = worker.shift_type_multi_select__c || [];
+                if (typeof existingTeams === 'string') {
+                    try {
+                        existingTeams = JSON.parse(existingTeams);
+                    } catch {
+                        existingTeams = [existingTeams];
+                    }
+                }
+                if (!Array.isArray(existingTeams)) {
+                    existingTeams = [];
+                }
+                
+                // Add new team if not already present
+                if (!existingTeams.includes(teamId)) {
+                    existingTeams.push(teamId);
+                }
+                
+                // Update worker with new team list
+                const updateResponse = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c/${workerId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        shift_type_multi_select__c: existingTeams
+                    })
+                });
+                
+                if (!updateResponse.ok) {
+                    console.error('Failed to update worker team field');
+                }
+                
+            } catch (error) {
+                console.error('Error updating worker team field:', error);
+            }
         }
         
         // Edit member (placeholder)
@@ -2394,6 +3405,8 @@
         // Load project data
         async function loadProject(projectId) {
             try {
+                isDataLoading = true;
+                console.log('[DEBUG] Starting project load:', projectId);
                 // Fetch project data from engineering management API
                 const response = await fetch(
                     `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}`,
@@ -2415,6 +3428,7 @@
                 if (result.success && result.project) {
                     currentProject = result.project;
                     window.currentProject = result.project; // Save globally for team functions
+                    console.log('[DEBUG] Project loaded successfully:', window.currentProject);
                     updateProjectInfo();
                     await loadSites();
                 } else {
@@ -2423,6 +3437,9 @@
             } catch (error) {
                 console.error('Error loading project:', error);
                 showError('載入專案失敗: ' + error.message);
+            } finally {
+                isDataLoading = false;
+                console.log('[DEBUG] Project loading complete. isDataLoading:', isDataLoading);
             }
         }
 
@@ -2682,12 +3699,21 @@
         // Render floor grid
         function renderFloorGrid() {
             const gridContent = document.getElementById('gridContent');
-            const sites = window.sitesGroupedByBuilding[currentBuilding] || [];
             
-            if (sites.length === 0) {
-                gridContent.innerHTML = '<div class="error-message">此棟別暫無案場資料</div>';
-                return;
-            }
+            // Show loading state immediately
+            gridContent.style.opacity = '0.5';
+            gridContent.style.pointerEvents = 'none';
+            
+            // Use requestAnimationFrame to ensure smooth transition
+            requestAnimationFrame(() => {
+                const sites = window.sitesGroupedByBuilding[currentBuilding] || [];
+                
+                if (sites.length === 0) {
+                    gridContent.innerHTML = '<div class="error-message">此棟別暫無案場資料</div>';
+                    gridContent.style.opacity = '1';
+                    gridContent.style.pointerEvents = 'auto';
+                    return;
+                }
 
             // Group by floor and unit
             const floorMap = {};
@@ -2754,7 +3780,16 @@
             });
 
             html += '</tbody></table>';
+            
+            // Update DOM and restore opacity
             gridContent.innerHTML = html;
+            
+            // Restore opacity after render
+            requestAnimationFrame(() => {
+                gridContent.style.opacity = '1';
+                gridContent.style.pointerEvents = 'auto';
+            });
+        });
         }
 
         // Update statistics
@@ -3489,13 +4524,32 @@
                 });
             });
 
-            // Building switching
+            // Building switching - use event delegation properly
             document.getElementById('buildingTabs').addEventListener('click', (e) => {
-                if (e.target.classList.contains('building-btn')) {
+                // Find the actual button element (could be the target or its parent)
+                let button = e.target.closest('.building-btn');
+                
+                if (button) {
+                    // Prevent multiple rapid clicks
+                    if (button.dataset.switching === 'true') return;
+                    button.dataset.switching = 'true';
+                    
+                    // Update active state
                     document.querySelectorAll('.building-btn').forEach(b => b.classList.remove('active'));
-                    e.target.classList.add('active');
-                    currentBuilding = e.target.dataset.building;
-                    renderFloorGrid();
+                    button.classList.add('active');
+                    
+                    // Update current building
+                    const newBuilding = button.dataset.building;
+                    if (currentBuilding !== newBuilding) {
+                        currentBuilding = newBuilding;
+                        console.log('Switching to building:', currentBuilding);
+                        renderFloorGrid();
+                    }
+                    
+                    // Allow clicking again after a short delay
+                    setTimeout(() => {
+                        button.dataset.switching = 'false';
+                    }, 300);
                 }
             });
 
