@@ -1409,43 +1409,168 @@
             gap: 1rem;
         }
         
-        /* Team icon styling */
-        .team-icon {
-            display: inline-flex;
+        /* Team management modal */
+        .team-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
             align-items: center;
             justify-content: center;
-            width: 36px;
-            height: 36px;
-            background: #84C7D0;
-            color: white;
-            border-radius: 8px;
-            font-size: 0.875rem;
+            padding: 1rem;
+        }
+        
+        .team-modal.active {
+            display: flex;
+        }
+        
+        .team-modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .team-modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .team-modal-title {
+            font-size: 1.25rem;
             font-weight: 600;
+            color: var(--heading);
+        }
+        
+        .team-modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: #f3f4f6;
             cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            margin: 0 0.25rem;
-        }
-        
-        .team-icon:hover {
-            transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(132, 199, 208, 0.4);
-        }
-        
-        .team-icon .member-count {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: #ef4444;
-            color: white;
-            border-radius: 10px;
-            padding: 0 4px;
-            font-size: 0.625rem;
-            min-width: 16px;
-            height: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .team-modal-close:hover {
+            background: #e5e7eb;
+        }
+        
+        .team-modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .team-members-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        
+        .team-member-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        .team-member-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .team-member-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .team-member-name {
+            font-weight: 500;
+            color: var(--heading);
+        }
+        
+        .team-member-phone {
+            font-size: 0.875rem;
+            color: var(--body-text);
+        }
+        
+        .team-member-role {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: #84C7D0;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-top: 0.25rem;
+        }
+        
+        .team-member-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .team-action-btn {
+            padding: 0.5rem;
+            border: none;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+        }
+        
+        .team-action-btn:hover {
+            background: #e5e7eb;
+        }
+        
+        .team-action-btn.delete {
+            color: #ef4444;
+        }
+        
+        .team-action-btn.delete:hover {
+            background: #fee2e2;
+        }
+        
+        .add-member-btn {
+            width: 100%;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            border: 2px dashed #d1d5db;
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            color: var(--body-text);
+        }
+        
+        .add-member-btn:hover {
+            border-color: #84C7D0;
+            background: #f0fdfa;
+            color: #0f766e;
         }
 
         .legend-title {
@@ -2090,40 +2215,79 @@
                 return;
             }
             
+            // Create a container for all team icons
+            const teamsContainer = document.createElement('div');
+            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
+            
             teams.forEach(team => {
-                const teamWrapper = document.createElement('div');
-                teamWrapper.style.cssText = 'display: inline-flex; align-items: center; margin-right: 1rem;';
-                
-                const teamIcon = document.createElement('div');
-                teamIcon.className = 'team-icon';
-                teamIcon.style.cssText = 'cursor: pointer; padding: 0.5rem 1rem; background: #84C7D0; color: white; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 0.5rem; transition: all 0.2s; margin-right: 0.5rem;';
+                const teamButton = document.createElement('button');
+                teamButton.style.cssText = `
+                    cursor: pointer; 
+                    padding: 0.625rem 1rem; 
+                    background: #84C7D0; 
+                    color: white; 
+                    border: none;
+                    border-radius: 20px; 
+                    font-weight: 600; 
+                    font-size: 0.875rem;
+                    display: inline-flex; 
+                    align-items: center; 
+                    gap: 0.5rem; 
+                    transition: all 0.2s;
+                    min-width: 80px;
+                    white-space: nowrap;
+                `;
                 
                 // Show full team name with site count badge
-                teamIcon.innerHTML = `
-                    <span style="margin-right: 0.25rem;">${team.name}</span>
-                    <span style="background: #ef4444; color: white; border-radius: 10px; padding: 2px 8px; font-size: 0.75rem; min-width: 24px; text-align: center; display: inline-block;">${team.siteCount || 0}</span>
+                const teamNameSpan = document.createElement('span');
+                teamNameSpan.textContent = team.name || `工班 ${team.id}`;
+                
+                const countBadge = document.createElement('span');
+                countBadge.style.cssText = `
+                    background: #ef4444; 
+                    color: white; 
+                    border-radius: 12px; 
+                    padding: 2px 8px; 
+                    font-size: 0.75rem; 
+                    min-width: 24px; 
+                    text-align: center; 
+                    display: inline-block;
+                    font-weight: bold;
                 `;
+                countBadge.textContent = team.siteCount || 0;
+                
+                teamButton.appendChild(teamNameSpan);
+                teamButton.appendChild(countBadge);
                 
                 // Tooltip shows both site count and member count
                 const siteText = team.siteCount ? `${team.siteCount} 個案場` : '無案場';
                 const memberText = team.memberCount ? `${team.memberCount} 位成員` : '無成員';
-                teamIcon.title = `${team.name}\n${siteText}\n${memberText}`;
+                teamButton.title = `${team.name}\n${siteText}\n${memberText}`;
                 
                 // Add hover effect
-                teamIcon.onmouseenter = () => {
-                    teamIcon.style.transform = 'scale(1.05)';
-                    teamIcon.style.boxShadow = '0 4px 12px rgba(132, 199, 208, 0.4)';
+                teamButton.onmouseenter = () => {
+                    teamButton.style.transform = 'scale(1.05)';
+                    teamButton.style.boxShadow = '0 4px 12px rgba(132, 199, 208, 0.4)';
+                    teamButton.style.background = '#6BB8C3';
                 };
-                teamIcon.onmouseleave = () => {
-                    teamIcon.style.transform = 'scale(1)';
-                    teamIcon.style.boxShadow = 'none';
+                teamButton.onmouseleave = () => {
+                    teamButton.style.transform = 'scale(1)';
+                    teamButton.style.boxShadow = 'none';
+                    teamButton.style.background = '#84C7D0';
                 };
                 
-                teamIcon.onclick = () => showTeamModal(team);
+                // Fix onclick event
+                teamButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('Team button clicked:', team.name);
+                    showTeamModal(team);
+                });
                 
-                teamWrapper.appendChild(teamIcon);
-                legendTeams.appendChild(teamWrapper);
+                teamsContainer.appendChild(teamButton);
             });
+            
+            legendTeams.appendChild(teamsContainer);
         }
         
         // Show team management modal
