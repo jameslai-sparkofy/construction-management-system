@@ -2108,11 +2108,7 @@
                                 <p style="color: #92400e; font-weight: 600; margin: 0 0 0.5rem 0;">
                                     此電話號碼已存在！
                                 </p>
-                                <p style="color: #92400e; margin: 0;">
-                                    姓名：<span id="existingWorkerName"></span><br>
-                                    簡稱：<span id="existingWorkerAbbr"></span><br>
-                                    所屬工班：<span id="existingWorkerTeams" style="color: #ef4444;"></span>
-                                </p>
+                                <div id="existingWorkerInfo" style="color: #92400e; margin: 0;"></div>
                                 <p style="color: #92400e; margin: 0.5rem 0 0 0; font-size: 0.875rem;">
                                     按確認將把此師傅加入到當前工班。
                                 </p>
@@ -2122,6 +2118,8 @@
                                     <strong>提示：</strong>新建師傅將自動加入到 object_50HJ8__c 工地師父資料表和 users 表中，
                                     並將此工班資訊寫入 shift_type_multi_select__c 欄位。
                                 </p>
+                                
+                                <!-- Duplicate phone warning -->
                             </div>
                         </div>
                     </div>
@@ -2266,7 +2264,21 @@
                 // Process teams from sites
                 window.projectTeamsFromSites.forEach((teamInfo, teamName) => {
                     // Find matching team from users data
-                    const teamWithMembers = data.teams?.find(t => t.name === teamName) || {
+                    // Try to match with both original and decoded name
+                    const teamWithMembers = data.teams?.find(t => {
+                        // Direct match
+                        if (t.name === teamName) return true;
+                        
+                        // Try decoding if needed
+                        try {
+                            if (t.name && t.name.includes('%')) {
+                                return decodeURIComponent(t.name) === teamName;
+                            }
+                        } catch (e) {
+                            // Ignore decode errors
+                        }
+                        return false;
+                    }) || {
                         name: teamName,
                         members: [],
                         leaders: [],
@@ -2284,9 +2296,23 @@
                 
                 // Also include teams from users that might not have sites yet
                 data.teams?.forEach(team => {
-                    if (!window.projectTeamsFromSites.has(team.name)) {
+                    // Decode team name if it's URL encoded
+                    let decodedTeamName = team.name;
+                    try {
+                        // Check if the name looks URL encoded
+                        if (team.name && team.name.includes('%')) {
+                            decodedTeamName = decodeURIComponent(team.name);
+                        }
+                    } catch (e) {
+                        console.warn('Failed to decode team name:', team.name, e);
+                    }
+                    
+                    // Check with both original and decoded name
+                    if (!window.projectTeamsFromSites.has(team.name) && 
+                        !window.projectTeamsFromSites.has(decodedTeamName)) {
                         combinedTeams.push({
                             ...team,
+                            name: decodedTeamName, // Use decoded name
                             siteCount: 0,
                             sites: []
                         });
@@ -3133,6 +3159,8 @@
             
             try {
                 let memberData;
+                let wasExisting = false;
+                let workerName = '';
                 
                 if (currentMemberTab === 'existing') {
                     // Adding existing worker
@@ -3147,6 +3175,8 @@
                         sourceId: selectedWorker._id,
                         createdBy: 'admin'
                     };
+                    
+                    workerName = selectedWorker.name || '師傅';
                     
                     // Update shift_type_multi_select__c for existing worker
                     await updateWorkerTeamField(selectedWorker._id, teamId);
@@ -3171,7 +3201,8 @@
                     }
                     
                     const newWorkerId = result.id || result;
-                    const wasExisting = result.existing || false;
+                    wasExisting = result.existing || false;
+                    workerName = result.name || name;
                     
                     if (wasExisting) {
                         console.log('使用現有師傅，已更新其工班資訊');
@@ -3188,6 +3219,26 @@
                     };
                 }
                 
+                // First check if member already exists in this team
+                const checkExistingResponse = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams/${teamId}/members`, {
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                    }
+                });
+                
+                if (checkExistingResponse.ok) {
+                    const existingMembers = await checkExistingResponse.json();
+                    const memberExists = existingMembers.some(member => 
+                        member.userId === memberData.userId || 
+                        member.phone === memberData.phone
+                    );
+                    
+                    if (memberExists) {
+                        alert(`${workerName || '此師傅'} 已經是這個工班的成員了！`);
+                        return;
+                    }
+                }
+                
                 // Add member to team
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams/${teamId}/members`, {
                     method: 'POST',
@@ -3202,7 +3253,6 @@
                     // Customize message based on whether it was a new or existing worker
                     let message;
                     if (currentMemberTab === 'new' && wasExisting) {
-                        const workerName = result.name || '師傅';
                         message = `${workerName} 已加入工班！\n(該電話號碼已存在，已更新其工班資訊)`;
                     } else {
                         message = addMemberRole === 'team_leader' ? '負責人已新增' : '成員已新增';
@@ -3249,8 +3299,66 @@
                         const existingWorker = existingWorkers[0];
                         console.log('Found existing worker:', existingWorker.name, 'Phone:', existingWorker.phone_number__c);
                         
-                        // Update the worker's team field
+                        // Update the worker's team field in CRM
                         await updateWorkerTeamField(existingWorker._id, teamId);
+                        
+                        // Also update the user's teams in engineering management users table
+                        try {
+                            // First check if user exists
+                            const checkUserResponse = await fetch(`${WORKER_API_URL}/api/v1/users/phone/${phone}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                                }
+                            });
+                            
+                            if (checkUserResponse.ok) {
+                                // User exists, update their teams
+                                const existingUser = await checkUserResponse.json();
+                                const updatedTeams = existingUser.teams || [];
+                                if (!updatedTeams.includes(teamId)) {
+                                    updatedTeams.push(teamId);
+                                }
+                                
+                                const updateResponse = await fetch(`${WORKER_API_URL}/api/v1/users/${existingUser.id}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                                    },
+                                    body: JSON.stringify({ teams: updatedTeams })
+                                });
+                                
+                                if (updateResponse.ok) {
+                                    console.log('User teams updated in engineering management');
+                                }
+                            } else if (checkUserResponse.status === 404) {
+                                // User doesn't exist in engineering management, create them
+                                const password = phone.slice(-3);
+                                const userData = {
+                                    name: existingWorker.name,
+                                    phone: phone,
+                                    password: password,
+                                    role: 'worker',
+                                    teams: [teamId]
+                                };
+                                
+                                const userResponse = await fetch(`${WORKER_API_URL}/api/v1/users`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
+                                    },
+                                    body: JSON.stringify(userData)
+                                });
+                                
+                                if (userResponse.ok) {
+                                    console.log('User created in engineering management for existing CRM worker');
+                                }
+                            }
+                        } catch (userError) {
+                            console.warn('Error updating/creating user in engineering management:', userError);
+                            // Don't fail the whole operation
+                        }
                         
                         // Return the existing worker info
                         return {
@@ -3523,15 +3631,17 @@
                 const teamName = site.team_name || site['shift_time__c.name'] || teamId;
                 
                 if (teamId && teamId !== '-') {
-                    if (!teamsMap.has(teamId)) {
-                        teamsMap.set(teamId, {
+                    // 使用 teamName 作為 key，而非 teamId（避免URL編碼問題）
+                    const mapKey = teamName || teamId;
+                    if (!teamsMap.has(mapKey)) {
+                        teamsMap.set(mapKey, {
                             id: teamId,
                             name: teamName || `工班 ${teamId}`,
                             siteCount: 0,
                             sites: []
                         });
                     }
-                    const teamData = teamsMap.get(teamId);
+                    const teamData = teamsMap.get(mapKey);
                     teamData.siteCount++;
                     teamData.sites.push(site._id);
                     
