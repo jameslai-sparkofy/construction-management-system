@@ -1950,11 +1950,12 @@
             // Load user data
             await loadUserData();
             
-            // Load project data
+            // Load project data (this will also load sites)
             await loadProject(projectId);
             
-            // Load teams data
-            await loadProjectTeams(projectId);
+            // Load teams data after sites are loaded
+            // This will be called after sites are processed
+            // await loadProjectTeams(projectId); // Will be called from loadSites
             
             // If site_id is provided, open the modal
             if (siteId) {
@@ -1992,9 +1993,16 @@
             }
         }
 
-        // Load teams for the project
+        // Load teams for the project (combine site teams with user data)
         async function loadProjectTeams(projectId) {
             try {
+                // Wait for sites to be loaded first
+                if (!window.projectTeamsFromSites) {
+                    console.log('Waiting for sites data...');
+                    return;
+                }
+                
+                // Get team members from users table
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams`, {
                     headers: {
                         'Authorization': `Bearer ${sessionStorage.getItem('token') || 'dev-token'}`
@@ -2002,18 +2010,72 @@
                 });
                 
                 if (!response.ok) {
-                    console.error('Failed to load teams');
+                    console.error('Failed to load team members');
+                    // Still display teams even if no members
+                    displayTeamsWithSiteInfo();
                     return;
                 }
                 
                 const data = await response.json();
-                if (data.success) {
-                    displayTeams(data.teams);
-                    window.projectTeams = data.teams;
-                }
+                
+                // Combine site team info with user data
+                const combinedTeams = [];
+                
+                // Process teams from sites
+                window.projectTeamsFromSites.forEach((teamInfo, teamName) => {
+                    // Find matching team from users data
+                    const teamWithMembers = data.teams?.find(t => t.name === teamName) || {
+                        name: teamName,
+                        members: [],
+                        leaders: [],
+                        memberCount: 0
+                    };
+                    
+                    // Combine the data
+                    combinedTeams.push({
+                        ...teamWithMembers,
+                        name: teamName,
+                        siteCount: teamInfo.siteCount,
+                        sites: teamInfo.sites
+                    });
+                });
+                
+                // Also include teams from users that might not have sites yet
+                data.teams?.forEach(team => {
+                    if (!window.projectTeamsFromSites.has(team.name)) {
+                        combinedTeams.push({
+                            ...team,
+                            siteCount: 0,
+                            sites: []
+                        });
+                    }
+                });
+                
+                displayTeams(combinedTeams);
+                window.projectTeams = combinedTeams;
+                
             } catch (error) {
                 console.error('Error loading teams:', error);
+                // Still display teams from sites even on error
+                displayTeamsWithSiteInfo();
             }
+        }
+        
+        // Display teams with site info only (fallback)
+        function displayTeamsWithSiteInfo() {
+            const teams = [];
+            window.projectTeamsFromSites?.forEach((teamInfo, teamName) => {
+                teams.push({
+                    name: teamName,
+                    siteCount: teamInfo.siteCount,
+                    sites: teamInfo.sites,
+                    members: [],
+                    leaders: [],
+                    memberCount: 0
+                });
+            });
+            displayTeams(teams);
+            window.projectTeams = teams;
         }
         
         // Display team icons
@@ -2031,11 +2093,21 @@
             teams.forEach(team => {
                 const teamIcon = document.createElement('div');
                 teamIcon.className = 'team-icon';
+                
+                // Get team abbreviation (first character or custom abbreviation)
+                const teamAbbr = team.abbreviation || team.name.substring(0, 1).toUpperCase();
+                
+                // Show site count instead of member count
                 teamIcon.innerHTML = `
-                    ${team.name.substring(0, 1).toUpperCase()}
-                    <span class="member-count">${team.memberCount || 0}</span>
+                    ${teamAbbr}
+                    <span class="member-count">${team.siteCount || 0}</span>
                 `;
-                teamIcon.title = `${team.name} (${team.memberCount || 0} 人)`;
+                
+                // Tooltip shows both site count and member count
+                const siteText = team.siteCount ? `${team.siteCount} 個案場` : '無案場';
+                const memberText = team.memberCount ? `${team.memberCount} 位成員` : '無成員';
+                teamIcon.title = `${team.name}\n${siteText}\n${memberText}`;
+                
                 teamIcon.onclick = () => showTeamModal(team);
                 legendTeams.appendChild(teamIcon);
             });
@@ -2047,14 +2119,28 @@
             const title = document.getElementById('teamModalTitle');
             const membersList = document.getElementById('teamMembersList');
             
-            title.textContent = `${team.name} - 成員管理`;
+            // Update title with site count
+            const siteInfo = team.siteCount ? `(${team.siteCount} 個案場)` : '(無案場)';
+            title.innerHTML = `${team.name} ${siteInfo} - 成員管理`;
             window.currentTeam = team;
             
-            // Display team members
-            membersList.innerHTML = '';
+            // Display team info summary
+            membersList.innerHTML = `
+                <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #6b7280;">案場數量：</span>
+                        <span style="font-weight: 600;">${team.siteCount || 0} 個</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: #6b7280;">成員數量：</span>
+                        <span style="font-weight: 600;">${team.memberCount || 0} 人</span>
+                    </div>
+                </div>
+            `;
             
+            // Display team members
             if (!team.members || team.members.length === 0) {
-                membersList.innerHTML = '<div style="text-align: center; color: #9ca3af; padding: 2rem;">尚無成員</div>';
+                membersList.innerHTML += '<div style="text-align: center; color: #9ca3af; padding: 2rem;">尚無成員</div>';
             } else {
                 team.members.forEach(member => {
                     const memberItem = document.createElement('div');
@@ -2226,7 +2312,7 @@
         function processSitesData() {
             // Group sites by building
             const buildings = {};
-            const teams = new Map(); // 收集所有工班
+            const teamsMap = new Map(); // 收集所有工班及其案場數
             
             currentSites.forEach(site => {
                 const building = site[fieldMapping.building] || 'A';
@@ -2235,16 +2321,25 @@
                 }
                 buildings[building].push(site);
                 
-                // 收集工班資訊
+                // 收集工班資訊及統計案場數
                 const team = site[fieldMapping.team];
                 if (team && team !== '-') {
-                    const teamAbbr = site.team_abbreviation || (team ? team.charAt(0) : '');
-                    teams.set(team, teamAbbr);
+                    if (!teamsMap.has(team)) {
+                        teamsMap.set(team, {
+                            name: team,
+                            siteCount: 0,
+                            sites: []
+                        });
+                    }
+                    const teamData = teamsMap.get(team);
+                    teamData.siteCount++;
+                    teamData.sites.push(site._id);
                 }
             });
             
             // Store processed data
             window.sitesGroupedByBuilding = buildings;
+            window.projectTeamsFromSites = teamsMap; // 儲存從案場提取的工班資訊
             
             // 自動選擇第一個有資料的棟別作為預設
             const sortedBuildings = Object.keys(buildings).sort();
@@ -2252,8 +2347,14 @@
                 currentBuilding = sortedBuildings[0];
             }
             
-            // 更新工班圖例
-            updateTeamLegend(teams);
+            // 更新工班圖例（傳遞包含案場數的工班資訊）
+            updateTeamLegend(teamsMap);
+            
+            // Now load team members from users table
+            const projectId = new URLSearchParams(window.location.search).get('id');
+            if (projectId) {
+                loadProjectTeams(projectId);
+            }
         }
         
         // Update team legend
