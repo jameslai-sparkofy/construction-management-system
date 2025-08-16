@@ -488,7 +488,7 @@
                     const localUser = JSON.parse(localStorage.getItem('user') || '{}');
                     if (!localUser.id) {
                         alert('請先登入');
-                        window.location.href = 'login-supabase-simple.html';
+                        window.location.href = 'login-simple.html';
                         return;
                     }
                     currentUser = localUser;

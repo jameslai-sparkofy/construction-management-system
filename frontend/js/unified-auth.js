@@ -10,9 +10,6 @@ class UnifiedAuth {
             TOKEN: 'token',
             USER: 'user',
             AUTH_TYPE: 'auth_type',
-            // Clerk keys
-            CLERK_TOKEN: 'clerk_token',
-            CLERK_USER: 'clerk_user',
             // Legacy keys (will be migrated)
             LEGACY_TOKEN: 'auth_token',  // 舊的 key 名稱
             LEGACY_USER: 'user_info'      // 舊的 key 名稱
@@ -20,7 +17,6 @@ class UnifiedAuth {
         
         this.AUTH_TYPES = {
             SIMPLE: 'simple',
-            CLERK: 'clerk',
             EMERGENCY: 'emergency'
         };
         
@@ -32,7 +28,18 @@ class UnifiedAuth {
      */
     init() {
         this.migrateLegacyData();
-        this.checkTokenValidity();
+        // 只在非登入頁面檢查 token 有效性
+        if (!this.isLoginPage()) {
+            this.checkTokenValidity();
+        }
+    }
+    
+    /**
+     * 檢查是否為登入頁面
+     */
+    isLoginPage() {
+        const currentPage = window.location.pathname;
+        return currentPage.includes('login') || currentPage.includes('index.html') || currentPage === '/';
     }
     
     /**
@@ -64,7 +71,7 @@ class UnifiedAuth {
         if (!token) return false;
         
         try {
-            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/verify`, {
+            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/users/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -87,7 +94,7 @@ class UnifiedAuth {
      */
     async loginSimple(phone, password) {
         try {
-            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/login`, {
+            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -99,11 +106,11 @@ class UnifiedAuth {
             
             if (data.success) {
                 this.saveAuth(
-                    data.data.token,
-                    data.data.user,
+                    data.token,
+                    data.user,
                     this.AUTH_TYPES.SIMPLE
                 );
-                return { success: true, user: data.data.user };
+                return { success: true, user: data.user };
             } else {
                 return { success: false, error: data.message || '登入失敗' };
             }
@@ -113,40 +120,6 @@ class UnifiedAuth {
         }
     }
     
-    /**
-     * Clerk 認證登入
-     */
-    async loginClerk(clerkToken) {
-        try {
-            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/clerk/verify`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ token: clerkToken })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                localStorage.setItem(this.STORAGE_KEYS.CLERK_TOKEN, clerkToken);
-                localStorage.setItem(this.STORAGE_KEYS.CLERK_USER, JSON.stringify(data.clerkUser));
-                
-                this.saveAuth(
-                    data.sessionToken,
-                    data.user,
-                    this.AUTH_TYPES.CLERK
-                );
-                
-                return { success: true, user: data.user };
-            } else {
-                return { success: false, error: data.error || 'Clerk 認證失敗' };
-            }
-        } catch (error) {
-            console.error('Clerk login error:', error);
-            return { success: false, error: 'Clerk 認證系統錯誤' };
-        }
-    }
     
     /**
      * 緊急登入（如果啟用）
@@ -245,6 +218,11 @@ class UnifiedAuth {
         Object.values(this.STORAGE_KEYS).forEach(key => {
             localStorage.removeItem(key);
         });
+        
+        // 清除可能存在的舊 Clerk token
+        localStorage.removeItem('clerk-db-jwt');
+        localStorage.removeItem('clerk_token');
+        localStorage.removeItem('clerk_user');
         
         // 觸發登出事件
         this.dispatchAuthEvent('logout', {});
