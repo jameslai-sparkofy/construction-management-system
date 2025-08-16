@@ -1980,15 +1980,31 @@
                         </div>
                     </div>
                     
-                    <!-- 完工照片 - 移到施工完成區塊內 -->
-                    <div class="completion-fields" id="completionPhotos" style="margin-top: 1rem; opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
-                        <div class="media-container" style="grid-column: span 2;">
-                            <div class="media-header">
-                                <span class="section-icon">✅</span>
-                                <span class="section-title">完工照片</span>
-                            </div>
-                            <div class="photos-wrapper" id="afterPhotos">
+                    <!-- 工班施工完備註 -->
+                    <div class="completion-fields" id="completionFields3" style="margin-top: 0.75rem; opacity: 0.5; pointer-events: none; transition: all 0.3s ease;">
+                        <div class="field-group" style="grid-column: span 2;">
+                            <label class="field-label">工班施工完備註</label>
+                            <textarea class="field-input" id="workShiftCompletionNoteInput" rows="3" placeholder="請輸入施工完成備註..."></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- 完工照片和工地狀況照片在同一行 -->
+                    <div class="completion-fields" style="margin-top: 0.75rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; opacity: 0.5; pointer-events: none; transition: all 0.3s ease;" id="completionPhotosRow">
+                        <!-- 完工照片 -->
+                        <div class="field-group" id="completionPhotos">
+                            <label class="field-label">完工照片</label>
+                            <div class="photos-wrapper" id="afterPhotos" style="border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 100px; background: white;">
                                 <div class="photo-box add-photo" onclick="uploadPhoto('after')">
+                                    <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 工地狀況照片(施工後) -->
+                        <div class="field-group" id="completionDifficultyPhotos">
+                            <label class="field-label">工地狀況照片(施工後)</label>
+                            <div class="photos-wrapper" id="difficultyPhotos" style="border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 100px; background: white;">
+                                <div class="photo-box add-photo" onclick="uploadPhoto('difficulty')">
                                     <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
                                 </div>
                             </div>
@@ -2020,6 +2036,69 @@
             <div class="team-modal-body">
                 <div class="team-members-list" id="teamMembersList">
                     <!-- Members will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Member Management Modal (Add/Remove Members) -->
+    <div id="memberManagementModal" class="team-modal">
+        <div class="team-modal-content" style="max-width: 900px;">
+            <div class="team-modal-header">
+                <h2 class="team-modal-title">
+                    管理成員 - <span id="managementTeamName"></span>
+                </h2>
+                <button class="team-modal-close" onclick="closeMemberManagementModal()">✕</button>
+            </div>
+            <div class="team-modal-body">
+                <div class="member-management-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- Left: Current Members -->
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">現有成員</h3>
+                        <div id="currentMembersList" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Current members will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Available Workers -->
+                    <div>
+                        <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">可加入的師傅</h3>
+                        <div id="workersList" style="max-height: 300px; overflow-y: auto;">
+                            <!-- Available workers will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Add Section -->
+                <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid #e5e7eb;">
+                    <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">快速新增師傅</h3>
+                    <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">姓名</label>
+                            <input type="text" id="quickAddName" placeholder="輸入姓名" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">電話</label>
+                            <input type="tel" id="quickAddPhone" placeholder="0912345678" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">簡稱</label>
+                            <input type="text" id="quickAddAbbr" placeholder="自動" maxlength="2"
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">密碼</label>
+                            <input type="text" id="quickAddPassword" placeholder="自動" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <button onclick="quickAddMember()" 
+                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                            新增
+                        </button>
+                    </div>
+                    <div id="quickAddMessage" style="margin-top: 0.5rem; font-size: 0.875rem;"></div>
                 </div>
             </div>
         </div>
@@ -2159,6 +2238,15 @@
         const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
         const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || CONFIG?.API?.REST_API_TOKEN || 'fx-crm-api-secret-2025';
 
+        // Generate MongoDB ObjectId
+        function generateObjectId() {
+            const timestamp = Math.floor(Date.now() / 1000).toString(16).padStart(8, '0');
+            const randomBytes = Array.from({length: 16}, () => 
+                Math.floor(Math.random() * 16).toString(16)
+            ).join('');
+            return timestamp + randomBytes;
+        }
+
         // 欄位對應表
         const fieldMapping = {
             building: 'field_WD7k1__c',     // 棟別
@@ -2176,7 +2264,9 @@
             label: 'field_23Z5i__c',         // 標籤
             stage: 'field_z9H6O__c',         // 階段
             siteArea: 'field_tXAko__c',      // 工地坪數
-            opportunityId: 'field_1P96q__c'  // 商機關聯
+            opportunityId: 'field_1P96q__c',  // 商機關聯
+            workShiftCompletionNote: 'work_shift_completion_note__c',  // 工班施工完備註
+            constructionDifficultyPhotos: 'construction_difficulty_ph__c'  // 工地狀況照片(施工後)
         };
 
         // Global variables
@@ -2213,12 +2303,23 @@
                     suppliers.forEach(supplier => {
                         const name = supplier.name;
                         const id = supplier._id;
+                        const abbreviation = supplier.abbreviation__c; // 取得簡稱
                         
                         // Check if this is likely a team/construction company
                         if (name && (name.includes('工班') || name.includes('師傅') || 
                                      name.includes('有限公司') || name.includes('企業'))) {
                             teamNameToIdMap[name] = id;
-                            teamIdToNameMap[id] = name;
+                            teamIdToNameMap[id] = {
+                                name: name,
+                                abbreviation: abbreviation || null
+                            };
+                            
+                            // Also map common variations to handle edge cases
+                            // Handle potential encoding issues
+                            const decodedName = decodeURIComponent(name).trim();
+                            if (decodedName !== name) {
+                                teamNameToIdMap[decodedName] = id;
+                            }
                         }
                     });
                     
@@ -2334,54 +2435,42 @@
                 // Combine site team info with user data
                 const combinedTeams = [];
                 
-                // Process teams from sites (now using team ID as key)
+                // Process teams from sites (now using team ID as key) - ONLY teams with sites
                 window.projectTeamsFromSites.forEach((teamInfo, teamId) => {
-                    // Find matching team from users data using team ID
-                    const teamWithMembers = data.teams?.find(t => {
-                        // Match by team ID
-                        return t.id === teamId;
-                    }) || {
-                        id: teamId,
-                        name: teamInfo.name,
-                        members: [],
-                        leaders: [],
-                        memberCount: 0
-                    };
-                    
-                    // Combine the data
-                    combinedTeams.push({
-                        ...teamWithMembers,
-                        id: teamId,  // Use team ID
-                        name: teamInfo.name || teamWithMembers.name || `工班 ${teamId}`,
-                        siteCount: teamInfo.siteCount,
-                        sites: teamInfo.sites
-                    });
-                });
-                
-                // Also include teams from users that might not have sites yet
-                data.teams?.forEach(team => {
-                    // Decode team name if it's URL encoded
-                    let decodedTeamName = team.name;
-                    try {
-                        // Check if the name looks URL encoded
-                        if (team.name && team.name.includes('%')) {
-                            decodedTeamName = decodeURIComponent(team.name);
-                        }
-                    } catch (e) {
-                        console.warn('Failed to decode team name:', team.name, e);
-                    }
-                    
-                    // Check with both original and decoded name
-                    if (!window.projectTeamsFromSites.has(team.name) && 
-                        !window.projectTeamsFromSites.has(decodedTeamName)) {
+                    // Only process teams that have sites
+                    if (teamInfo.siteCount > 0) {
+                        // Find matching team from users data using team ID
+                        const teamWithMembers = data.teams?.find(t => {
+                            // Handle URL encoded team IDs
+                            const decodedTeamId = decodeURIComponent(t.id || '');
+                            const decodedTeamName = decodeURIComponent(t.name || '');
+                            
+                            // Match by team ID or decoded name to ID mapping
+                            return t.id === teamId || 
+                                   decodedTeamId === teamId || 
+                                   teamNameToIdMap[decodedTeamName] === teamId;
+                        }) || {
+                            id: teamId,
+                            name: teamInfo.name,
+                            members: [],
+                            leaders: [],
+                            memberCount: 0
+                        };
+                        
+                        // Combine the data
                         combinedTeams.push({
-                            ...team,
-                            name: decodedTeamName, // Use decoded name
-                            siteCount: 0,
-                            sites: []
+                            ...teamWithMembers,
+                            id: teamId,  // Use team ID
+                            name: teamInfo.name || teamWithMembers.name || `工班 ${teamId}`,
+                            siteCount: teamInfo.siteCount,
+                            sites: teamInfo.sites
                         });
                     }
                 });
+                
+                // DO NOT add teams from user data that don't have sites
+                // Only show teams that are actually assigned to sites
+                console.log(`顯示 ${combinedTeams.length} 個有案場的工班，${window.unassignedSitesCount || 0} 個未分配案場`);
                 
                 displayTeams(combinedTeams);
                 window.projectTeams = combinedTeams;
@@ -2398,9 +2487,10 @@
         // Display teams with site info only (fallback)
         function displayTeamsWithSiteInfo() {
             const teams = [];
-            window.projectTeamsFromSites?.forEach((teamInfo, teamName) => {
+            window.projectTeamsFromSites?.forEach((teamInfo, teamId) => {
                 teams.push({
-                    name: teamName,
+                    id: teamId,  // Use team ID
+                    name: teamInfo.name,  // Use the name stored in teamInfo
                     siteCount: teamInfo.siteCount,
                     sites: teamInfo.sites,
                     members: [],
@@ -2597,6 +2687,7 @@
                 document.getElementById('teamsCarousel') : 
                 legendTeams.querySelector('div');
             
+            // 先添加所有工班按鈕
             teams.forEach(team => {
                 const teamButton = document.createElement('button');
                 const buttonWidth = isMobile ? '160px' : '80px';
@@ -2667,6 +2758,76 @@
                 teamsContainer.appendChild(teamButton);
             });
             
+            // 最後添加「未分配」按鈕（如果有未分配的案場）
+            console.log('[DEBUG] 檢查未分配按鈕顯示條件: window.unassignedSitesCount =', window.unassignedSitesCount);
+            if (window.unassignedSitesCount > 0) {
+                console.log('[DEBUG] 創建未分配按鈕，數量:', window.unassignedSitesCount);
+                const unassignedButton = document.createElement('button');
+                const buttonWidth = isMobile ? '160px' : '100px';
+                unassignedButton.style.cssText = `
+                    cursor: pointer; 
+                    padding: 0.625rem 1rem; 
+                    background: #6b7280; 
+                    color: white; 
+                    border: none;
+                    border-radius: 20px; 
+                    font-weight: 600; 
+                    font-size: 0.875rem;
+                    display: inline-flex; 
+                    align-items: center; 
+                    gap: 0.5rem; 
+                    transition: all 0.2s;
+                    min-width: ${buttonWidth};
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                `;
+                
+                // 未分配文字
+                const unassignedSpan = document.createElement('span');
+                unassignedSpan.textContent = '未分配';
+                
+                // 數量標籤
+                const countBadge = document.createElement('span');
+                countBadge.style.cssText = `
+                    background: #dc2626; 
+                    color: white; 
+                    border-radius: 12px; 
+                    padding: 2px 8px; 
+                    font-size: 0.75rem; 
+                    min-width: 24px; 
+                    text-align: center; 
+                    display: inline-block;
+                    font-weight: bold;
+                `;
+                countBadge.textContent = window.unassignedSitesCount;
+                
+                unassignedButton.appendChild(unassignedSpan);
+                unassignedButton.appendChild(countBadge);
+                
+                unassignedButton.title = `${window.unassignedSitesCount} 個案場尚未分配工班`;
+                
+                // 添加懸停效果
+                unassignedButton.onmouseenter = () => {
+                    unassignedButton.style.transform = 'scale(1.05)';
+                    unassignedButton.style.boxShadow = '0 4px 12px rgba(107, 114, 128, 0.4)';
+                    unassignedButton.style.background = '#4b5563';
+                };
+                unassignedButton.onmouseleave = () => {
+                    unassignedButton.style.transform = 'scale(1)';
+                    unassignedButton.style.boxShadow = 'none';
+                    unassignedButton.style.background = '#6b7280';
+                };
+                
+                // 點擊事件 - 顯示未分配案場列表
+                unassignedButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showUnassignedSitesModal();
+                });
+                
+                teamsContainer.appendChild(unassignedButton);
+            }
+            
             legendTeams.appendChild(teamsContainer);
         }
         
@@ -2696,159 +2857,86 @@
             
             // Update title with site count
             const siteInfo = team.siteCount ? `(${team.siteCount} 個案場)` : '(無案場)';
-            title.innerHTML = `${team.name} ${siteInfo} - 成員管理`;
+            title.textContent = `${team.name} ${siteInfo}`;
             window.currentTeam = team;
+            
+            // Store members list in window for other functions to access
+            const leaders = team.leaders || [];
+            const members = team.members || [];
             
             // Get current user permissions
             const currentUserRole = getCurrentUserRole();
             const canEdit = currentUserRole === 'admin' || 
                            (currentUserRole === 'team_leader' && isCurrentUserTeamLeader(team));
             
-            // Load all workers and team members
-            const leaders = team.leaders || [];
-            const members = team.members || [];
-            const currentMembers = [...leaders.map(l => ({...l, role: 'team_leader'})), ...members];
-            const currentMemberIds = currentMembers.map(m => m.userId || m.id);
-            
-            // Load available workers from CRM
-            let availableWorkers = [];
-            try {
-                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?limit=100`, {
-                    headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const allWorkers = data.results || [];
-                    
-                    // Filter workers: those who can join this team but haven't
-                    availableWorkers = allWorkers.filter(worker => {
-                        // Check if worker is not in current team
-                        const workerId = worker._id;
-                        const isInCurrentTeam = currentMemberIds.includes(workerId);
-                        
-                        // Check if worker has this team in their team list
-                        const workerTeams = worker.shift_type_multi_select__c || [];
-                        const belongsToTeam = workerTeams.includes(team.id);
-                        
-                        // Available if: not in current team AND (has no teams OR already belongs to this team)
-                        return !isInCurrentTeam && (workerTeams.length === 0 || belongsToTeam);
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to load available workers:', error);
-            }
-            
-            // Build the unified interface
+            // Display team members list (original simple design)
             membersList.innerHTML = `
-                <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="color: #6b7280;">案場數量：</span>
                         <span style="font-weight: 600;">${team.siteCount || 0} 個</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #6b7280;">成員數量：</span>
-                        <span style="font-weight: 600;">${currentMembers.length} 人</span>
+                        <span style="font-weight: 600;">${leaders.length + members.length} 人</span>
                     </div>
                 </div>
                 
-                <!-- Current Members Section -->
-                <div style="margin-bottom: 2rem;">
-                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
-                        現有成員 (${currentMembers.length})
-                    </h3>
-                    <div id="currentMembersList">
-                        ${currentMembers.length === 0 ? 
-                            '<div style="text-align: center; color: #9ca3af; padding: 1rem; background: #f9fafb; border-radius: 8px;">尚無成員</div>' : 
-                            currentMembers.map(member => `
-                                <div class="team-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 0.5rem; background: white;">
-                                    <div style="flex: 1;">
-                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                            <span style="font-weight: 600; color: #1f2937;">${member.name || '未知'}</span>
-                                            ${member.role === 'team_leader' ? 
-                                                '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">負責人</span>' :
-                                                '<span style="background: #3b82f6; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">成員</span>'
-                                            }
-                                        </div>
-                                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">${member.phone}</div>
-                                    </div>
-                                    ${canEdit ? `
-                                        <button onclick="removeMemberFromTeam('${member.userId || member.id}', '${member.name}')" 
-                                                style="padding: 0.5rem; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;" 
-                                                title="移除">
-                                            ✕
-                                        </button>
-                                    ` : ''}
+                ${leaders.length > 0 ? `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #374151; font-size: 0.875rem; margin-bottom: 0.5rem;">負責人</h4>
+                        ${leaders.map(leader => `
+                            <div class="team-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f0fdf4; border: 1px solid #86efac; border-radius: 6px; margin-bottom: 0.5rem;">
+                                <div>
+                                    <div style="font-weight: 600; color: #065f46;">${leader.name}</div>
+                                    <div style="color: #6b7280; font-size: 0.75rem;">${leader.phone}</div>
                                 </div>
-                            `).join('')
-                        }
+                                ${canEdit ? `
+                                    <button onclick="removeMemberFromTeam('${leader.userId || leader.id}', '${leader.name}')" 
+                                            style="padding: 0.25rem 0.5rem; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer; color: #991b1b; font-size: 0.75rem;">
+                                        移除
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `).join('')}
                     </div>
-                </div>
+                ` : ''}
                 
-                <!-- Available Members Section -->
-                <div style="margin-bottom: 2rem;">
-                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
-                        可加入成員 (${availableWorkers.length})
-                    </h3>
-                    <div id="availableMembersList" style="max-height: 200px; overflow-y: auto;">
-                        ${availableWorkers.length === 0 ? 
-                            '<div style="text-align: center; color: #9ca3af; padding: 1rem; background: #f9fafb; border-radius: 8px;">沒有可加入的成員</div>' :
-                            availableWorkers.map(worker => `
-                                <div class="available-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 0.5rem; background: #f9fafb;">
-                                    <div style="flex: 1;">
-                                        <div style="font-weight: 600; color: #1f2937;">${worker.name || '未知'}</div>
-                                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">${worker.phone_number__c || ''}</div>
-                                    </div>
-                                    ${canEdit ? `
-                                        <button onclick="addExistingMemberToTeam('${worker._id}', '${worker.name}')" 
-                                                style="padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
-                                            加入
-                                        </button>
-                                    ` : ''}
+                ${members.length > 0 ? `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #374151; font-size: 0.875rem; margin-bottom: 0.5rem;">成員</h4>
+                        ${members.map(member => `
+                            <div class="team-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border: 1px solid #e5e7eb; border-radius: 6px; margin-bottom: 0.5rem;">
+                                <div>
+                                    <div style="font-weight: 600; color: #1f2937;">${member.name}</div>
+                                    <div style="color: #6b7280; font-size: 0.75rem;">${member.phone}</div>
                                 </div>
-                            `).join('')
-                        }
+                                ${canEdit ? `
+                                    <button onclick="removeMemberFromTeam('${member.userId || member.id}', '${member.name}')" 
+                                            style="padding: 0.25rem 0.5rem; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer; color: #991b1b; font-size: 0.75rem;">
+                                        移除
+                                    </button>
+                                ` : ''}
+                            </div>
+                        `).join('')}
                     </div>
-                </div>
+                ` : ''}
                 
-                <!-- Add New Member Section -->
+                ${leaders.length === 0 && members.length === 0 ? `
+                    <div style="text-align: center; padding: 2rem; color: #9ca3af;">
+                        尚無成員
+                    </div>
+                ` : ''}
+                
                 ${canEdit ? `
-                <div style="border-top: 2px solid #e5e7eb; padding-top: 1.5rem;">
-                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
-                        新增成員
-                    </h3>
-                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
-                        <div>
-                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">姓名</label>
-                            <input type="text" id="quickAddName" placeholder="輸入姓名" 
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">電話</label>
-                            <input type="tel" id="quickAddPhone" placeholder="0912345678" 
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">簡稱</label>
-                            <input type="text" id="quickAddAbbr" placeholder="自動" maxlength="2"
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
-                        </div>
-                        <button onclick="quickAddMember()" 
-                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
-                            快速新增
+                    <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                        <button onclick="showMemberManagementModal()" 
+                                style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #84C7D0, #6eb5c0); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            管理成員
                         </button>
                     </div>
-                    <div id="quickAddMessage" style="margin-top: 0.5rem; font-size: 0.875rem;"></div>
-                </div>
                 ` : ''}
             `;
-            
-            // Setup event listeners for quick add
-            if (canEdit) {
-                setupQuickAddListeners();
-            }
             
             modal.classList.add('active');
         }
@@ -2858,11 +2946,101 @@
             document.getElementById('teamModal').classList.remove('active');
         }
         
+        // Show unassigned sites modal
+        function showUnassignedSitesModal() {
+            // 收集未分配的案場
+            const unassignedSites = currentSites.filter(site => {
+                const teamValue = site[fieldMapping.team];
+                return !teamValue || teamValue === '-';
+            });
+            
+            // 使用現有的 teamModal 來顯示
+            const modal = document.getElementById('teamModal');
+            const title = document.getElementById('teamModalTitle');
+            const membersList = document.getElementById('teamMembersList');
+            
+            title.textContent = `未分配案場 (${unassignedSites.length} 個)`;
+            
+            // 按棟別分組顯示未分配案場
+            const sitesByBuilding = {};
+            unassignedSites.forEach(site => {
+                const building = site[fieldMapping.building] || 'A';
+                if (!sitesByBuilding[building]) {
+                    sitesByBuilding[building] = [];
+                }
+                sitesByBuilding[building].push(site);
+            });
+            
+            membersList.innerHTML = `
+                <div style="background: #fef2f2; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="color: #991b1b; font-weight: 600;">
+                        共有 ${unassignedSites.length} 個案場尚未分配工班
+                    </div>
+                </div>
+                
+                ${Object.entries(sitesByBuilding).map(([building, sites]) => `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #374151; font-size: 0.875rem; margin-bottom: 0.5rem;">
+                            ${building}棟 (${sites.length} 個)
+                        </h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 0.5rem;">
+                            ${sites.map(site => `
+                                <div style="padding: 0.5rem; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 4px; text-align: center; font-size: 0.75rem;">
+                                    ${site[fieldMapping.floor]}F-${site[fieldMapping.unit]}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}
+            `;
+            
+            modal.classList.add('active');
+        }
+        
+        // Show member management modal (separate modal for adding/removing members)
+        async function showMemberManagementModal() {
+            const modal = document.getElementById('memberManagementModal');
+            const teamNameSpan = document.getElementById('managementTeamName');
+            
+            if (!modal) {
+                console.error('Member management modal not found');
+                return;
+            }
+            
+            // Set team name
+            if (window.currentTeam) {
+                teamNameSpan.textContent = window.currentTeam.name;
+            }
+            
+            // Load workers for the current team
+            await loadWorkers();
+            
+            // Setup quick add listeners
+            setupQuickAddListeners();
+            
+            // Show the modal
+            modal.classList.add('active');
+        }
+        
+        // Close member management modal
+        function closeMemberManagementModal() {
+            const modal = document.getElementById('memberManagementModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            
+            // Reload team modal to show updated members
+            if (window.currentTeam) {
+                showTeamModal(window.currentTeam);
+            }
+        }
+        
         // Setup quick add listeners
         function setupQuickAddListeners() {
             const nameInput = document.getElementById('quickAddName');
             const phoneInput = document.getElementById('quickAddPhone');
             const abbrInput = document.getElementById('quickAddAbbr');
+            const passwordInput = document.getElementById('quickAddPassword');
             
             if (nameInput) {
                 nameInput.addEventListener('input', () => {
@@ -2876,8 +3054,21 @@
             if (phoneInput) {
                 phoneInput.addEventListener('input', () => {
                     // Auto-generate password (last 3 digits)
-                    if (phoneInput.value.length >= 3) {
-                        phoneInput.setAttribute('data-password', phoneInput.value.slice(-3));
+                    if (phoneInput.value.length >= 3 && passwordInput) {
+                        // Only auto-fill if password field is empty or still has the auto-generated value
+                        if (!passwordInput.value || passwordInput.getAttribute('data-auto') === 'true') {
+                            passwordInput.value = phoneInput.value.slice(-3);
+                            passwordInput.setAttribute('data-auto', 'true');
+                        }
+                    }
+                });
+            }
+            
+            if (passwordInput) {
+                passwordInput.addEventListener('input', () => {
+                    // Mark as manually edited
+                    if (passwordInput.value) {
+                        passwordInput.setAttribute('data-auto', 'false');
                     }
                 });
             }
@@ -2888,6 +3079,7 @@
             const name = document.getElementById('quickAddName').value.trim();
             const phone = document.getElementById('quickAddPhone').value.trim();
             const abbreviation = document.getElementById('quickAddAbbr').value.trim() || name.slice(-1);
+            const password = document.getElementById('quickAddPassword').value.trim() || phone.slice(-3);
             const messageDiv = document.getElementById('quickAddMessage');
             
             if (!name || !phone) {
@@ -2913,9 +3105,9 @@
                     name: name,
                     phone_number__c: phone,
                     account__c: phone,
-                    password__c: phone.slice(-3),
+                    password__c: password,  // Use the password from input field
                     abbreviation__c: abbreviation,
-                    shift_type_multi_select__c: [window.currentTeam.id],
+                    shift_type_multi_select__c: JSON.stringify([window.currentTeam.id]),
                     record_type: 'default__c',
                     life_status: 'normal'
                 };
@@ -2936,6 +3128,7 @@
                     document.getElementById('quickAddName').value = '';
                     document.getElementById('quickAddPhone').value = '';
                     document.getElementById('quickAddAbbr').value = '';
+                    document.getElementById('quickAddPassword').value = '';
                     
                     // Refresh the modal after 1 second
                     setTimeout(() => {
@@ -4222,6 +4415,7 @@
             const buildings = {};
             const teamsMap = new Map(); // 收集所有工班及其案場數
             const buildingTeams = {}; // 記錄每個棟別的工班
+            let unassignedCount = 0; // 統計未分配的案場數
             
             currentSites.forEach(site => {
                 const building = site[fieldMapping.building] || 'A';
@@ -4232,32 +4426,62 @@
                 buildings[building].push(site);
                 
                 // 收集工班資訊及統計案場數
-                const teamNameFromSite = site[fieldMapping.team];  // shift_time__c 一定儲存工班名稱
+                const teamNameFromSite = site[fieldMapping.team];  // shift_time__c 可能是工班名稱或 ID
                 
                 if (teamNameFromSite && teamNameFromSite !== '-') {
                     // 從名稱獲取對應的工班 ID
-                    const teamId = teamNameToIdMap[teamNameFromSite];
+                    let teamId = teamNameToIdMap[teamNameFromSite];
                     
                     if (!teamId) {
-                        console.warn(`找不到工班 "${teamNameFromSite}" 的 ID 映射，跳過此工班`);
-                        // 在 forEach 中使用 return 只會跳過當前迭代，不是整個函數
-                    } else {
-                        // 使用 teamId 作為唯一的 key
-                        if (!teamsMap.has(teamId)) {
-                            teamsMap.set(teamId, {
-                                id: teamId,
-                                name: teamNameFromSite, // 使用原始名稱
-                                siteCount: 0,
-                                sites: []
-                            });
-                        }
-                        const teamData = teamsMap.get(teamId);
-                        teamData.siteCount++;
-                        teamData.sites.push(site._id);
+                        // Try decoding in case of URL encoding issues
+                        const decodedName = decodeURIComponent(teamNameFromSite).trim();
+                        teamId = teamNameToIdMap[decodedName];
                         
-                        // 記錄此棟別有此工班（使用 ID）
-                        buildingTeams[building].add(teamId);
+                        if (!teamId) {
+                            // 如果 teamNameFromSite 本身就是 ID，直接使用
+                            if (teamNameFromSite.match(/^[0-9a-f]{24}$/)) {
+                                teamId = teamNameFromSite;
+                                // 嘗試從 teamIdToNameMap 獲取名稱和簡稱
+                                const teamInfo = teamIdToNameMap[teamId];
+                                const teamName = teamInfo?.name || teamNameFromSite;
+                                const teamAbbreviation = teamInfo?.abbreviation || null;
+                                if (!teamsMap.has(teamId)) {
+                                    teamsMap.set(teamId, {
+                                        id: teamId,
+                                        name: teamName,
+                                        abbreviation: teamAbbreviation,
+                                        siteCount: 0,
+                                        sites: []
+                                    });
+                                }
+                            } else {
+                                console.warn(`找不到工班 "${teamNameFromSite}" 的 ID 映射，視為未分配`);
+                                unassignedCount++;
+                                return; // Skip this iteration
+                            }
+                        }
                     }
+                    
+                    // 使用 teamId 作為唯一的 key
+                    if (!teamsMap.has(teamId)) {
+                        const teamInfo = teamIdToNameMap[teamId];
+                        teamsMap.set(teamId, {
+                            id: teamId,
+                            name: teamInfo?.name || teamNameFromSite, // 優先使用映射的名稱
+                            abbreviation: teamInfo?.abbreviation || null,
+                            siteCount: 0,
+                            sites: []
+                        });
+                    }
+                    const teamData = teamsMap.get(teamId);
+                    teamData.siteCount++;
+                    teamData.sites.push(site._id);
+                    
+                    // 記錄此棟別有此工班（使用 ID）
+                    buildingTeams[building].add(teamId);
+                } else {
+                    // 沒有工班的案場，計入未分配
+                    unassignedCount++;
                 }
             });
             
@@ -4265,6 +4489,8 @@
             window.sitesGroupedByBuilding = buildings;
             window.projectTeamsFromSites = teamsMap; // 儲存從案場提取的工班資訊
             window.buildingTeamsMap = buildingTeams; // 儲存每個棟別的工班列表
+            window.unassignedSitesCount = unassignedCount; // 儲存未分配案場數量
+            console.log('[DEBUG] processSitesData: 設置 window.unassignedSitesCount =', unassignedCount);
             
             // 自動選擇第一個有資料的棟別作為預設
             const sortedBuildings = Object.keys(buildings).sort();
@@ -4394,17 +4620,39 @@
             const buildingTeams = window.buildingTeamsMap || {};
             
             tabsContainer.innerHTML = buildings.map(building => {
-                // 取得此棟的工班列表
-                const teams = buildingTeams[building] ? Array.from(buildingTeams[building]) : [];
+                // 取得此棟的工班列表（工班ID）
+                const teamIds = buildingTeams[building] ? Array.from(buildingTeams[building]) : [];
                 let teamDisplay = '';
                 
-                if (teams.length > 0) {
-                    // 取每個工班名稱的第一個字
-                    const teamAbbrs = teams.map(team => {
-                        // 如果是數字 ID，顯示 "工班"；否則顯示第一個字
-                        return isNaN(team) ? team.charAt(0) : '班';
-                    });
-                    teamDisplay = ' | ' + teamAbbrs.join(' ');
+                if (teamIds.length > 0) {
+                    // 從工班ID獲取工班名稱，然後取簡稱
+                    const teamAbbrs = teamIds.map(teamId => {
+                        // 從 projectTeamsFromSites 獲取工班資訊
+                        const teamInfo = window.projectTeamsFromSites?.get(teamId);
+                        if (teamInfo) {
+                            // 優先使用 abbreviation__c 欄位
+                            if (teamInfo.abbreviation) {
+                                return teamInfo.abbreviation;
+                            }
+                            // 如果沒有 abbreviation__c，使用原邏輯
+                            if (teamInfo.name) {
+                                const name = teamInfo.name;
+                                // 如果是「XX工班」格式，取XX的最後一個字
+                                const match = name.match(/(.+?)工班/);
+                                if (match) {
+                                    return match[1].slice(-1); // 取工班前面名字的最後一個字
+                                }
+                                // 否則直接取名稱的最後一個字
+                                return name.slice(-1);
+                            }
+                        }
+                        // 如果找不到工班資訊，顯示問號
+                        return '?';
+                    }).filter(abbr => abbr !== '?'); // 過濾掉未知的工班
+                    
+                    if (teamAbbrs.length > 0) {
+                        teamDisplay = ' | ' + teamAbbrs.join(' ');
+                    }
                 }
                 
                 return `
@@ -4481,12 +4729,32 @@
                         // Get worker abbreviation (last character of name if abbreviation field is empty)
                         const workerAbbr = site.worker_abbreviation || (worker ? worker.charAt(worker.length - 1) : worker);
                         
+                        // Format date properly (handle timestamp or string)
+                        let formattedDate = '';
+                        if (date) {
+                            // Check if date is a timestamp (number or numeric string)
+                            const timestamp = parseInt(date);
+                            if (!isNaN(timestamp) && timestamp > 1000000000) {
+                                // Convert milliseconds to date string
+                                const dateObj = new Date(timestamp);
+                                formattedDate = `${dateObj.getMonth() + 1}/${dateObj.getDate()}`;
+                            } else if (typeof date === 'string' && date.includes('-')) {
+                                // Convert YYYY-MM-DD to M/D format
+                                const parts = date.split('-');
+                                if (parts.length === 3) {
+                                    formattedDate = `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+                                }
+                            } else {
+                                formattedDate = date; // Use as-is if already formatted
+                            }
+                        }
+                        
                         html += `
                             <td class="grid-cell ${isCompleted ? 'completed' : ''}" 
                                 onclick="openSiteModal('${site._id}')">
                                 <div class="cell-content">
                                     ${isCompleted ? 
-                                        `<div class="cell-line1">${date} | ${workerAbbr}</div>
+                                        `<div class="cell-line1">${formattedDate}${workerAbbr ? ' | ' + workerAbbr : ''}</div>
                                          <div class="cell-line2">${area}坪<span class="cell-team">${teamAbbr}</span></div>` :
                                         `<div class="cell-line1">${area}坪<span class="cell-team">${teamAbbr}</span></div>`
                                     }
@@ -4596,6 +4864,9 @@
 
         // Update modal with site data
         function updateModalWithSiteData(site) {
+            // Store current site data globally for other functions to access
+            window.currentSiteData = site;
+            
             // Basic info
             document.getElementById('modalBuilding').textContent = 
                 (site[fieldMapping.building] || 'A') + '棟';
@@ -4620,13 +4891,40 @@
             if (isCompleted) {
                 document.getElementById('areaInput').value = site[fieldMapping.area] || '';
                 document.getElementById('workerInput').value = site[fieldMapping.worker] || '';
-                document.getElementById('dateInput').value = site[fieldMapping.date] || '';
+                
+                // Handle date field - convert timestamp to YYYY-MM-DD format for date input
+                const dateValue = site[fieldMapping.date];
+                if (dateValue) {
+                    const timestamp = parseInt(dateValue);
+                    if (!isNaN(timestamp) && timestamp > 1000000000) {
+                        // Convert milliseconds to YYYY-MM-DD
+                        const dateObj = new Date(timestamp);
+                        const year = dateObj.getFullYear();
+                        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                        const day = String(dateObj.getDate()).padStart(2, '0');
+                        document.getElementById('dateInput').value = `${year}-${month}-${day}`;
+                    } else {
+                        document.getElementById('dateInput').value = dateValue;
+                    }
+                } else {
+                    document.getElementById('dateInput').value = '';
+                }
                 
                 document.getElementById('completionFields').classList.add('active');
                 document.getElementById('completionFields2').classList.add('active');
-                document.getElementById('completionPhotos').classList.add('active');
-                document.getElementById('completionPhotos').style.opacity = '1';
-                document.getElementById('completionPhotos').style.pointerEvents = 'auto';
+                
+                // 啟用新欄位
+                const fields3 = document.getElementById('completionFields3');
+                const completionPhotosRow = document.getElementById('completionPhotosRow');
+                
+                fields3.classList.add('active');
+                fields3.style.opacity = '1';
+                fields3.style.pointerEvents = 'auto';
+                
+                completionPhotosRow.classList.add('active');
+                completionPhotosRow.style.opacity = '1';
+                completionPhotosRow.style.pointerEvents = 'auto';
+                
                 document.getElementById('workerName').textContent = `- ${site[fieldMapping.worker] || ''}`;
             } else {
                 // 未完成時，預設填入今天日期、工地坪數和當前用戶
@@ -4636,9 +4934,19 @@
                 
                 document.getElementById('completionFields').classList.remove('active');
                 document.getElementById('completionFields2').classList.remove('active');
-                document.getElementById('completionPhotos').classList.remove('active');
-                document.getElementById('completionPhotos').style.opacity = '0.5';
-                document.getElementById('completionPhotos').style.pointerEvents = 'none';
+                
+                // 禁用新欄位
+                const fields3 = document.getElementById('completionFields3');
+                const completionPhotosRow = document.getElementById('completionPhotosRow');
+                
+                fields3.classList.remove('active');
+                fields3.style.opacity = '0.5';
+                fields3.style.pointerEvents = 'none';
+                
+                completionPhotosRow.classList.remove('active');
+                completionPhotosRow.style.opacity = '0.5';
+                completionPhotosRow.style.pointerEvents = 'none';
+                
                 document.getElementById('workerName').textContent = '';
             }
             
@@ -4649,12 +4957,14 @@
         // Load existing photos
         function loadExistingPhotos(site) {
             // Clear existing photos (except add buttons)
-            ['floorPlanPhotos', 'beforePhotos', 'afterPhotos'].forEach(containerId => {
+            ['floorPlanPhotos', 'beforePhotos', 'afterPhotos', 'difficultyPhotos'].forEach(containerId => {
                 const container = document.getElementById(containerId);
-                const addButton = container.querySelector('.add-photo');
-                container.innerHTML = '';
-                if (addButton) {
-                    container.appendChild(addButton);
+                if (container) {
+                    const addButton = container.querySelector('.add-photo');
+                    container.innerHTML = '';
+                    if (addButton) {
+                        container.appendChild(addButton);
+                    }
                 }
             });
             
@@ -4665,28 +4975,189 @@
             
             // Load before photos
             if (site[fieldMapping.beforePhotos]) {
-                const photos = site[fieldMapping.beforePhotos].split(',');
-                photos.forEach(photo => addPhotoToContainer('beforePhotos', photo));
+                const beforePhotosData = site[fieldMapping.beforePhotos];
+                
+                // 處理不同格式的照片數據
+                if (typeof beforePhotosData === 'string' && beforePhotosData.trim()) {
+                    // 檢查是否為 JSON 格式（從 D1 database 來的數據）
+                    if (beforePhotosData.startsWith('[') && beforePhotosData.includes('signedUrl')) {
+                        try {
+                            const photoArray = JSON.parse(beforePhotosData);
+                            photoArray.forEach(photoObj => {
+                                if (photoObj.signedUrl) {
+                                    addPhotoToContainer('beforePhotos', photoObj.signedUrl);
+                                }
+                            });
+                        } catch (e) {
+                            console.error('[ERROR] Failed to parse photo JSON:', e);
+                            // 如果解析失敗，嘗試用逗號分割
+                            const photos = beforePhotosData.split(',').filter(p => p.trim());
+                            photos.forEach(photo => {
+                                if (photo.trim()) {
+                                    addPhotoToContainer('beforePhotos', photo.trim());
+                                }
+                            });
+                        }
+                    } else {
+                        // 處理逗號分隔的 URL 格式
+                        const photos = beforePhotosData.split(',').filter(p => p.trim());
+                        photos.forEach(photo => {
+                            if (photo.trim()) {
+                                addPhotoToContainer('beforePhotos', photo.trim());
+                            }
+                        });
+                    }
+                } else if (Array.isArray(beforePhotosData)) {
+                    beforePhotosData.forEach(photo => {
+                        if (typeof photo === 'object' && photo.signedUrl) {
+                            addPhotoToContainer('beforePhotos', photo.signedUrl);
+                        } else if (typeof photo === 'string' && photo.trim()) {
+                            addPhotoToContainer('beforePhotos', photo.trim());
+                        }
+                    });
+                }
             }
             
             // Load after photos
             if (site[fieldMapping.afterPhotos]) {
-                const photos = site[fieldMapping.afterPhotos].split(',');
-                photos.forEach(photo => addPhotoToContainer('afterPhotos', photo));
+                const afterPhotosData = site[fieldMapping.afterPhotos];
+                
+                // 處理不同格式的照片數據
+                if (typeof afterPhotosData === 'string' && afterPhotosData.trim()) {
+                    // 檢查是否為 JSON 格式（從 D1 database 來的數據）
+                    if (afterPhotosData.startsWith('[') && afterPhotosData.includes('signedUrl')) {
+                        try {
+                            const photoArray = JSON.parse(afterPhotosData);
+                            photoArray.forEach(photoObj => {
+                                if (photoObj.signedUrl) {
+                                    addPhotoToContainer('afterPhotos', photoObj.signedUrl);
+                                }
+                            });
+                        } catch (e) {
+                            console.error('[ERROR] Failed to parse after photos JSON:', e);
+                            // 如果解析失敗，嘗試用逗號分割
+                            const photos = afterPhotosData.split(',').filter(p => p.trim());
+                            photos.forEach(photo => {
+                                if (photo.trim()) {
+                                    addPhotoToContainer('afterPhotos', photo.trim());
+                                }
+                            });
+                        }
+                    } else {
+                        // 處理逗號分隔的 URL 格式
+                        const photos = afterPhotosData.split(',').filter(p => p.trim());
+                        photos.forEach(photo => {
+                            if (photo.trim()) {
+                                addPhotoToContainer('afterPhotos', photo.trim());
+                            }
+                        });
+                    }
+                } else if (Array.isArray(afterPhotosData)) {
+                    afterPhotosData.forEach(photo => {
+                        if (typeof photo === 'object' && photo.signedUrl) {
+                            addPhotoToContainer('afterPhotos', photo.signedUrl);
+                        } else if (typeof photo === 'string' && photo.trim()) {
+                            addPhotoToContainer('afterPhotos', photo.trim());
+                        }
+                    });
+                }
+            }
+            
+            // Load construction difficulty photos (施工後)
+            if (site[fieldMapping.constructionDifficultyPhotos]) {
+                const difficultyPhotosData = site[fieldMapping.constructionDifficultyPhotos];
+                
+                // 處理不同格式的照片數據
+                if (typeof difficultyPhotosData === 'string' && difficultyPhotosData.trim()) {
+                    // 檢查是否為 JSON 格式（從 D1 database 來的數據）
+                    if (difficultyPhotosData.startsWith('[') && difficultyPhotosData.includes('signedUrl')) {
+                        try {
+                            const photoArray = JSON.parse(difficultyPhotosData);
+                            photoArray.forEach(photoObj => {
+                                if (photoObj.signedUrl) {
+                                    addPhotoToContainer('difficultyPhotos', photoObj.signedUrl);
+                                }
+                            });
+                        } catch (e) {
+                            console.error('[ERROR] Failed to parse difficulty photos JSON:', e);
+                            // 如果解析失敗，嘗試用逗號分割
+                            const photos = difficultyPhotosData.split(',').filter(p => p.trim());
+                            photos.forEach(photo => {
+                                if (photo.trim()) {
+                                    addPhotoToContainer('difficultyPhotos', photo.trim());
+                                }
+                            });
+                        }
+                    } else {
+                        // 處理逗號分隔的 URL 格式
+                        const photos = difficultyPhotosData.split(',').filter(p => p.trim());
+                        photos.forEach(photo => {
+                            if (photo.trim()) {
+                                addPhotoToContainer('difficultyPhotos', photo.trim());
+                            }
+                        });
+                    }
+                } else if (Array.isArray(difficultyPhotosData)) {
+                    difficultyPhotosData.forEach(photo => {
+                        if (typeof photo === 'object' && photo.signedUrl) {
+                            addPhotoToContainer('difficultyPhotos', photo.signedUrl);
+                        } else if (typeof photo === 'string' && photo.trim()) {
+                            addPhotoToContainer('difficultyPhotos', photo.trim());
+                        }
+                    });
+                }
+            }
+            
+            // Load work shift completion note
+            if (site[fieldMapping.workShiftCompletionNote]) {
+                document.getElementById('workShiftCompletionNoteInput').value = site[fieldMapping.workShiftCompletionNote];
             }
         }
 
         // Add photo to container
         function addPhotoToContainer(containerId, photoUrl) {
             const container = document.getElementById(containerId);
+            if (!container) {
+                console.error('[ERROR] Container not found:', containerId);
+                return;
+            }
+            
+            // 直接使用提供的 URL（從 D1 database 來的 signedUrl 已經是完整的）
+            const fullPhotoUrl = photoUrl;
+            
+            console.log('[DEBUG] Adding photo to container:', containerId, 'URL:', fullPhotoUrl);
+            
             const photoBox = document.createElement('div');
             photoBox.className = 'photo-box has-image';
             
             const img = document.createElement('img');
-            img.src = photoUrl;
+            img.src = fullPhotoUrl;
             img.alt = '照片';
             img.style.cursor = 'zoom-in';
-            img.onclick = () => openLightbox(photoUrl);
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            
+            // 添加錯誤處理
+            img.onerror = () => {
+                console.error('[ERROR] Failed to load image:', fullPhotoUrl);
+                // 嘗試使用原始URL
+                if (fullPhotoUrl !== photoUrl) {
+                    console.log('[DEBUG] Trying original URL:', photoUrl);
+                    img.src = photoUrl;
+                    img.onerror = () => {
+                        console.error('[ERROR] Failed to load original URL too:', photoUrl);
+                        // 顯示錯誤占位符
+                        photoBox.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">無法載入圖片</div>';
+                    };
+                }
+            };
+            
+            img.onload = () => {
+                console.log('[DEBUG] Image loaded successfully:', fullPhotoUrl);
+            };
+            
+            img.onclick = () => openLightbox(fullPhotoUrl);
             
             const removeBtn = document.createElement('button');
             removeBtn.className = 'photo-remove-btn';
@@ -4726,7 +5197,6 @@
             const checkbox = document.getElementById('completionCheck');
             const fields = document.getElementById('completionFields');
             const fields2 = document.getElementById('completionFields2');
-            const completionPhotos = document.getElementById('completionPhotos');
             const workerName = document.getElementById('workerName');
             const workerInput = document.getElementById('workerInput');
             
@@ -4735,9 +5205,18 @@
             if (checkbox.checked) {
                 fields.classList.add('active');
                 fields2.classList.add('active');
-                completionPhotos.classList.add('active');
-                completionPhotos.style.opacity = '1';
-                completionPhotos.style.pointerEvents = 'auto';
+                
+                // 啟用新欄位
+                const fields3 = document.getElementById('completionFields3');
+                const completionPhotosRow = document.getElementById('completionPhotosRow');
+                
+                fields3.classList.add('active');
+                fields3.style.opacity = '1';
+                fields3.style.pointerEvents = 'auto';
+                
+                completionPhotosRow.classList.add('active');
+                completionPhotosRow.style.opacity = '1';
+                completionPhotosRow.style.pointerEvents = 'auto';
                 
                 // Auto-fill values
                 if (!document.getElementById('dateInput').value) {
@@ -4767,9 +5246,19 @@
             } else {
                 fields.classList.remove('active');
                 fields2.classList.remove('active');
-                completionPhotos.classList.remove('active');
-                completionPhotos.style.opacity = '0.5';
-                completionPhotos.style.pointerEvents = 'none';
+                
+                // 禁用新欄位
+                const fields3 = document.getElementById('completionFields3');
+                const completionPhotosRow = document.getElementById('completionPhotosRow');
+                
+                fields3.classList.remove('active');
+                fields3.style.opacity = '0.5';
+                fields3.style.pointerEvents = 'none';
+                
+                completionPhotosRow.classList.remove('active');
+                completionPhotosRow.style.opacity = '0.5';
+                completionPhotosRow.style.pointerEvents = 'none';
+                
                 workerName.textContent = '';
                 workerInput.value = '';
                 workerInput.removeAttribute('value');
@@ -4827,6 +5316,9 @@
                                 break;
                             case 'after':
                                 containerId = 'afterPhotos';
+                                break;
+                            case 'difficulty':
+                                containerId = 'difficultyPhotos';
                                 break;
                         }
                         addPhotoToContainer(containerId, photoUrl);
@@ -4907,6 +5399,7 @@
                 const area = document.getElementById('areaInput').value;
                 const date = document.getElementById('dateInput').value;
                 const worker = document.getElementById('workerInput').value;
+                const workShiftCompletionNote = document.getElementById('workShiftCompletionNoteInput').value;
                 
                 if (!area || !date) {
                     alert('請填寫鋪設坪數和施工日期！');
@@ -4917,6 +5410,11 @@
                 updateData[fieldMapping.date] = date;
                 updateData[fieldMapping.worker] = worker;
                 
+                // 新增工班施工完備註
+                if (workShiftCompletionNote) {
+                    updateData[fieldMapping.workShiftCompletionNote] = workShiftCompletionNote;
+                }
+                
                 // Update stage if completed
                 updateData[fieldMapping.stage] = '驗收';
                 updateData[fieldMapping.label] = '已完工';
@@ -4926,6 +5424,7 @@
             const floorPlanPhotos = collectPhotoUrls('floorPlanPhotos');
             const beforePhotos = collectPhotoUrls('beforePhotos');
             const afterPhotos = collectPhotoUrls('afterPhotos');
+            const difficultyPhotos = collectPhotoUrls('difficultyPhotos');
             
             if (floorPlanPhotos.length > 0) {
                 updateData[fieldMapping.floorPlan] = floorPlanPhotos[0]; // Only one floor plan
@@ -4935,6 +5434,10 @@
             }
             if (afterPhotos.length > 0) {
                 updateData[fieldMapping.afterPhotos] = afterPhotos.join(',');
+            }
+            // 新增工地狀況照片(施工後)
+            if (difficultyPhotos.length > 0) {
+                updateData[fieldMapping.constructionDifficultyPhotos] = difficultyPhotos.join(',');
             }
             
             try {
