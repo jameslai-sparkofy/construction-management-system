@@ -6,15 +6,16 @@
 class UnifiedAuth {
     constructor() {
         this.STORAGE_KEYS = {
-            TOKEN: 'auth_token',
-            USER: 'user_info',
+            // 統一使用簡單的 key 名稱，與其他頁面一致
+            TOKEN: 'token',
+            USER: 'user',
             AUTH_TYPE: 'auth_type',
             // Clerk keys
             CLERK_TOKEN: 'clerk_token',
             CLERK_USER: 'clerk_user',
             // Legacy keys (will be migrated)
-            LEGACY_TOKEN: 'token',
-            LEGACY_USER: 'user'
+            LEGACY_TOKEN: 'auth_token',  // 舊的 key 名稱
+            LEGACY_USER: 'user_info'      // 舊的 key 名稱
         };
         
         this.AUTH_TYPES = {
