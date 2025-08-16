@@ -2246,9 +2246,6 @@
         
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
-            // Load team mappings first
-            await loadTeamMappings();
-            
             // Get project ID from URL
             const urlParams = new URLSearchParams(window.location.search);
             const projectId = urlParams.get('id');
@@ -2259,6 +2256,11 @@
                 showError('未提供專案 ID');
                 return;
             }
+            
+            // IMPORTANT: Load team mappings FIRST before any other data
+            console.log('載入工班映射...');
+            await loadTeamMappings();
+            console.log('工班映射載入完成:', Object.keys(teamNameToIdMap).length, '個工班');
 
             // Initialize perspective switcher for admin
             await initializePerspectiveSwitcher(projectId);
@@ -3887,6 +3889,12 @@
         // Load sites for the project
         async function loadSites() {
             try {
+                // Ensure team mappings are loaded first
+                if (Object.keys(teamNameToIdMap).length === 0) {
+                    console.log('工班映射尚未載入，先載入映射...');
+                    await loadTeamMappings();
+                }
+                
                 // Use opportunity_id to fetch related sites
                 const opportunityId = currentProject.opportunity_id;
                 
@@ -3897,6 +3905,7 @@
                 }
                 
                 console.log('[DEBUG] Loading sites for opportunity:', opportunityId);
+                console.log('[DEBUG] Team mappings loaded:', Object.keys(teamNameToIdMap).length, '個工班');
                 
                 // Show loading state
                 const gridContent = document.getElementById('gridContent');
@@ -3950,26 +3959,32 @@
                 buildings[building].push(site);
                 
                 // 收集工班資訊及統計案場數
-                const teamNameFromSite = site[fieldMapping.team];  // 這可能是工班名稱
-                const teamId = getTeamIdFromName(teamNameFromSite);  // 轉換為工班 ID
-                const teamName = teamIdToNameMap[teamId] || teamNameFromSite;  // 獲取正確的工班名稱
+                const teamNameFromSite = site[fieldMapping.team];  // shift_time__c 一定儲存工班名稱
                 
                 if (teamNameFromSite && teamNameFromSite !== '-') {
-                    // 使用 teamId 作為 key，確保統一使用 ID
-                    if (!teamsMap.has(teamId)) {
-                        teamsMap.set(teamId, {
-                            id: teamId,
-                            name: teamName,
-                            siteCount: 0,
-                            sites: []
-                        });
-                    }
-                    const teamData = teamsMap.get(teamId);
-                    teamData.siteCount++;
-                    teamData.sites.push(site._id);
+                    // 從名稱獲取對應的工班 ID
+                    const teamId = teamNameToIdMap[teamNameFromSite];
                     
-                    // 記錄此棟別有此工班（使用 ID）
-                    buildingTeams[building].add(teamId);
+                    if (!teamId) {
+                        console.warn(`找不到工班 "${teamNameFromSite}" 的 ID 映射，跳過此工班`);
+                        // 在 forEach 中使用 return 只會跳過當前迭代，不是整個函數
+                    } else {
+                        // 使用 teamId 作為唯一的 key
+                        if (!teamsMap.has(teamId)) {
+                            teamsMap.set(teamId, {
+                                id: teamId,
+                                name: teamNameFromSite, // 使用原始名稱
+                                siteCount: 0,
+                                sites: []
+                            });
+                        }
+                        const teamData = teamsMap.get(teamId);
+                        teamData.siteCount++;
+                        teamData.sites.push(site._id);
+                        
+                        // 記錄此棟別有此工班（使用 ID）
+                        buildingTeams[building].add(teamId);
+                    }
                 }
             });
             
