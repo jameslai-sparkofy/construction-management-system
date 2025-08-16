@@ -28,10 +28,11 @@ class UnifiedAuth {
      */
     init() {
         this.migrateLegacyData();
-        // 只在非登入頁面檢查 token 有效性
-        if (!this.isLoginPage()) {
-            this.checkTokenValidity();
-        }
+        // 暫時停用自動 token 驗證，因為會造成問題
+        // TODO: 實現更好的 token 驗證機制
+        // if (!this.isLoginPage()) {
+        //     this.checkTokenValidity();
+        // }
     }
     
     /**
@@ -274,8 +275,8 @@ class UnifiedAuth {
      */
     requireAuth(redirectUrl = 'login-simple.html') {
         if (!this.isAuthenticated()) {
-            // 清除任何無效的認證資料
-            this.clearAuth();
+            // 如果沒有 token，直接跳轉到登入頁面
+            // 不需要清除，因為本來就沒有
             window.location.href = redirectUrl;
             return false;
         }
