@@ -152,40 +152,60 @@
             cursor: not-allowed;
         }
 
-        /* 角色選擇 */
-        .role-selector {
+        /* 工班選擇 */
+        .team-selector {
             margin: 15px 0;
             padding: 15px;
             background: #f5f5f5;
             border-radius: 6px;
         }
 
-        .role-selector label {
+        .team-selector label {
             display: block;
             margin-bottom: 8px;
             font-size: 14px;
             color: #666;
         }
 
-        .role-options {
-            display: flex;
-            gap: 10px;
+        .team-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: white;
         }
 
-        .role-option {
-            flex: 1;
-            padding: 8px;
-            text-align: center;
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
+        /* 工班分頁 */
+        .team-tabs {
+            margin: 10px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .team-tab-buttons {
+            display: flex;
+            gap: 2px;
+            overflow-x: auto;
+        }
+
+        .team-tab-button {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 6px 6px 0 0;
             cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
             transition: all 0.3s;
         }
 
-        .role-option.selected {
-            border-color: #667eea;
-            background: #f3f4ff;
+        .team-tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .team-tab-button:hover:not(.active) {
+            background: #e8eaf6;
         }
 
         /* 專案用戶列表 */
@@ -397,7 +417,7 @@
                         管理員
                     </button>
                     <button class="tab-button" data-source="workers">
-                        工人
+                        師父
                     </button>
                     <button class="tab-button" data-source="owners">
                         業主
@@ -412,17 +432,12 @@
                     </div>
                 </div>
 
-                <!-- 角色選擇（僅工人顯示） -->
-                <div class="role-selector" id="roleSelector" style="display: none;">
-                    <label>選擇角色：</label>
-                    <div class="role-options">
-                        <div class="role-option" data-role="leader">
-                            領班 (Leader)
-                        </div>
-                        <div class="role-option selected" data-role="member">
-                            成員 (Member)
-                        </div>
-                    </div>
+                <!-- 工班選擇（僅師父顯示） -->
+                <div class="team-selector" id="teamSelector" style="display: none;">
+                    <label>選擇工班：</label>
+                    <select id="teamSelect" class="team-select">
+                        <option value="">載入中...</option>
+                    </select>
                 </div>
 
                 <!-- 添加按鈕 -->
@@ -430,16 +445,16 @@
                     添加選中的用戶
                 </button>
 
-                <!-- 新增工人按鈕 -->
-                <button class="create-worker-toggle" id="createWorkerToggle">
-                    + 創建新工人
+                <!-- 新增師父按鈕（僅師父標籤顯示） -->
+                <button class="create-worker-toggle" id="createWorkerToggle" style="display: none;">
+                    + 創建新師父
                 </button>
 
-                <!-- 新增工人表單 -->
+                <!-- 新增師父表單 -->
                 <div class="new-worker-form" id="newWorkerForm">
                     <div class="form-group">
                         <label>姓名：</label>
-                        <input type="text" id="workerName" placeholder="輸入工人姓名">
+                        <input type="text" id="workerName" placeholder="輸入師父姓名">
                     </div>
                     <div class="form-group">
                         <label>電話：</label>
@@ -483,24 +498,19 @@
                         </div>
                     </div>
 
-                    <!-- 工班領班 -->
-                    <div class="user-group">
-                        <div class="group-header">
-                            <span>工班領班 (Leader)</span>
-                            <span class="group-badge" id="leaderCount">0</span>
-                        </div>
-                        <div class="group-users" id="leaderUsers">
-                            <div class="loading">載入中...</div>
-                        </div>
-                    </div>
-
                     <!-- 工班成員 -->
                     <div class="user-group">
                         <div class="group-header">
-                            <span>工班成員 (Member)</span>
-                            <span class="group-badge" id="memberCount">0</span>
+                            <span>工班成員</span>
+                            <span class="group-badge" id="workerCount">0</span>
                         </div>
-                        <div class="group-users" id="memberUsers">
+                        <!-- 工班分頁控制 -->
+                        <div class="team-tabs" id="teamTabs" style="display: none;">
+                            <div class="team-tab-buttons" id="teamTabButtons">
+                                <!-- 動態生成工班分頁 -->
+                            </div>
+                        </div>
+                        <div class="group-users" id="workerUsers">
                             <div class="loading">載入中...</div>
                         </div>
                     </div>
@@ -511,15 +521,17 @@
 
     <script>
         // 配置
-        // 使用與其他頁面相同的 API URL
-        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-api-development.lai-jameslai.workers.dev';
+        // 使用與其他頁面相同的 API URL - 確保使用正確的 development API
+        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
         let projectId = null;
         let currentUserData = null;
         let selectedUser = null;
-        let selectedRole = 'member';
+        let selectedTeam = null;
         let currentSource = 'admins';
         let availableUsersList = [];
         let projectUsersList = [];
+        let teamsList = [];
+        let currentTeamTab = null;
 
         // 初始化
         async function init() {
@@ -539,6 +551,9 @@
             
             // 載入專案資訊
             await loadProjectInfo();
+            
+            // 載入工班列表
+            await loadTeams();
             
             // 載入可用用戶
             await loadAvailableUsers('admins');
@@ -605,6 +620,64 @@
             }
         }
 
+        // 載入工班列表
+        async function loadTeams() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE}/api/v1/teams`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    teamsList = result.data || [];
+                    updateTeamSelector();
+                    updateTeamTabs();
+                }
+            } catch (error) {
+                console.error('Error loading teams:', error);
+            }
+        }
+
+        // 更新工班選擇器
+        function updateTeamSelector() {
+            const select = document.getElementById('teamSelect');
+            select.innerHTML = '<option value="">選擇工班...</option>';
+            
+            teamsList.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team.id;
+                option.textContent = team.name;
+                select.appendChild(option);
+            });
+        }
+
+        // 更新工班分頁
+        function updateTeamTabs() {
+            const tabsContainer = document.getElementById('teamTabButtons');
+            const teamTabsDiv = document.getElementById('teamTabs');
+            
+            if (teamsList.length > 0) {
+                teamTabsDiv.style.display = 'block';
+                tabsContainer.innerHTML = teamsList.map(team => 
+                    `<button class="team-tab-button" data-team-id="${team.id}">
+                        ${team.name}
+                    </button>`
+                ).join('');
+                
+                // 預設選擇第一個工班
+                if (teamsList.length > 0) {
+                    currentTeamTab = teamsList[0].id;
+                    const firstTab = tabsContainer.querySelector(`[data-team-id="${currentTeamTab}"]`);
+                    if (firstTab) firstTab.classList.add('active');
+                }
+            } else {
+                teamTabsDiv.style.display = 'none';
+            }
+        }
+
         // 載入可用用戶
         async function loadAvailableUsers(source) {
             currentSource = source;
@@ -616,6 +689,9 @@
                 if (source === 'owners') {
                     // 如果是業主，可以傳遞 opportunity_id
                     url += `?opportunity_id=${projectId}`;
+                } else if (source === 'workers' && selectedTeam) {
+                    // 如果是師父且選擇了工班，按工班過濾
+                    url += `?team_id=${selectedTeam}`;
                 }
 
                 const token = localStorage.getItem('token');
@@ -679,12 +755,16 @@
             // 啟用添加按鈕
             document.getElementById('addUserButton').disabled = false;
             
-            // 如果是工人，顯示角色選擇
-            const roleSelector = document.getElementById('roleSelector');
+            // 如果是師父，顯示工班選擇
+            const teamSelector = document.getElementById('teamSelector');
             if (currentSource === 'workers') {
-                roleSelector.style.display = 'block';
+                teamSelector.style.display = 'block';
+                // 如果還沒選擇工班，要求選擇
+                if (!selectedTeam) {
+                    document.getElementById('addUserButton').disabled = true;
+                }
             } else {
-                roleSelector.style.display = 'none';
+                teamSelector.style.display = 'none';
             }
         }
 
@@ -712,8 +792,10 @@
             // 更新計數
             document.getElementById('adminCount').textContent = grouped.admins.length;
             document.getElementById('ownerCount').textContent = grouped.owners.length;
-            document.getElementById('leaderCount').textContent = grouped.leaders.length;
-            document.getElementById('memberCount').textContent = grouped.members.length;
+            
+            // 計算工班成員總數（包含所有工班）
+            const totalWorkers = (grouped.teams || []).reduce((total, team) => total + team.members.length, 0);
+            document.getElementById('workerCount').textContent = totalWorkers;
 
             // 顯示管理員
             displayUserGroup('adminUsers', grouped.admins, 'admin');
@@ -721,11 +803,18 @@
             // 顯示業主
             displayUserGroup('ownerUsers', grouped.owners, 'owner');
             
-            // 顯示領班
-            displayUserGroup('leaderUsers', grouped.leaders, 'leader');
-            
-            // 顯示成員
-            displayUserGroup('memberUsers', grouped.members, 'member');
+            // 顯示工班成員（按當前選擇的工班分頁）
+            displayTeamUsers(grouped.teams || []);
+        }
+
+        // 顯示工班用戶
+        function displayTeamUsers(teams) {
+            const currentTeam = teams.find(team => team.team_id === currentTeamTab);
+            if (currentTeam) {
+                displayUserGroup('workerUsers', currentTeam.members, 'worker');
+            } else {
+                document.getElementById('workerUsers').innerHTML = '<div style="text-align: center; color: #999;">請選擇工班</div>';
+            }
         }
 
         // 顯示用戶組
@@ -790,7 +879,8 @@
                 user_id: selectedUser.user_id,
                 user_type: currentSource === 'admins' ? 'admin' : 
                           currentSource === 'workers' ? 'worker' : 'owner',
-                user_role: currentSource === 'workers' ? selectedRole : null,
+                user_role: currentSource === 'workers' ? 'member' : null,
+                team_id: currentSource === 'workers' ? selectedTeam : null,
                 source_table: currentSource === 'admins' ? 'employees_simple' :
                              currentSource === 'workers' ? 'object_50hj8__c' : 'newopportunitycontactsobj',
                 phone: selectedUser.phone || selectedUser.contact_phone,
@@ -943,18 +1033,47 @@
                     document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
                     // 添加 active
                     button.classList.add('active');
+                    
+                    // 顯示/隱藏創建新師父按鈕
+                    const createWorkerBtn = document.getElementById('createWorkerToggle');
+                    if (button.dataset.source === 'workers') {
+                        createWorkerBtn.style.display = 'block';
+                    } else {
+                        createWorkerBtn.style.display = 'none';
+                    }
+                    
                     // 載入對應的用戶
                     loadAvailableUsers(button.dataset.source);
                 });
             });
 
-            // 角色選擇
-            document.querySelectorAll('.role-option').forEach(option => {
-                option.addEventListener('click', () => {
-                    document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
-                    option.classList.add('selected');
-                    selectedRole = option.dataset.role;
-                });
+            // 工班選擇
+            document.getElementById('teamSelect').addEventListener('change', (e) => {
+                selectedTeam = e.target.value;
+                // 重新載入師父列表
+                if (currentSource === 'workers') {
+                    loadAvailableUsers('workers');
+                }
+                // 更新添加按鈕狀態
+                if (selectedUser && selectedTeam) {
+                    document.getElementById('addUserButton').disabled = false;
+                } else {
+                    document.getElementById('addUserButton').disabled = true;
+                }
+            });
+
+            // 工班分頁切換
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('team-tab-button')) {
+                    // 移除所有工班分頁的 active
+                    document.querySelectorAll('.team-tab-button').forEach(tab => tab.classList.remove('active'));
+                    // 添加 active
+                    e.target.classList.add('active');
+                    // 更新當前工班
+                    currentTeamTab = e.target.dataset.teamId;
+                    // 重新顯示該工班的用戶
+                    loadProjectUsers();
+                }
             });
 
             // 添加用戶按鈕

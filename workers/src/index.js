@@ -129,112 +129,140 @@ export default {
       }), { status: 401, headers: corsHeaders });
     }
 
+    // Get project info
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)$/) && method === 'GET') {
+      const projectId = path.split('/')[4];
+      
+      // Return basic project info
+      return new Response(JSON.stringify({
+        id: projectId,
+        name: '育賢二',
+        opportunity_name: '育賢二專案',
+        status: 'active'
+      }), { headers: corsHeaders });
+    }
+
     // Get all users in project with their team contexts
     if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/users$/) && method === 'GET') {
       const projectId = path.split('/')[4];
       
-      // Return users with team-based context permissions
-      return new Response(JSON.stringify([
+      // Sample users data
+      const users = [
         {
           user_id: 'admin_001',
           name: '系統管理員',
           phone: '0900000001',
           user_type: 'admin',
-          // Admin 不屬於工班，但有所有權限
-          team_contexts: [],
-          global_permissions: {
-            can_view: true,
-            can_edit: true,
-            can_manage_members: true,
-            can_view_other_teams: true
-          }
+          user_role: null,
+          can_view_all: 1,
+          can_edit_all: 1,
+          can_add_members: 1,
+          can_add_leaders: 1
         },
         {
           user_id: 'owner_001',
           name: '王業主',
           phone: '0987654321',
           user_type: 'owner',
-          // 業主不屬於工班，但可查看所有
-          team_contexts: [],
-          global_permissions: {
-            can_view: true,
-            can_edit: false,
-            can_manage_members: false,
-            can_view_other_teams: true
-          }
+          user_role: null,
+          can_view_all: 1,
+          can_edit_all: 0,
+          can_add_members: 0,
+          can_add_leaders: 0
         },
         {
           user_id: 'worker_001',
           name: '張師傅',
           phone: '0912345678',
           user_type: 'worker',
-          // 張師傅在不同工班有不同角色
-          team_contexts: [
-            {
-              team_id: 'team_A',
-              team_name: '泥作工班A',
-              role: 'leader',
-              // 在A工班是工班長，有管理權限
-              permissions: {
-                can_view: true,
-                can_edit: true,
-                can_manage_members: true,
-                can_view_other_teams: false
-              }
-            },
-            {
-              team_id: 'team_B',
-              team_name: '水電工班B',
-              role: 'member',
-              // 在B工班是成員，沒有管理權限
-              permissions: {
-                can_view: true,
-                can_edit: true,
-                can_manage_members: false,
-                can_view_other_teams: false
-              }
-            }
-          ]
+          user_role: 'member',
+          team_id: 'team_001',
+          can_view_all: 1,
+          can_edit_all: 1,
+          can_add_members: 1,
+          can_add_leaders: 0
         },
         {
           user_id: 'worker_002',
           name: '李師傅',
           phone: '0955555555',
           user_type: 'worker',
-          team_contexts: [
-            {
-              team_id: 'team_B',
-              team_name: '水電工班B',
-              role: 'leader',
-              permissions: {
-                can_view: true,
-                can_edit: true,
-                can_manage_members: true,
-                can_view_other_teams: false
-              }
-            }
-          ]
+          user_role: 'member',
+          team_id: 'team_002',
+          can_view_all: 1,
+          can_edit_all: 1,
+          can_add_members: 1,
+          can_add_leaders: 0
         },
         {
           user_id: 'worker_003',
           name: '陳師傅',
           phone: '0911111111',
           user_type: 'worker',
-          team_contexts: [
-            {
-              team_id: 'team_A',
-              team_name: '泥作工班A',
-              role: 'member',
-              permissions: {
-                can_view: true,
-                can_edit: true,
-                can_manage_members: false,
-                can_view_other_teams: false
-              }
-            }
-          ]
+          user_role: 'member',
+          team_id: 'team_001',
+          can_view_all: 0,
+          can_edit_all: 0,
+          can_add_members: 0,
+          can_add_leaders: 0
+        },
+        {
+          user_id: 'worker_004',
+          name: '王師傅',
+          phone: '0966666666',
+          user_type: 'worker',
+          user_role: 'member',
+          team_id: 'team_003',
+          can_view_all: 0,
+          can_edit_all: 0,
+          can_add_members: 0,
+          can_add_leaders: 0
         }
-      ]), { headers: corsHeaders });
+      ];
+      
+      // Group users by type and team
+      const workers = users.filter(u => u.user_type === 'worker');
+      const teamGroups = {};
+      
+      // 按工班分組工人
+      workers.forEach(worker => {
+        const teamId = worker.team_id || 'no_team';
+        if (!teamGroups[teamId]) {
+          teamGroups[teamId] = [];
+        }
+        teamGroups[teamId].push(worker);
+      });
+      
+      // 工班名稱對照
+      const teamNames = {
+        'team_001': '泥作工班A',
+        'team_002': '水電工班B', 
+        'team_003': '油漆工班C',
+        'team_004': '木工班D'
+      };
+      
+      // 轉換為前端期望的格式
+      const teams = Object.keys(teamGroups).map(teamId => ({
+        team_id: teamId,
+        team_name: teamId === 'no_team' ? '未分配工班' : (teamNames[teamId] || teamId),
+        members: teamGroups[teamId]
+      }));
+
+      const grouped = {
+        admins: users.filter(u => u.user_type === 'admin'),
+        owners: users.filter(u => u.user_type === 'owner'),
+        teams: teams
+      };
+      
+      // Return in the format expected by frontend
+      return new Response(JSON.stringify({
+        success: true,
+        data: {
+          all: users,
+          grouped: grouped,
+          total: users.length
+        }
+      }), { headers: corsHeaders });
     }
 
     // Get permissions for a specific site (based on team context)
@@ -303,7 +331,8 @@ export default {
     // Handle User Management API routes
     if (path.startsWith('/api/v1/users/available/') || 
         path.match(/^\/api\/v1\/projects\/[^\/]+\/users/) ||
-        path === '/api/v1/workers/create') {
+        path === '/api/v1/workers/create' ||
+        path === '/api/v1/teams') {
       const result = await handleUserManagementAPI(request, env, path);
       return new Response(JSON.stringify(result), { 
         status: result.success ? 200 : 400,

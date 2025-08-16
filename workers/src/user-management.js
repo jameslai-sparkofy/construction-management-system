@@ -6,7 +6,8 @@
 export class UserManagement {
     constructor(env) {
         this.env = env;
-        this.db = env.DB_ENGINEERING || env.DB;
+        this.engineeringDB = env.DB_ENGINEERING || env.DB;
+        this.crmDB = env.DB_CRM;
     }
 
     /**
@@ -14,16 +15,15 @@ export class UserManagement {
      */
     async getAvailableAdmins() {
         try {
-            const result = await this.db.prepare(`
+            const result = await this.crmDB.prepare(`
                 SELECT 
-                    id as user_id,
+                    open_user_id as user_id,
                     name,
-                    phone,
+                    mobile as phone,
                     email,
-                    department,
-                    position
+                    main_department_id as department,
+                    '' as position
                 FROM employees_simple
-                WHERE is_active = 1
                 ORDER BY name
             `).all();
 
@@ -43,19 +43,34 @@ export class UserManagement {
     /**
      * 從工地師父表獲取可選擇的工人
      */
-    async getAvailableWorkers() {
+    async getAvailableWorkers(teamId = null) {
         try {
-            const result = await this.db.prepare(`
+            let query = `
                 SELECT 
                     _id as user_id,
                     name,
-                    owner,
-                    owner__r
+                    phone_number__c as phone,
+                    owner__r,
+                    owner_department as department,
+                    field_D1087__c as team_id
                 FROM object_50hj8__c
                 WHERE is_deleted = 0
                 AND life_status = 'normal'
-                ORDER BY name
-            `).all();
+            `;
+            
+            const params = [];
+            if (teamId) {
+                query += ` AND field_D1087__c = ?`;
+                params.push(teamId);
+            }
+            
+            query += ` ORDER BY name`;
+            
+            const stmt = params.length > 0 ? 
+                this.crmDB.prepare(query).bind(...params) :
+                this.crmDB.prepare(query);
+                
+            const result = await stmt.all();
 
             return {
                 success: true,
@@ -71,33 +86,60 @@ export class UserManagement {
     }
 
     /**
+     * 獲取工班列表
+     */
+    async getAvailableTeams() {
+        try {
+            // 從 CRM 或工程資料庫獲取工班資訊
+            // 這裡暫時使用固定資料，實際應從資料庫查詢
+            const teams = [
+                { id: 'team_001', name: '泥作工班A' },
+                { id: 'team_002', name: '水電工班B' },
+                { id: 'team_003', name: '油漆工班C' },
+                { id: 'team_004', name: '木工班D' }
+            ];
+
+            return {
+                success: true,
+                data: teams
+            };
+        } catch (error) {
+            console.error('Error fetching teams:', error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+
+    /**
      * 從商機聯絡人表獲取可選擇的業主
      */
     async getAvailableOwners(opportunityId) {
         try {
             const query = opportunityId ? 
                 `SELECT 
-                    id as user_id,
-                    contact_name as name,
-                    contact_phone as phone,
-                    contact_email as email,
-                    contact_role as role
+                    _id as user_id,
+                    contact_id__r as name,
+                    '' as phone,
+                    '' as email,
+                    '' as role
                 FROM newopportunitycontactsobj
-                WHERE opportunity_id = ?
-                ORDER BY contact_name` :
+                WHERE new_opportunity_id__relation_ids = ?
+                ORDER BY contact_id__r` :
                 `SELECT 
-                    id as user_id,
-                    contact_name as name,
-                    contact_phone as phone,
-                    contact_email as email,
-                    contact_role as role,
-                    opportunity_id
+                    _id as user_id,
+                    contact_id__r as name,
+                    '' as phone,
+                    '' as email,
+                    '' as role,
+                    new_opportunity_id__relation_ids as opportunity_id
                 FROM newopportunitycontactsobj
-                ORDER BY contact_name`;
+                ORDER BY contact_id__r`;
 
             const stmt = opportunityId ? 
-                this.db.prepare(query).bind(opportunityId) :
-                this.db.prepare(query);
+                this.crmDB.prepare(query).bind(opportunityId) :
+                this.crmDB.prepare(query);
 
             const result = await stmt.all();
 
@@ -134,7 +176,7 @@ export class UserManagement {
             const id = `pu_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
             // 檢查用戶是否已存在
-            const existing = await this.db.prepare(`
+            const existing = await this.engineeringDB.prepare(`
                 SELECT id FROM project_users
                 WHERE project_id = ? AND user_id = ?
             `).bind(projectId, user_id).first();
@@ -161,7 +203,7 @@ export class UserManagement {
             }
 
             // 插入用戶
-            await this.db.prepare(`
+            await this.engineeringDB.prepare(`
                 INSERT INTO project_users (
                     id, project_id, user_id, user_type, user_role,
                     source_table, phone, name, email, password_suffix,
@@ -227,7 +269,7 @@ export class UserManagement {
 
             query += ` ORDER BY pu.user_type, pu.user_role, pu.name`;
 
-            const result = await this.db.prepare(query).bind(...params).all();
+            const result = await this.engineeringDB.prepare(query).bind(...params).all();
 
             // 分組返回
             const users = result.results || [];
@@ -269,7 +311,7 @@ export class UserManagement {
             }
 
             // 獲取目標用戶
-            const targetUser = await this.db.prepare(`
+            const targetUser = await this.engineeringDB.prepare(`
                 SELECT * FROM project_users
                 WHERE project_id = ? AND user_id = ?
             `).bind(projectId, userId).first();
@@ -290,7 +332,7 @@ export class UserManagement {
             }
 
             // 更新角色
-            await this.db.prepare(`
+            await this.engineeringDB.prepare(`
                 UPDATE project_users
                 SET user_role = ?, updated_at = datetime('now')
                 WHERE project_id = ? AND user_id = ?
@@ -326,7 +368,7 @@ export class UserManagement {
             }
 
             // 軟刪除
-            await this.db.prepare(`
+            await this.engineeringDB.prepare(`
                 UPDATE project_users
                 SET is_active = 0, updated_at = datetime('now')
                 WHERE project_id = ? AND user_id = ?
@@ -350,7 +392,7 @@ export class UserManagement {
      */
     async checkUserPermission(projectId, userId, permission) {
         try {
-            const user = await this.db.prepare(`
+            const user = await this.engineeringDB.prepare(`
                 SELECT * FROM user_permissions
                 WHERE project_id = ? AND user_id = ?
             `).bind(projectId, userId).first();
@@ -385,7 +427,7 @@ export class UserManagement {
      */
     async getUserTeamAssignments(projectId, userId) {
         try {
-            const result = await this.db.prepare(`
+            const result = await this.engineeringDB.prepare(`
                 SELECT 
                     team_id,
                     assigned_sites_count,
@@ -425,7 +467,7 @@ export class UserManagement {
             const workerId = `worker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
             // 插入到 object_50hj8__c (工地師父表)
-            await this.db.prepare(`
+            await this.crmDB.prepare(`
                 INSERT INTO object_50hj8__c (
                     _id, name, create_time, life_status, is_deleted
                 ) VALUES (?, ?, ?, 'normal', 0)
@@ -468,10 +510,12 @@ export async function handleUserManagementAPI(request, env, path) {
             case 'admins':
                 return userMgmt.getAvailableAdmins();
             case 'workers':
-                return userMgmt.getAvailableWorkers();
-            case 'owners':
                 const url = new URL(request.url);
-                const opportunityId = url.searchParams.get('opportunity_id');
+                const teamId = url.searchParams.get('team_id');
+                return userMgmt.getAvailableWorkers(teamId);
+            case 'owners':
+                const ownerUrl = new URL(request.url);
+                const opportunityId = ownerUrl.searchParams.get('opportunity_id');
                 return userMgmt.getAvailableOwners(opportunityId);
         }
     }
@@ -507,6 +551,11 @@ export async function handleUserManagementAPI(request, env, path) {
         const projectId = path.split('/')[4];
         const userId = path.split('/')[6];
         return userMgmt.removeUserFromProject(projectId, userId, currentUser);
+    }
+    
+    // 獲取工班列表
+    if (path === '/api/v1/teams' && method === 'GET') {
+        return userMgmt.getAvailableTeams();
     }
     
     // 創建新工人
