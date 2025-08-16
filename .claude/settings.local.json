@@ -215,7 +215,9 @@
       "WebFetch(domain:d8e549a7.construction-management-frontend-dev.pages.dev)",
       "WebFetch(domain:9f73f19d.construction-management-frontend-dev.pages.dev)",
       "WebFetch(domain:7caedc08.construction-management-frontend-dev.pages.dev)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler deploy --config wrangler-final.toml)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" timeout 60 npx wrangler deploy)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

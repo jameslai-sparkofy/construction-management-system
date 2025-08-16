@@ -113,6 +113,20 @@
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        #userManagementBtn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        #userManagementBtn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
         }
 
         .header-actions button:hover {
@@ -1730,6 +1744,12 @@
                     <p id="projectDescription">正在載入專案資料...</p>
                 </div>
                 <div class="header-actions">
+                    <!-- 用戶管理按鈕 (管理員和領班可見) -->
+                    <button id="userManagementBtn" onclick="goToUserManagement()" style="display: none;">
+                        <span>👥</span>
+                        <span>用戶管理</span>
+                    </button>
+                    
                     <!-- 視角切換器 (僅管理員可見) -->
                     <div class="perspective-switcher" id="perspectiveSwitcher">
                         <button class="perspective-btn" onclick="togglePerspectiveDropdown()">
@@ -2360,6 +2380,9 @@
 
             // Initialize perspective switcher for admin
             await initializePerspectiveSwitcher(projectId);
+            
+            // Update user management button visibility
+            updateUserManagementButton();
 
             // Load user data
             await loadUserData();
@@ -5856,6 +5879,33 @@
         // Go back
         function goBack() {
             window.location.href = 'project-list.html';
+        }
+
+        // Go to user management page
+        function goToUserManagement() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+            if (projectId) {
+                window.location.href = `user-management.html?project_id=${projectId}`;
+            }
+        }
+
+        // Show/hide user management button based on user role
+        function updateUserManagementButton() {
+            const userManagementBtn = document.getElementById('userManagementBtn');
+            if (!userManagementBtn) return;
+            
+            // Get current user role
+            const userRole = getCurrentUserRole();
+            const isAdmin = userRole === 'admin';
+            const isLeader = currentUser?.role === 'foreman' || currentUser?.role === 'leader';
+            
+            // Show button for admin or leader
+            if (isAdmin || isLeader) {
+                userManagementBtn.style.display = 'flex';
+            } else {
+                userManagementBtn.style.display = 'none';
+            }
         }
 
         // Show error
