@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案用戶管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .project-info {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* 用戶選擇面板 */
+        .user-source-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 10px;
+            background: #f5f5f5;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .tab-button.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .user-item {
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-item:hover {
+            background: #e8eaf6;
+            transform: translateX(5px);
+        }
+
+        .user-item.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .user-detail {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .add-button {
+            padding: 8px 16px;
+            background: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .add-button:hover {
+            background: #45a049;
+        }
+
+        .add-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 角色選擇 */
+        .role-selector {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .role-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .role-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .role-option {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .role-option.selected {
+            border-color: #667eea;
+            background: #f3f4ff;
+        }
+
+        /* 專案用戶列表 */
+        .users-grid {
+            display: grid;
+            gap: 20px;
+        }
+
+        .user-group {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .group-header {
+            background: #f5f5f5;
+            padding: 12px 15px;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .group-badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .group-users {
+            padding: 15px;
+        }
+
+        .project-user-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .project-user-item:hover {
+            background: #e8eaf6;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-button {
+            padding: 4px 10px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .promote-button {
+            background: #ff9800;
+            color: white;
+        }
+
+        .promote-button:hover {
+            background: #f57c00;
+        }
+
+        .remove-button {
+            background: #f44336;
+            color: white;
+        }
+
+        .remove-button:hover {
+            background: #d32f2f;
+        }
+
+        /* 權限標籤 */
+        .permission-tags {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .permission-tag {
+            padding: 2px 6px;
+            background: #e3f2fd;
+            color: #1976d2;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 新增工人表單 */
+        .new-worker-form {
+            display: none;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+
+        .new-worker-form.show {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .create-worker-toggle {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .create-worker-toggle:hover {
+            background: #5a67d8;
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .user-source-tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>專案用戶管理</h1>
+            <div class="project-info">
+                <div id="projectName">載入中...</div>
+                <div id="currentUser" style="margin-top: 5px; font-size: 12px;"></div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- 左側：添加用戶面板 -->
+            <div class="panel">
+                <h2 class="panel-title">添加用戶到專案</h2>
+                
+                <!-- 用戶來源選擇 -->
+                <div class="user-source-tabs">
+                    <button class="tab-button active" data-source="admins">
+                        管理員
+                    </button>
+                    <button class="tab-button" data-source="workers">
+                        工人
+                    </button>
+                    <button class="tab-button" data-source="owners">
+                        業主
+                    </button>
+                </div>
+
+                <!-- 可選用戶列表 -->
+                <div class="user-list" id="availableUsers">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        載入中...
+                    </div>
+                </div>
+
+                <!-- 角色選擇（僅工人顯示） -->
+                <div class="role-selector" id="roleSelector" style="display: none;">
+                    <label>選擇角色：</label>
+                    <div class="role-options">
+                        <div class="role-option" data-role="leader">
+                            領班 (Leader)
+                        </div>
+                        <div class="role-option selected" data-role="member">
+                            成員 (Member)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 添加按鈕 -->
+                <button class="add-button" id="addUserButton" disabled>
+                    添加選中的用戶
+                </button>
+
+                <!-- 新增工人按鈕 -->
+                <button class="create-worker-toggle" id="createWorkerToggle">
+                    + 創建新工人
+                </button>
+
+                <!-- 新增工人表單 -->
+                <div class="new-worker-form" id="newWorkerForm">
+                    <div class="form-group">
+                        <label>姓名：</label>
+                        <input type="text" id="workerName" placeholder="輸入工人姓名">
+                    </div>
+                    <div class="form-group">
+                        <label>電話：</label>
+                        <input type="tel" id="workerPhone" placeholder="輸入手機號碼">
+                    </div>
+                    <div class="form-group">
+                        <label>Email（選填）：</label>
+                        <input type="email" id="workerEmail" placeholder="輸入電子郵件">
+                    </div>
+                    <div class="form-actions">
+                        <button class="action-button" onclick="cancelNewWorker()">取消</button>
+                        <button class="add-button" onclick="createNewWorker()">創建</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右側：專案用戶列表 -->
+            <div class="panel">
+                <h2 class="panel-title">專案成員列表</h2>
+                
+                <div class="users-grid" id="projectUsers">
+                    <!-- 管理員 -->
+                    <div class="user-group">
+                        <div class="group-header">
+                            <span>管理員 (Admin)</span>
+                            <span class="group-badge" id="adminCount">0</span>
+                        </div>
+                        <div class="group-users" id="adminUsers">
+                            <div class="loading">載入中...</div>
+                        </div>
+                    </div>
+
+                    <!-- 業主 -->
+                    <div class="user-group">
+                        <div class="group-header">
+                            <span>業主 (Owner)</span>
+                            <span class="group-badge" id="ownerCount">0</span>
+                        </div>
+                        <div class="group-users" id="ownerUsers">
+                            <div class="loading">載入中...</div>
+                        </div>
+                    </div>
+
+                    <!-- 工班領班 -->
+                    <div class="user-group">
+                        <div class="group-header">
+                            <span>工班領班 (Leader)</span>
+                            <span class="group-badge" id="leaderCount">0</span>
+                        </div>
+                        <div class="group-users" id="leaderUsers">
+                            <div class="loading">載入中...</div>
+                        </div>
+                    </div>
+
+                    <!-- 工班成員 -->
+                    <div class="user-group">
+                        <div class="group-header">
+                            <span>工班成員 (Member)</span>
+                            <span class="group-badge" id="memberCount">0</span>
+                        </div>
+                        <div class="group-users" id="memberUsers">
+                            <div class="loading">載入中...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置
+        const API_BASE = 'https://construction-api-unified.lai-jameslai.workers.dev';
+        let projectId = null;
+        let currentUserData = null;
+        let selectedUser = null;
+        let selectedRole = 'member';
+        let currentSource = 'admins';
+        let availableUsersList = [];
+        let projectUsersList = [];
+
+        // 初始化
+        async function init() {
+            // 從 URL 獲取專案 ID
+            const urlParams = new URLSearchParams(window.location.search);
+            projectId = urlParams.get('project_id');
+            
+            if (!projectId) {
+                alert('缺少專案 ID');
+                return;
+            }
+
+            // 獲取當前用戶
+            await getCurrentUser();
+            
+            // 載入專案資訊
+            await loadProjectInfo();
+            
+            // 載入可用用戶
+            await loadAvailableUsers('admins');
+            
+            // 載入專案用戶
+            await loadProjectUsers();
+            
+            // 綁定事件
+            bindEvents();
+        }
+
+        // 獲取當前用戶
+        async function getCurrentUser() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentUserData = await response.json();
+                    document.getElementById('currentUser').textContent = 
+                        `當前用戶：${currentUserData.name} (${currentUserData.user_type || currentUserData.role})`;
+                }
+            } catch (error) {
+                console.error('Error fetching current user:', error);
+            }
+        }
+
+        // 載入專案資訊
+        async function loadProjectInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const project = await response.json();
+                    document.getElementById('projectName').textContent = 
+                        `專案：${project.name || project.opportunity_name || '未命名專案'}`;
+                }
+            } catch (error) {
+                console.error('Error loading project:', error);
+            }
+        }
+
+        // 載入可用用戶
+        async function loadAvailableUsers(source) {
+            currentSource = source;
+            const listElement = document.getElementById('availableUsers');
+            listElement.innerHTML = '<div class="loading"><div class="spinner"></div>載入中...</div>';
+
+            try {
+                let url = `${API_BASE}/api/v1/users/available/${source}`;
+                if (source === 'owners') {
+                    // 如果是業主，可以傳遞 opportunity_id
+                    url += `?opportunity_id=${projectId}`;
+                }
+
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    availableUsersList = result.data || [];
+                    displayAvailableUsers(availableUsersList);
+                }
+            } catch (error) {
+                console.error('Error loading available users:', error);
+                listElement.innerHTML = '<div style="color: red;">載入失敗</div>';
+            }
+        }
+
+        // 顯示可用用戶
+        function displayAvailableUsers(users) {
+            const listElement = document.getElementById('availableUsers');
+            
+            if (users.length === 0) {
+                listElement.innerHTML = '<div style="text-align: center; color: #999;">沒有可用的用戶</div>';
+                return;
+            }
+
+            listElement.innerHTML = users.map(user => `
+                <div class="user-item" data-user-id="${user.user_id}">
+                    <div class="user-info">
+                        <div class="user-name">${user.name || '未命名'}</div>
+                        <div class="user-detail">
+                            ${user.phone || user.email || user.department || ''}
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // 綁定選擇事件
+            listElement.querySelectorAll('.user-item').forEach(item => {
+                item.addEventListener('click', () => selectUser(item));
+            });
+        }
+
+        // 選擇用戶
+        function selectUser(element) {
+            // 移除其他選中狀態
+            document.querySelectorAll('.user-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            // 添加選中狀態
+            element.classList.add('selected');
+            
+            // 記錄選中的用戶
+            const userId = element.dataset.userId;
+            selectedUser = availableUsersList.find(u => u.user_id === userId);
+            
+            // 啟用添加按鈕
+            document.getElementById('addUserButton').disabled = false;
+            
+            // 如果是工人，顯示角色選擇
+            const roleSelector = document.getElementById('roleSelector');
+            if (currentSource === 'workers') {
+                roleSelector.style.display = 'block';
+            } else {
+                roleSelector.style.display = 'none';
+            }
+        }
+
+        // 載入專案用戶
+        async function loadProjectUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    projectUsersList = result.data.all || [];
+                    displayProjectUsers(result.data.grouped);
+                }
+            } catch (error) {
+                console.error('Error loading project users:', error);
+            }
+        }
+
+        // 顯示專案用戶
+        function displayProjectUsers(grouped) {
+            // 更新計數
+            document.getElementById('adminCount').textContent = grouped.admins.length;
+            document.getElementById('ownerCount').textContent = grouped.owners.length;
+            document.getElementById('leaderCount').textContent = grouped.leaders.length;
+            document.getElementById('memberCount').textContent = grouped.members.length;
+
+            // 顯示管理員
+            displayUserGroup('adminUsers', grouped.admins, 'admin');
+            
+            // 顯示業主
+            displayUserGroup('ownerUsers', grouped.owners, 'owner');
+            
+            // 顯示領班
+            displayUserGroup('leaderUsers', grouped.leaders, 'leader');
+            
+            // 顯示成員
+            displayUserGroup('memberUsers', grouped.members, 'member');
+        }
+
+        // 顯示用戶組
+        function displayUserGroup(elementId, users, type) {
+            const element = document.getElementById(elementId);
+            
+            if (users.length === 0) {
+                element.innerHTML = '<div style="text-align: center; color: #999;">暫無成員</div>';
+                return;
+            }
+
+            element.innerHTML = users.map(user => {
+                let actions = '';
+                
+                // 根據當前用戶權限顯示操作按鈕
+                if (currentUserData) {
+                    if (type === 'member' && (currentUserData.user_type === 'admin' || currentUserData.user_role === 'leader')) {
+                        // 可以提升成員為領班
+                        actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為領班</button>`;
+                    }
+                    
+                    if (currentUserData.user_type === 'admin') {
+                        // 管理員可以移除用戶
+                        actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
+                    }
+                }
+
+                // 權限標籤
+                let permissions = [];
+                if (user.can_view_all) permissions.push('查看所有');
+                if (user.can_edit_all) permissions.push('編輯所有');
+                if (user.can_add_members) permissions.push('添加成員');
+                if (user.can_add_leaders) permissions.push('添加領班');
+
+                return `
+                    <div class="project-user-item">
+                        <div>
+                            <div class="user-name">${user.name}</div>
+                            <div class="user-detail">${user.phone || ''}</div>
+                            ${permissions.length > 0 ? `
+                                <div class="permission-tags">
+                                    ${permissions.map(p => `<span class="permission-tag">${p}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div class="user-actions">
+                            ${actions}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 添加用戶到專案
+        async function addUserToProject() {
+            if (!selectedUser) {
+                alert('請選擇一個用戶');
+                return;
+            }
+
+            const userInfo = {
+                user_id: selectedUser.user_id,
+                user_type: currentSource === 'admins' ? 'admin' : 
+                          currentSource === 'workers' ? 'worker' : 'owner',
+                user_role: currentSource === 'workers' ? selectedRole : null,
+                source_table: currentSource === 'admins' ? 'employees_simple' :
+                             currentSource === 'workers' ? 'object_50hj8__c' : 'newopportunitycontactsobj',
+                phone: selectedUser.phone || selectedUser.contact_phone,
+                name: selectedUser.name || selectedUser.contact_name,
+                email: selectedUser.email || selectedUser.contact_email
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userInfo)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('用戶添加成功！');
+                    // 重新載入用戶列表
+                    await loadProjectUsers();
+                    // 清除選擇
+                    selectedUser = null;
+                    document.querySelectorAll('.user-item').forEach(item => {
+                        item.classList.remove('selected');
+                    });
+                    document.getElementById('addUserButton').disabled = true;
+                } else {
+                    alert('添加失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('Error adding user:', error);
+                alert('添加失敗');
+            }
+        }
+
+        // 提升用戶為領班
+        async function promoteUser(userId) {
+            if (!confirm('確定要提升此成員為領班嗎？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: 'leader' })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('提升成功！');
+                    await loadProjectUsers();
+                } else {
+                    alert('操作失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('Error promoting user:', error);
+                alert('操作失敗');
+            }
+        }
+
+        // 移除用戶
+        async function removeUser(userId) {
+            if (!confirm('確定要移除此用戶嗎？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('移除成功！');
+                    await loadProjectUsers();
+                } else {
+                    alert('操作失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('Error removing user:', error);
+                alert('操作失敗');
+            }
+        }
+
+        // 創建新工人
+        async function createNewWorker() {
+            const name = document.getElementById('workerName').value.trim();
+            const phone = document.getElementById('workerPhone').value.trim();
+            const email = document.getElementById('workerEmail').value.trim();
+
+            if (!name || !phone) {
+                alert('請填寫姓名和電話');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/workers/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, phone, email })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('工人創建成功！');
+                    // 隱藏表單
+                    document.getElementById('newWorkerForm').classList.remove('show');
+                    // 清空表單
+                    document.getElementById('workerName').value = '';
+                    document.getElementById('workerPhone').value = '';
+                    document.getElementById('workerEmail').value = '';
+                    // 重新載入工人列表
+                    await loadAvailableUsers('workers');
+                } else {
+                    alert('創建失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('Error creating worker:', error);
+                alert('創建失敗');
+            }
+        }
+
+        // 取消創建新工人
+        function cancelNewWorker() {
+            document.getElementById('newWorkerForm').classList.remove('show');
+        }
+
+        // 綁定事件
+        function bindEvents() {
+            // Tab 切換
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    // 移除所有 active
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    // 添加 active
+                    button.classList.add('active');
+                    // 載入對應的用戶
+                    loadAvailableUsers(button.dataset.source);
+                });
+            });
+
+            // 角色選擇
+            document.querySelectorAll('.role-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    document.querySelectorAll('.role-option').forEach(o => o.classList.remove('selected'));
+                    option.classList.add('selected');
+                    selectedRole = option.dataset.role;
+                });
+            });
+
+            // 添加用戶按鈕
+            document.getElementById('addUserButton').addEventListener('click', addUserToProject);
+
+            // 創建新工人按鈕
+            document.getElementById('createWorkerToggle').addEventListener('click', () => {
+                const form = document.getElementById('newWorkerForm');
+                form.classList.toggle('show');
+            });
+        }
+
+        // 頁面載入時初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
