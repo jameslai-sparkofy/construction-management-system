@@ -78,15 +78,32 @@ class UnifiedAuth {
             });
             
             if (response.status === 401) {
-                this.logout();
+                // 只清除 token，不要立即跳轉
+                this.clearAuth();
                 return false;
             }
             
             return response.ok;
         } catch (error) {
             console.warn('Token validation failed:', error);
+            // 網路錯誤時不清除 token，可能只是暫時的連線問題
             return false;
         }
+    }
+    
+    /**
+     * 清除認證資料（不跳轉）
+     */
+    clearAuth() {
+        // 清除所有認證相關資料
+        Object.values(this.STORAGE_KEYS).forEach(key => {
+            localStorage.removeItem(key);
+        });
+        
+        // 清除可能存在的舊 Clerk token
+        localStorage.removeItem('clerk-db-jwt');
+        localStorage.removeItem('clerk_token');
+        localStorage.removeItem('clerk_user');
     }
     
     /**
@@ -257,6 +274,8 @@ class UnifiedAuth {
      */
     requireAuth(redirectUrl = 'login-simple.html') {
         if (!this.isAuthenticated()) {
+            // 清除任何無效的認證資料
+            this.clearAuth();
             window.location.href = redirectUrl;
             return false;
         }
@@ -267,7 +286,7 @@ class UnifiedAuth {
      * 處理 API 401 錯誤
      */
     handle401() {
-        this.logout();
+        this.clearAuth();
         window.location.href = 'login-simple.html';
     }
     
