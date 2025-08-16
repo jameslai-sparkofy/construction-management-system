@@ -2021,11 +2021,6 @@
                 <div class="team-members-list" id="teamMembersList">
                     <!-- Members will be loaded here -->
                 </div>
-                <div style="margin-top: 1rem;">
-                    <button class="add-member-btn" onclick="showAddMemberForm()" style="width: 100%; padding: 0.75rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 8px; font-size: 1rem; cursor: pointer;">
-                        + 新增成員
-                    </button>
-                </div>
             </div>
         </div>
     </div>
@@ -2687,8 +2682,8 @@
             }, 250);
         });
         
-        // Show team management modal
-        function showTeamModal(team) {
+        // Show team management modal with unified interface
+        async function showTeamModal(team) {
             // Check if data is ready
             if (isDataLoading || !window.currentProject) {
                 alert('數據載入中，請稍候...');
@@ -2704,69 +2699,155 @@
             title.innerHTML = `${team.name} ${siteInfo} - 成員管理`;
             window.currentTeam = team;
             
-            // Display team info summary
+            // Get current user permissions
+            const currentUserRole = getCurrentUserRole();
+            const canEdit = currentUserRole === 'admin' || 
+                           (currentUserRole === 'team_leader' && isCurrentUserTeamLeader(team));
+            
+            // Load all workers and team members
+            const leaders = team.leaders || [];
+            const members = team.members || [];
+            const currentMembers = [...leaders.map(l => ({...l, role: 'team_leader'})), ...members];
+            const currentMemberIds = currentMembers.map(m => m.userId || m.id);
+            
+            // Load available workers from CRM
+            let availableWorkers = [];
+            try {
+                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c?limit=100`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const allWorkers = data.results || [];
+                    
+                    // Filter workers: those who can join this team but haven't
+                    availableWorkers = allWorkers.filter(worker => {
+                        // Check if worker is not in current team
+                        const workerId = worker._id;
+                        const isInCurrentTeam = currentMemberIds.includes(workerId);
+                        
+                        // Check if worker has this team in their team list
+                        const workerTeams = worker.shift_type_multi_select__c || [];
+                        const belongsToTeam = workerTeams.includes(team.id);
+                        
+                        // Available if: not in current team AND (has no teams OR already belongs to this team)
+                        return !isInCurrentTeam && (workerTeams.length === 0 || belongsToTeam);
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load available workers:', error);
+            }
+            
+            // Build the unified interface
             membersList.innerHTML = `
-                <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <div style="background: #f3f4f6; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="color: #6b7280;">案場數量：</span>
                         <span style="font-weight: 600;">${team.siteCount || 0} 個</span>
                     </div>
                     <div style="display: flex; justify-content: space-between;">
                         <span style="color: #6b7280;">成員數量：</span>
-                        <span style="font-weight: 600;">${team.memberCount || 0} 人</span>
+                        <span style="font-weight: 600;">${currentMembers.length} 人</span>
                     </div>
                 </div>
+                
+                <!-- Current Members Section -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
+                        現有成員 (${currentMembers.length})
+                    </h3>
+                    <div id="currentMembersList">
+                        ${currentMembers.length === 0 ? 
+                            '<div style="text-align: center; color: #9ca3af; padding: 1rem; background: #f9fafb; border-radius: 8px;">尚無成員</div>' : 
+                            currentMembers.map(member => `
+                                <div class="team-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 0.5rem; background: white;">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <span style="font-weight: 600; color: #1f2937;">${member.name || '未知'}</span>
+                                            ${member.role === 'team_leader' ? 
+                                                '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">負責人</span>' :
+                                                '<span style="background: #3b82f6; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">成員</span>'
+                                            }
+                                        </div>
+                                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">${member.phone}</div>
+                                    </div>
+                                    ${canEdit ? `
+                                        <button onclick="removeMemberFromTeam('${member.userId || member.id}', '${member.name}')" 
+                                                style="padding: 0.5rem; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;" 
+                                                title="移除">
+                                            ✕
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+                
+                <!-- Available Members Section -->
+                <div style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
+                        可加入成員 (${availableWorkers.length})
+                    </h3>
+                    <div id="availableMembersList" style="max-height: 200px; overflow-y: auto;">
+                        ${availableWorkers.length === 0 ? 
+                            '<div style="text-align: center; color: #9ca3af; padding: 1rem; background: #f9fafb; border-radius: 8px;">沒有可加入的成員</div>' :
+                            availableWorkers.map(worker => `
+                                <div class="available-member-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 0.5rem; background: #f9fafb;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; color: #1f2937;">${worker.name || '未知'}</div>
+                                        <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">${worker.phone_number__c || ''}</div>
+                                    </div>
+                                    ${canEdit ? `
+                                        <button onclick="addExistingMemberToTeam('${worker._id}', '${worker.name}')" 
+                                                style="padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.875rem;">
+                                            加入
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                </div>
+                
+                <!-- Add New Member Section -->
+                ${canEdit ? `
+                <div style="border-top: 2px solid #e5e7eb; padding-top: 1.5rem;">
+                    <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: #374151;">
+                        新增成員
+                    </h3>
+                    <div style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">姓名</label>
+                            <input type="text" id="quickAddName" placeholder="輸入姓名" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">電話</label>
+                            <input type="tel" id="quickAddPhone" placeholder="0912345678" 
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">簡稱</label>
+                            <input type="text" id="quickAddAbbr" placeholder="自動" maxlength="2"
+                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                        </div>
+                        <button onclick="quickAddMember()" 
+                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                            快速新增
+                        </button>
+                    </div>
+                    <div id="quickAddMessage" style="margin-top: 0.5rem; font-size: 0.875rem;"></div>
+                </div>
+                ` : ''}
             `;
             
-            // Get current user permissions
-            const currentUserRole = getCurrentUserRole();
-            const canEdit = currentUserRole === 'admin' || 
-                           (currentUserRole === 'team_leader' && isCurrentUserTeamLeader(team));
-            
-            // Display team members (leaders first, then members)
-            const leaders = team.leaders || [];
-            const members = team.members || [];
-            const allMembers = [...leaders.map(l => ({...l, role: 'team_leader'})), ...members];
-            
-            if (allMembers.length === 0) {
-                membersList.innerHTML += '<div style="text-align: center; color: #9ca3af; padding: 2rem;">尚無成員</div>';
-            } else {
-                allMembers.forEach(member => {
-                    const memberItem = document.createElement('div');
-                    memberItem.className = 'team-member-item';
-                    memberItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 1rem; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 0.5rem;';
-                    
-                    // Role badge color and text
-                    const roleBadge = member.role === 'team_leader' 
-                        ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">負責人</span>'
-                        : '<span style="background: #3b82f6; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-left: 0.5rem;">成員</span>';
-                    
-                    memberItem.innerHTML = `
-                        <div class="team-member-info" style="flex: 1;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="font-weight: 600; color: #1f2937;">${member.name || member.abbreviation || '未知'}</span>
-                                ${roleBadge}
-                            </div>
-                            <div style="color: #6b7280; font-size: 0.875rem; margin-top: 0.25rem;">${member.phone}</div>
-                            ${member.abbreviation ? `<div style="color: #9ca3af; font-size: 0.75rem;">簡稱: ${member.abbreviation}</div>` : ''}
-                        </div>
-                        ${canEdit ? `
-                        <div class="team-member-actions" style="display: flex; gap: 0.5rem;">
-                            <button class="team-action-btn" onclick="editMember('${member.userId || member.id}', ${JSON.stringify(member).replace(/"/g, '&quot;')})" 
-                                    style="padding: 0.5rem; background: #f3f4f6; border: none; border-radius: 4px; cursor: pointer;" 
-                                    title="編輯">
-                                ✏️
-                            </button>
-                            <button class="team-action-btn delete" onclick="deleteMember('${member.userId || member.id}', '${member.name}')" 
-                                    style="padding: 0.5rem; background: #fee2e2; border: none; border-radius: 4px; cursor: pointer;" 
-                                    title="刪除">
-                                🗑️
-                            </button>
-                        </div>
-                        ` : ''}
-                    `;
-                    membersList.appendChild(memberItem);
-                });
+            // Setup event listeners for quick add
+            if (canEdit) {
+                setupQuickAddListeners();
             }
             
             modal.classList.add('active');
@@ -2775,6 +2856,198 @@
         // Close team modal
         function closeTeamModal() {
             document.getElementById('teamModal').classList.remove('active');
+        }
+        
+        // Setup quick add listeners
+        function setupQuickAddListeners() {
+            const nameInput = document.getElementById('quickAddName');
+            const phoneInput = document.getElementById('quickAddPhone');
+            const abbrInput = document.getElementById('quickAddAbbr');
+            
+            if (nameInput) {
+                nameInput.addEventListener('input', () => {
+                    // Auto-fill abbreviation
+                    if (nameInput.value && !abbrInput.value) {
+                        abbrInput.value = nameInput.value.slice(-1);
+                    }
+                });
+            }
+            
+            if (phoneInput) {
+                phoneInput.addEventListener('input', () => {
+                    // Auto-generate password (last 3 digits)
+                    if (phoneInput.value.length >= 3) {
+                        phoneInput.setAttribute('data-password', phoneInput.value.slice(-3));
+                    }
+                });
+            }
+        }
+        
+        // Quick add member
+        async function quickAddMember() {
+            const name = document.getElementById('quickAddName').value.trim();
+            const phone = document.getElementById('quickAddPhone').value.trim();
+            const abbreviation = document.getElementById('quickAddAbbr').value.trim() || name.slice(-1);
+            const messageDiv = document.getElementById('quickAddMessage');
+            
+            if (!name || !phone) {
+                messageDiv.innerHTML = '<span style="color: #dc2626;">請填寫姓名和電話</span>';
+                return;
+            }
+            
+            // Validate phone format
+            if (!/^09\d{8}$/.test(phone)) {
+                messageDiv.innerHTML = '<span style="color: #dc2626;">請輸入正確的手機號碼格式</span>';
+                return;
+            }
+            
+            messageDiv.innerHTML = '<span style="color: #6b7280;">新增中...</span>';
+            
+            try {
+                // Generate MongoDB ObjectId
+                const objectId = generateObjectId();
+                
+                // Create worker in CRM
+                const workerData = {
+                    _id: objectId,
+                    name: name,
+                    phone_number__c: phone,
+                    account__c: phone,
+                    password__c: phone.slice(-3),
+                    abbreviation__c: abbreviation,
+                    shift_type_multi_select__c: [window.currentTeam.id],
+                    record_type: 'default__c',
+                    life_status: 'normal'
+                };
+                
+                const response = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(workerData)
+                });
+                
+                if (response.ok) {
+                    messageDiv.innerHTML = '<span style="color: #10b981;">✓ 成員新增成功！</span>';
+                    
+                    // Clear inputs
+                    document.getElementById('quickAddName').value = '';
+                    document.getElementById('quickAddPhone').value = '';
+                    document.getElementById('quickAddAbbr').value = '';
+                    
+                    // Refresh the modal after 1 second
+                    setTimeout(() => {
+                        showTeamModal(window.currentTeam);
+                    }, 1000);
+                } else {
+                    const error = await response.text();
+                    console.error('Failed to create worker:', error);
+                    messageDiv.innerHTML = '<span style="color: #dc2626;">新增失敗，請稍後再試</span>';
+                }
+            } catch (error) {
+                console.error('Error adding member:', error);
+                messageDiv.innerHTML = '<span style="color: #dc2626;">新增失敗：' + error.message + '</span>';
+            }
+        }
+        
+        // Add existing member to team
+        async function addExistingMemberToTeam(workerId, workerName) {
+            if (!confirm(`確定要將 ${workerName} 加入到 ${window.currentTeam.name}？`)) {
+                return;
+            }
+            
+            try {
+                // Get current worker data
+                const getResponse = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c/${workerId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (!getResponse.ok) {
+                    throw new Error('無法取得成員資料');
+                }
+                
+                const workerData = await getResponse.json();
+                const currentTeams = workerData.shift_type_multi_select__c || [];
+                
+                // Add team ID if not already present
+                if (!currentTeams.includes(window.currentTeam.id)) {
+                    currentTeams.push(window.currentTeam.id);
+                }
+                
+                // Update worker with new team
+                const updateResponse = await fetch(`${API_BASE_URL}/crud/object_50HJ8__c/${workerId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        shift_type_multi_select__c: currentTeams
+                    })
+                });
+                
+                if (updateResponse.ok) {
+                    alert(`${workerName} 已成功加入工班！`);
+                    showTeamModal(window.currentTeam); // Refresh modal
+                } else {
+                    throw new Error('更新失敗');
+                }
+            } catch (error) {
+                console.error('Error adding member to team:', error);
+                alert('加入失敗：' + error.message);
+            }
+        }
+        
+        // Remove member from team
+        async function removeMemberFromTeam(memberId, memberName) {
+            if (!confirm(`確定要將 ${memberName} 從 ${window.currentTeam.name} 移除？`)) {
+                return;
+            }
+            
+            try {
+                // Get current worker data
+                const getResponse = await fetch(`${API_BASE_URL}/rest/object_50HJ8__c/${memberId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`
+                    }
+                });
+                
+                if (!getResponse.ok) {
+                    throw new Error('無法取得成員資料');
+                }
+                
+                const workerData = await getResponse.json();
+                let currentTeams = workerData.shift_type_multi_select__c || [];
+                
+                // Remove team ID
+                currentTeams = currentTeams.filter(id => id !== window.currentTeam.id);
+                
+                // Update worker
+                const updateResponse = await fetch(`${API_BASE_URL}/crud/object_50HJ8__c/${memberId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${API_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        shift_type_multi_select__c: currentTeams
+                    })
+                });
+                
+                if (updateResponse.ok) {
+                    alert(`${memberName} 已從工班移除`);
+                    showTeamModal(window.currentTeam); // Refresh modal
+                } else {
+                    throw new Error('更新失敗');
+                }
+            } catch (error) {
+                console.error('Error removing member from team:', error);
+                alert('移除失敗：' + error.message);
+            }
         }
         
         // Get current user role (mock for now, should be from session)
