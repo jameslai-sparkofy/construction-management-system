@@ -509,7 +509,7 @@
 
     <script>
         // 配置
-        const API_BASE = 'https://construction-api-unified.lai-jameslai.workers.dev';
+        const API_BASE = 'https://construction-management-api.lai-jameslai.workers.dev';
         let projectId = null;
         let currentUserData = null;
         let selectedUser = null;
@@ -526,6 +526,8 @@
             
             if (!projectId) {
                 alert('缺少專案 ID');
+                // 返回專案列表而不是無限循環
+                window.location.href = 'project-list.html';
                 return;
             }
 
@@ -549,7 +551,7 @@
         async function getCurrentUser() {
             const token = localStorage.getItem('token');
             if (!token) {
-                window.location.href = '/login.html';
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -564,9 +566,14 @@
                     currentUserData = await response.json();
                     document.getElementById('currentUser').textContent = 
                         `當前用戶：${currentUserData.name} (${currentUserData.user_type || currentUserData.role})`;
+                } else if (response.status === 401) {
+                    // Token 無效，返回登入頁
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
                 }
             } catch (error) {
                 console.error('Error fetching current user:', error);
+                // 不要在這裡跳轉，讓用戶看到錯誤
             }
         }
 

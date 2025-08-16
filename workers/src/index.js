@@ -49,7 +49,7 @@ export default {
         // Test users (password is last 3 digits of phone)
         const testUsers = {
           '0900000001': { id: 'admin_001', name: '系統管理員', role: 'admin' },
-          '0912345678': { id: 'foreman_001', name: '張工班長', role: 'foreman' },
+          '0912345678': { id: 'admin_002', name: '張管理員', role: 'admin' },
           '0987654321': { id: 'owner_001', name: '王業主', role: 'owner' },
           '0955555555': { id: 'worker_001', name: '李師傅', role: 'worker' }
         };
