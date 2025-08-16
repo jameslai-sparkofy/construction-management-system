@@ -3,6 +3,8 @@
  * Simple authentication without Clerk
  */
 
+import { handleUserManagementAPI } from './user-management.js';
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -296,6 +298,17 @@ export default {
         message: 'Permission created',
         data: body
       }), { headers: corsHeaders });
+    }
+
+    // Handle User Management API routes
+    if (path.startsWith('/api/v1/users/available/') || 
+        path.match(/^\/api\/v1\/projects\/[^\/]+\/users/) ||
+        path === '/api/v1/workers/create') {
+      const result = await handleUserManagementAPI(request, env, path);
+      return new Response(JSON.stringify(result), { 
+        status: result.success ? 200 : 400,
+        headers: corsHeaders 
+      });
     }
 
     // Default 404

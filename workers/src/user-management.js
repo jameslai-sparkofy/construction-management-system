@@ -523,11 +523,38 @@ export async function handleUserManagementAPI(request, env, path) {
 
 // 輔助函數：獲取當前用戶
 async function getCurrentUser(request, env) {
-    // TODO: 從 session 或 token 獲取當前用戶
-    // 這裡需要實現實際的認證邏輯
-    return {
-        user_id: 'current_user',
-        user_type: 'admin',
-        user_role: null
-    };
+    const authHeader = request.headers.get('Authorization');
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return null;
+    }
+    
+    const token = authHeader.substring(7);
+    
+    // Check session in KV
+    if (env.SESSIONS) {
+        const session = await env.SESSIONS.get(token);
+        if (session) {
+            const user = JSON.parse(session);
+            return {
+                user_id: user.id,
+                user_type: user.role || 'member',
+                user_role: user.role === 'foreman' ? 'leader' : 
+                          user.role === 'worker' ? 'member' : null,
+                name: user.name
+            };
+        }
+    }
+    
+    // Fallback for development
+    if (token === 'dev-token-for-testing') {
+        return {
+            user_id: 'admin_001',
+            user_type: 'admin',
+            user_role: null,
+            name: '系統管理員'
+        };
+    }
+    
+    return null;
 }
