@@ -182,6 +182,7 @@ class UnifiedAuth {
      * 儲存認證資訊
      */
     saveAuth(token, user, authType = this.AUTH_TYPES.SIMPLE) {
+        // 統一使用 localStorage 儲存
         localStorage.setItem(this.STORAGE_KEYS.TOKEN, token);
         localStorage.setItem(this.STORAGE_KEYS.USER, JSON.stringify(user));
         localStorage.setItem(this.STORAGE_KEYS.AUTH_TYPE, authType);

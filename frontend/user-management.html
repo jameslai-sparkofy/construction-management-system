@@ -552,8 +552,11 @@
 
         // 獲取當前用戶
         async function getCurrentUser() {
+            // 從 localStorage 讀取 token（統一使用 localStorage）
             const token = localStorage.getItem('token');
+            
             if (!token) {
+                console.error('No token found in localStorage');
                 window.location.href = 'login.html';
                 return;
             }
@@ -569,6 +572,8 @@
                     currentUserData = await response.json();
                     document.getElementById('currentUser').textContent = 
                         `當前用戶：${currentUserData.name} (${currentUserData.user_type || currentUserData.role})`;
+                    
+                    // Token 有效，繼續使用
                 } else if (response.status === 401) {
                     // Token 無效，返回登入頁
                     localStorage.removeItem('token');
@@ -583,9 +588,10 @@
         // 載入專案資訊
         async function loadProjectInfo() {
             try {
+                const token = localStorage.getItem('token');
                 const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 
@@ -612,9 +618,10 @@
                     url += `?opportunity_id=${projectId}`;
                 }
 
+                const token = localStorage.getItem('token');
                 const response = await fetch(url, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
 
