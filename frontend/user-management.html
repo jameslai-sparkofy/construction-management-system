@@ -372,6 +372,8 @@
             }
         }
     </style>
+    <!-- 引入配置檔 -->
+    <script src="config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -509,7 +511,8 @@
 
     <script>
         // 配置
-        const API_BASE = 'https://construction-management-api.lai-jameslai.workers.dev';
+        // 使用與其他頁面相同的 API URL
+        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-api-development.lai-jameslai.workers.dev';
         let projectId = null;
         let currentUserData = null;
         let selectedUser = null;
