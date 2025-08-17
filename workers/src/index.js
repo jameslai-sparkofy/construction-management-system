@@ -196,12 +196,18 @@ export default {
           }), { status: 400, headers });
         }
         
-        // Insert new project user
+        // Extract source_id from user_id if it's a CRM worker
+        let sourceId = body.source_id;
+        if (!sourceId && user_id.startsWith('crm_worker_')) {
+          sourceId = user_id.replace('crm_worker_', '');
+        }
+        
+        // Insert new project user with role and source_id
         await env.DB_ENGINEERING.prepare(`
           INSERT INTO project_users (
             project_id, user_id, user_type, team_id, team_name,
-            name, phone, nickname, source_table, added_by
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            name, phone, nickname, source_table, added_by, role, source_id
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           projectId,
           user_id,
@@ -212,7 +218,9 @@ export default {
           phone || null,
           nickname || null,
           source_table || 'manual',
-          'system'
+          'system',
+          body.role || 'member',
+          sourceId || null
         ).run();
         
         return new Response(JSON.stringify({
@@ -544,7 +552,8 @@ export default {
           team_id: teamId,
           team_name: teamName || worker.team_name,
           source_type: 'crm_worker',
-          source_id: worker.id
+          source_id: worker.id,
+          role: 'member'  // 預設為成員，可以後續修改為負責人
         }));
         
         return new Response(JSON.stringify({
@@ -653,48 +662,125 @@ export default {
       }), { headers });
     }
     
-    // Get project teams (used by project-detail and user-management)
+    // Get project teams (from sites and project_users)
     if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/teams$/) && method === 'GET') {
       try {
         const projectId = path.split('/')[4];
         console.log('[DEBUG] Getting teams for project:', projectId);
         
-        // Get all users for this project and extract team information
-        const { results } = await env.DB_ENGINEERING.prepare(`
-          SELECT DISTINCT team_id, team_name, COUNT(*) as member_count
+        // First, get the project to get opportunity_id
+        const project = await env.DB_ENGINEERING.prepare(`
+          SELECT opportunity_id FROM projects WHERE id = ?
+        `).bind(projectId).first();
+        
+        if (!project || !project.opportunity_id) {
+          console.log('[DEBUG] No opportunity_id found for project');
+          return new Response(JSON.stringify({
+            success: true,
+            teams: []
+          }), { headers });
+        }
+        
+        // Get teams from sites using CRM database
+        const teamsMap = new Map();
+        
+        try {
+          const { results: sites } = await env.DB_CRM.prepare(`
+            SELECT DISTINCT shift_time__c as team_name
+            FROM object_d1ae2__c
+            WHERE opportunity__c = ?
+              AND shift_time__c IS NOT NULL
+              AND shift_time__c != '-'
+              AND is_deleted = 0
+              AND life_status = 'normal'
+          `).bind(project.opportunity_id).all();
+          
+          console.log('[DEBUG] Found teams from sites:', sites);
+          
+          // Process teams from sites
+          for (const site of sites || []) {
+            if (site.team_name) {
+              // Try to find team ID from SupplierObj
+              let teamId = null;
+              try {
+                const supplier = await env.DB_CRM.prepare(`
+                  SELECT _id FROM SupplierObj 
+                  WHERE name = ? 
+                    AND is_deleted = 0 
+                    AND life_status = 'normal'
+                  LIMIT 1
+                `).bind(site.team_name).first();
+                
+                if (supplier) {
+                  teamId = supplier._id;
+                }
+              } catch (err) {
+                console.error('Error finding supplier:', err);
+              }
+              
+              // If no ID found, generate one from team name
+              if (!teamId) {
+                teamId = 'team_' + site.team_name.replace(/[^\w]/g, '_');
+              }
+              
+              teamsMap.set(teamId, {
+                id: teamId,
+                name: site.team_name,
+                memberCount: 0,
+                members: []
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching teams from sites:', error);
+        }
+        
+        // Get existing members from project_users
+        const { results: projectUsers } = await env.DB_ENGINEERING.prepare(`
+          SELECT user_id, name, phone, nickname, user_type, team_id, team_name, role, source_id
           FROM project_users 
-          WHERE project_id = ? AND team_id IS NOT NULL AND team_name IS NOT NULL
-          GROUP BY team_id, team_name
-          ORDER BY team_name
+          WHERE project_id = ? AND team_id IS NOT NULL
+          ORDER BY team_id, user_type, name
         `).bind(projectId).all();
         
-        console.log('[DEBUG] Found team aggregation:', results);
-        
-        // Get detailed members for each team
-        const teams = [];
-        for (const teamRow of results || []) {
-          const { results: teamMembers } = await env.DB_ENGINEERING.prepare(`
-            SELECT user_id, name, phone, nickname, user_type
-            FROM project_users 
-            WHERE project_id = ? AND team_id = ?
-            ORDER BY user_type, name
-          `).bind(projectId, teamRow.team_id).all();
+        // Add members to teams (only process users with valid team_id)
+        for (const user of projectUsers || []) {
+          // Skip users without valid team_id
+          if (!user.team_id || user.team_id.trim() === '') {
+            console.log('[DEBUG] Skipping user without team_id:', user.name);
+            continue;
+          }
           
-          const members = teamMembers.map(member => ({
-            userId: member.user_id,
-            name: member.name,
-            phone: member.phone,
-            nickname: member.nickname,
-            role: member.user_type
-          }));
+          if (!teamsMap.has(user.team_id)) {
+            // If team not in sites, add it from project_users (with valid team data)
+            if (user.team_name && user.team_name.trim() !== '') {
+              teamsMap.set(user.team_id, {
+                id: user.team_id,
+                name: user.team_name,
+                memberCount: 0,
+                members: []
+              });
+            } else {
+              console.log('[DEBUG] Skipping user with invalid team data:', user.name, user.team_id);
+              continue;
+            }
+          }
           
-          teams.push({
-            id: teamRow.team_id,
-            name: teamRow.team_name,
-            memberCount: teamRow.member_count,
-            members: members
+          const team = teamsMap.get(user.team_id);
+          team.members.push({
+            userId: user.user_id,
+            name: user.name,
+            phone: user.phone,
+            nickname: user.nickname,
+            role: user.role || 'member',
+            userType: user.user_type,
+            sourceId: user.source_id
           });
+          team.memberCount = team.members.length;
         }
+        
+        const teams = Array.from(teamsMap.values());
+        console.log('[DEBUG] Final teams with members:', teams);
         
         return new Response(JSON.stringify({
           success: true,
@@ -706,6 +792,136 @@ export default {
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to fetch project teams',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Update user role in project
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/users\/([^\/]+)\/role$/) && method === 'PUT') {
+      try {
+        const projectId = path.split('/')[4];
+        const userId = path.split('/')[6];
+        const body = await request.json();
+        const { role } = body;
+        
+        console.log('[DEBUG] Updating user role:', { projectId, userId, role });
+        
+        if (!role || !['member', 'leader'].includes(role)) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '無效的角色'
+          }), { status: 400, headers });
+        }
+        
+        const result = await env.DB_ENGINEERING.prepare(`
+          UPDATE project_users 
+          SET role = ? 
+          WHERE project_id = ? AND user_id = ?
+        `).bind(role, projectId, userId).run();
+        
+        if (result.meta.changes > 0) {
+          return new Response(JSON.stringify({
+            success: true,
+            message: '角色更新成功'
+          }), { headers });
+        }
+        
+        return new Response(JSON.stringify({
+          success: false,
+          error: '找不到該用戶'
+        }), { status: 404, headers });
+        
+      } catch (error) {
+        console.error('Error updating user role:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update role',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Create new worker
+    if (path === '/api/v1/workers/create' && method === 'POST') {
+      try {
+        const body = await request.json();
+        const { name, nickname, phone, password, email, team_id } = body;
+        
+        console.log('[DEBUG] Creating new worker:', { name, phone, team_id });
+        
+        if (!name || !phone || !team_id) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '姓名、電話和工班為必填項目'
+          }), { status: 400, headers });
+        }
+        
+        // 檢查手機號碼在該工班中的唯一性
+        const existingWorker = await env.DB_CRM.prepare(`
+          SELECT _id, name FROM object_50hj8__c 
+          WHERE phone_number__c = ? 
+            AND field_D1087__c = ?
+            AND is_deleted = 0 
+            AND life_status = 'normal'
+          LIMIT 1
+        `).bind(phone, team_id).first();
+        
+        if (existingWorker) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: `手機號碼 ${phone} 在此工班中已存在（${existingWorker.name}）`
+          }), { status: 400, headers });
+        }
+        
+        // 生成唯一 ID
+        const workerId = 'worker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        
+        // 獲取工班名稱
+        let teamName = null;
+        try {
+          const team = await env.DB_CRM.prepare(`
+            SELECT name FROM SupplierObj WHERE _id = ?
+          `).bind(team_id).first();
+          teamName = team ? team.name : null;
+        } catch (error) {
+          console.error('Error getting team name:', error);
+        }
+        
+        // 插入新師父到 CRM 數據庫
+        await env.DB_CRM.prepare(`
+          INSERT INTO object_50hj8__c (
+            _id, name, abbreviation__c, phone_number__c, 
+            field_D1087__c, field_D1087__c__r, email__c,
+            is_deleted, life_status, create_time, last_modified_time
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'normal', datetime('now'), datetime('now'))
+        `).bind(
+          workerId,
+          name,
+          nickname || name.slice(-1),
+          phone,
+          team_id,
+          teamName,
+          email || null
+        ).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '師父創建成功',
+          data: {
+            worker_id: workerId,
+            name: name,
+            phone: phone,
+            team_id: team_id,
+            team_name: teamName
+          }
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Error creating worker:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to create worker',
           message: error.message
         }), { status: 500, headers });
       }
