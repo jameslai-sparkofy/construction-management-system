@@ -237,7 +237,8 @@
       "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler deploy src/index.js)",
       "Bash(CLOUDFLARE_API_TOKEN=\"zBuiIQ-JNOkea8-LYvNc4gKjR6MoKCXXgOlBqy9o\" timeout 60 npx wrangler deploy src/index.js)",
       "mcp__playwright__browser_network_requests",
-      "Bash(sqlite3:*)"
+      "Bash(sqlite3:*)",
+      "WebFetch(domain:fc25391d.construction-management-frontend-dev.pages.dev)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

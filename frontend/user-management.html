@@ -721,41 +721,125 @@
             }
         }
 
-        // 載入工班列表（從專案現有用戶中提取工班資訊）
+        // 載入工班列表（從案場資料中提取工班資訊）
         async function loadTeams() {
             try {
                 const token = localStorage.getItem('token');
-                // 使用新的專案工班端點，從專案現有用戶中提取工班資訊
-                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/teams`, {
+                
+                // 首先獲取專案資訊以取得 opportunity_id
+                const projectResponse = await fetch(`${API_BASE}/api/v1/projects/${projectId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
                 });
-
-                if (response.ok) {
-                    const result = await response.json();
-                    teamsList = result.teams || [];
-                    
-                    // 轉換格式以適配前端期望的結構
-                    teamsList = teamsList.map(team => ({
-                        id: team.id,
-                        name: team.name,
-                        member_count: team.memberCount || 0,
-                        members: team.members || []
-                    }));
-                    
-                    console.log('[DEBUG] Teams loaded from project users:', teamsList);
-                    updateTeamSelector();
-                    updateTeamTabs();
-                    
-                    // 如果目前在師父分頁，更新工班選項
-                    if (currentSource === 'workers') {
-                        loadTeamTabsForWorkers();
+                
+                if (!projectResponse.ok) {
+                    console.error('Failed to load project info');
+                    return;
+                }
+                
+                const project = await projectResponse.json();
+                const opportunityId = project.opportunity_id;
+                
+                if (!opportunityId) {
+                    console.warn('No opportunity_id found for project');
+                    return;
+                }
+                
+                // 載入案場資料以提取工班資訊
+                const sitesResponse = await fetch(`https://d1.yes-ceramics.com/rest/object_d1ae2__c?opportunity__c=${opportunityId}&_limit=500`, {
+                    headers: {
+                        'Authorization': `Bearer fx-crm-api-secret-2025`
                     }
+                });
+                
+                if (!sitesResponse.ok) {
+                    console.error('Failed to load sites data');
+                    return;
+                }
+                
+                const sitesData = await sitesResponse.json();
+                const sites = sitesData.dataList || sitesData.results || [];
+                
+                // 從案場資料中提取工班資訊
+                const teamsMap = new Map();
+                
+                sites.forEach(site => {
+                    const teamName = site.shift_time__c; // 工班名稱欄位
+                    if (teamName && teamName !== '-') {
+                        // 使用工班名稱映射表獲取工班 ID
+                        let teamId = getTeamIdByName(teamName);
+                        if (!teamId) {
+                            // 如果沒有找到映射，使用名稱的 hash 作為 ID
+                            teamId = 'team_' + teamName.replace(/[^\w]/g, '_');
+                        }
+                        
+                        if (!teamsMap.has(teamId)) {
+                            teamsMap.set(teamId, {
+                                id: teamId,
+                                name: teamName,
+                                member_count: 0,
+                                members: []
+                            });
+                        }
+                    }
+                });
+                
+                // 從專案用戶中獲取成員資訊
+                const projectTeamsResponse = await fetch(`${API_BASE}/api/v1/projects/${projectId}/teams`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (projectTeamsResponse.ok) {
+                    const projectResult = await projectTeamsResponse.json();
+                    const projectTeams = projectResult.teams || [];
+                    
+                    // 更新工班成員資訊
+                    projectTeams.forEach(team => {
+                        if (teamsMap.has(team.id)) {
+                            const mapTeam = teamsMap.get(team.id);
+                            mapTeam.member_count = team.memberCount || 0;
+                            mapTeam.members = team.members || [];
+                        }
+                    });
+                }
+                
+                // 轉換為陣列
+                teamsList = Array.from(teamsMap.values());
+                
+                console.log('[DEBUG] Teams loaded from sites:', teamsList);
+                updateTeamSelector();
+                updateTeamTabs();
+                
+                // 如果目前在師父分頁，更新工班選項
+                if (currentSource === 'workers') {
+                    loadTeamTabsForWorkers();
                 }
             } catch (error) {
                 console.error('Error loading teams:', error);
             }
+        }
+        
+        // 輔助函數：根據工班 ID 獲取工班名稱
+        function getTeamNameById(teamId) {
+            const teamMap = {
+                '6510b4e6909f550001cc8ea0': '周華龍工班',
+                '6510b5e9909f550001cc8f33': '樂邁(工班)-愛德美特有限公司',
+                '6510b636909f550001cc8f54': '莊聰源師傅/菲米裝潢工程行'
+            };
+            return teamMap[teamId] || null;
+        }
+        
+        // 輔助函數：根據工班名稱獲取工班 ID
+        function getTeamIdByName(teamName) {
+            const nameToIdMap = {
+                '周華龍工班': '6510b4e6909f550001cc8ea0',
+                '樂邁(工班)-愛德美特有限公司': '6510b5e9909f550001cc8f33',
+                '莊聰源師傅/菲米裝潢工程行': '6510b636909f550001cc8f54'
+            };
+            return nameToIdMap[teamName] || null;
         }
 
         // 更新工班選擇器
@@ -1071,8 +1155,43 @@
             document.getElementById('adminCount').textContent = grouped.admins.length;
             document.getElementById('ownerCount').textContent = grouped.owners.length;
             
-            // 計算工班成員總數（包含所有工班）
-            const totalWorkers = (grouped.teams || []).reduce((total, team) => total + team.members.length, 0);
+            // 處理工班資料 - 確保顯示所有三個工班
+            let allTeams = grouped.teams || [];
+            
+            // 預設的三個工班
+            const defaultTeams = [
+                { team_id: '6510b4e6909f550001cc8ea0', team_name: '周華龍工班', members: [] },
+                { team_id: '6510b5e9909f550001cc8f33', team_name: '樂邁(工班)-愛德美特有限公司', members: [] },
+                { team_id: '6510b636909f550001cc8f54', team_name: '莊聰源師傅/菲米裝潢工程行', members: [] }
+            ];
+            
+            // 合併現有工班資料和預設工班
+            const teamMap = new Map();
+            
+            // 先添加預設工班
+            defaultTeams.forEach(team => {
+                teamMap.set(team.team_id, team);
+            });
+            
+            // 更新或添加現有工班資料
+            allTeams.forEach(team => {
+                if (teamMap.has(team.team_id)) {
+                    // 更新現有工班的成員資料
+                    const existingTeam = teamMap.get(team.team_id);
+                    existingTeam.members = team.members || [];
+                    // 如果 API 返回的工班名稱為 null，使用預設名稱
+                    if (!team.team_name) {
+                        team.team_name = existingTeam.team_name;
+                    }
+                }
+                teamMap.set(team.team_id, team);
+            });
+            
+            // 轉換為陣列
+            allTeams = Array.from(teamMap.values());
+            
+            // 計算工班成員總數
+            const totalWorkers = allTeams.reduce((total, team) => total + team.members.length, 0);
             document.getElementById('workerCount').textContent = totalWorkers;
 
             // 顯示管理員
@@ -1081,8 +1200,8 @@
             // 顯示業主
             displayUserGroup('ownerUsers', grouped.owners, 'owner');
             
-            // 顯示工班成員（按當前選擇的工班分頁）
-            displayTeamUsers(grouped.teams || []);
+            // 顯示工班成員（顯示所有三個工班的分頁）
+            displayTeamUsers(allTeams);
         }
 
         // 顯示工班用戶
@@ -1100,14 +1219,18 @@
             teamTabs.style.display = 'block';
             
             // 生成工班分頁按鈕
-            teamTabButtons.innerHTML = teams.map(team => `
-                <button class="team-tab-button ${team.team_id === currentTeamTab ? 'active' : ''}" 
-                        data-team-id="${team.team_id}"
-                        onclick="switchTeamTab('${team.team_id}')">
-                    ${team.team_name || '未命名工班'}
-                    <span class="team-count">(${team.members ? team.members.length : 0})</span>
-                </button>
-            `).join('');
+            teamTabButtons.innerHTML = teams.map(team => {
+                // 嘗試多種方式獲取工班名稱
+                const teamName = team.team_name || getTeamNameById(team.team_id) || `工班 ${team.team_id.slice(-4)}`;
+                return `
+                    <button class="team-tab-button ${team.team_id === currentTeamTab ? 'active' : ''}" 
+                            data-team-id="${team.team_id}"
+                            onclick="switchTeamTab('${team.team_id}')">
+                        ${teamName}
+                        <span class="team-count">(${team.members ? team.members.length : 0})</span>
+                    </button>
+                `;
+            }).join('');
             
             // 如果沒有選中的工班，選擇第一個
             if (!currentTeamTab && teams.length > 0) {
