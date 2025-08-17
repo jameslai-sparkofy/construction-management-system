@@ -55,7 +55,12 @@ export default {
     if (path === '/api/v1/users/me' && method === 'GET') {
       return new Response(JSON.stringify({
         success: true,
-        user: { id: 'admin', name: '系統管理員', role: 'admin' }
+        user: { 
+          id: 'admin', 
+          name: '系統管理員', 
+          role: 'admin',
+          user_type: 'admin'  // 添加 user_type 字段
+        }
       }), { headers });
     }
     
@@ -331,47 +336,43 @@ export default {
       }
     }
     
-    // Get teams from CRM
+    // Get teams from project existing users (not from hardcoded query)
     if (path === '/api/v1/teams' && method === 'GET') {
       try {
         const projectId = url.searchParams.get('project_id');
         
         if (projectId) {
-          // Get teams that have been added to this project
+          // Get teams from existing project users
           const { results: projectTeams } = await env.DB_ENGINEERING.prepare(`
-            SELECT DISTINCT team_id as id, team_name as name
+            SELECT DISTINCT team_id, team_name
             FROM project_users
-            WHERE project_id = ? AND team_id IS NOT NULL
+            WHERE project_id = ? AND team_id IS NOT NULL AND team_name IS NOT NULL
             ORDER BY team_name
           `).bind(projectId).all();
           
-          // If no teams in project yet, get some common teams from CRM
+          console.log('[DEBUG] Found project teams:', projectTeams);
+          
+          // If no teams found in project, return empty array
           if (!projectTeams || projectTeams.length === 0) {
-            const { results: crmTeams } = await env.DB_CRM.prepare(`
-              SELECT DISTINCT
-                _id as id,
-                name
-              FROM supplierobj
-              WHERE is_deleted = 0
-              AND life_status = 'normal'
-              AND (name LIKE '%周華龍%' OR name LIKE '%愛德美特%' OR name LIKE '%莊聰源%')
-              ORDER BY name
-              LIMIT 10
-            `).all();
-            
+            console.log('[DEBUG] No teams found in project, returning empty array');
             return new Response(JSON.stringify({
               success: true,
-              data: crmTeams || [],
-              message: '顯示常用工班，請選擇要新增的工班'
+              data: []
             }), { headers });
           }
           
+          // Format teams for frontend
+          const teams = projectTeams.map(team => ({
+            id: team.team_id,
+            name: team.team_name
+          }));
+          
           return new Response(JSON.stringify({
             success: true,
-            data: projectTeams
+            data: teams
           }), { headers });
         } else {
-          // Get all teams from CRM
+          // Get all teams from CRM (for general queries)
           const query = env.DB_CRM.prepare(`
             SELECT DISTINCT
               _id as id,
@@ -510,7 +511,32 @@ export default {
           }), { headers });
         }
         
-        const workers = results.map(worker => ({
+        // Filter out workers who are already in the project
+        const projectId = url.searchParams.get('project_id');
+        let filteredResults = results;
+        
+        if (projectId) {
+          try {
+            const { results: existingUsers } = await env.DB_ENGINEERING.prepare(`
+              SELECT user_id FROM project_users 
+              WHERE project_id = ? AND user_type = 'worker'
+            `).bind(projectId).all();
+            
+            const existingUserIds = new Set(existingUsers.map(u => u.user_id));
+            
+            filteredResults = results.filter(worker => {
+              const workerId = `crm_worker_${worker.id}`;
+              return !existingUserIds.has(workerId);
+            });
+            
+            console.log(`[DEBUG] Filtered out existing users. ${results.length} -> ${filteredResults.length} available`);
+          } catch (filterError) {
+            console.error('Error filtering existing users:', filterError);
+            // If filtering fails, return all workers
+          }
+        }
+        
+        const workers = filteredResults.map(worker => ({
           user_id: `crm_worker_${worker.id}`,
           name: worker.name || '未命名',
           phone: worker.phone_number__c || '',
@@ -625,6 +651,64 @@ export default {
         success: true,
         data: []
       }), { headers });
+    }
+    
+    // Get project teams (used by project-detail and user-management)
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/teams$/) && method === 'GET') {
+      try {
+        const projectId = path.split('/')[4];
+        console.log('[DEBUG] Getting teams for project:', projectId);
+        
+        // Get all users for this project and extract team information
+        const { results } = await env.DB_ENGINEERING.prepare(`
+          SELECT DISTINCT team_id, team_name, COUNT(*) as member_count
+          FROM project_users 
+          WHERE project_id = ? AND team_id IS NOT NULL AND team_name IS NOT NULL
+          GROUP BY team_id, team_name
+          ORDER BY team_name
+        `).bind(projectId).all();
+        
+        console.log('[DEBUG] Found team aggregation:', results);
+        
+        // Get detailed members for each team
+        const teams = [];
+        for (const teamRow of results || []) {
+          const { results: teamMembers } = await env.DB_ENGINEERING.prepare(`
+            SELECT user_id, name, phone, nickname, user_type
+            FROM project_users 
+            WHERE project_id = ? AND team_id = ?
+            ORDER BY user_type, name
+          `).bind(projectId, teamRow.team_id).all();
+          
+          const members = teamMembers.map(member => ({
+            userId: member.user_id,
+            name: member.name,
+            phone: member.phone,
+            nickname: member.nickname,
+            role: member.user_type
+          }));
+          
+          teams.push({
+            id: teamRow.team_id,
+            name: teamRow.team_name,
+            memberCount: teamRow.member_count,
+            members: members
+          });
+        }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          teams: teams
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Error fetching project teams:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch project teams',
+          message: error.message
+        }), { status: 500, headers });
+      }
     }
     
     // Default 404

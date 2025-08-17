@@ -385,7 +385,7 @@ export default {
         const teamId = path.split('/')[4];
         console.log('[DEBUG] Getting workers for team:', teamId);
         
-        // Get team name from SupplierObj
+        // Get team name from SupplierObj - 用於工班名稱匹配
         let teamName = null;
         try {
           const supplierQuery = env.DB_CRM.prepare(`
@@ -394,50 +394,46 @@ export default {
           const supplier = await supplierQuery.bind(teamId).first();
           if (supplier) {
             teamName = supplier.name;
+            console.log('[DEBUG] Found team name from SupplierObj:', teamName);
           }
         } catch (error) {
           console.error('Error querying SupplierObj:', error);
         }
         
+        // 主要使用工班名稱進行查詢，因為 ID 可能不一致
         const searchTerm = teamName || teamId;
         
-        // Query workers
+        // Query workers - 使用工班名稱進行匹配
+        // field_D1087__c__r 是工班名稱（主要匹配欄位）
+        // field_D1087__c 是工班 ID（備用）
         const query = env.DB_CRM.prepare(`
           SELECT 
             _id as id,
             name,
             phone_number__c,
-            abbreviation__c
+            abbreviation__c,
+            field_D1087__c as team_id_field,
+            field_D1087__c__r as team_name
           FROM object_50hj8__c
-          WHERE shift_time__c__r LIKE ? OR shift_time__c LIKE ?
+          WHERE field_D1087__c__r LIKE ?
+            AND is_deleted = 0
+            AND life_status = 'normal'
           ORDER BY name
           LIMIT 50
         `);
         
-        const { results } = await query.bind(`%${searchTerm}%`, `%${searchTerm}%`).all();
+        // 使用工班名稱進行查詢
+        const { results } = await query.bind(`%${searchTerm}%`).all();
+        console.log(`[DEBUG] Found ${results ? results.length : 0} workers for team: ${searchTerm}`);
         
-        // Return mock data if no results
+        // 如果沒有查詢到結果，返回空陣列
         if (!results || results.length === 0) {
-          // Mock data for testing
-          if (searchTerm.includes('愛德美特')) {
-            return new Response(JSON.stringify({
-              success: true,
-              data: [{
-                user_id: 'user_lai_junyinq',
-                name: '賴俊穎',
-                phone: '+886-963922033',
-                nickname: '穎',
-                team_id: teamId
-              }],
-              total: 1,
-              mock: true
-            }), { headers });
-          }
-          
+          console.log('[DEBUG] No workers found for team:', searchTerm);
           return new Response(JSON.stringify({
             success: true,
             data: [],
-            total: 0
+            total: 0,
+            message: `未找到 ${teamName || teamId} 的工班成員`
           }), { headers });
         }
         
