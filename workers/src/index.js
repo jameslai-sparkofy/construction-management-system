@@ -337,12 +337,34 @@ export default {
         const projectId = url.searchParams.get('project_id');
         
         if (projectId) {
-          // Return mock teams for testing
-          const projectTeams = [
-            { id: '66a21ce3f0032b000142088f', name: '周華龍工班' },
-            { id: '66a3651be4a03100013b9a6f', name: '樂邁(工班)-愛德美特有限公司' },
-            { id: '66bbed4c1ca88f0001c83bc9', name: '莊聰源師傅/菲米裝潢工程行' }
-          ];
+          // Get teams that have been added to this project
+          const { results: projectTeams } = await env.DB_ENGINEERING.prepare(`
+            SELECT DISTINCT team_id as id, team_name as name
+            FROM project_users
+            WHERE project_id = ? AND team_id IS NOT NULL
+            ORDER BY team_name
+          `).bind(projectId).all();
+          
+          // If no teams in project yet, get some common teams from CRM
+          if (!projectTeams || projectTeams.length === 0) {
+            const { results: crmTeams } = await env.DB_CRM.prepare(`
+              SELECT DISTINCT
+                _id as id,
+                name
+              FROM supplierobj
+              WHERE is_deleted = 0
+              AND life_status = 'normal'
+              AND (name LIKE '%周華龍%' OR name LIKE '%愛德美特%' OR name LIKE '%莊聰源%')
+              ORDER BY name
+              LIMIT 10
+            `).all();
+            
+            return new Response(JSON.stringify({
+              success: true,
+              data: crmTeams || [],
+              message: '顯示常用工班，請選擇要新增的工班'
+            }), { headers });
+          }
           
           return new Response(JSON.stringify({
             success: true,
@@ -394,50 +416,97 @@ export default {
           const supplier = await supplierQuery.bind(teamId).first();
           if (supplier) {
             teamName = supplier.name;
+            console.log('[DEBUG] Found team name from SupplierObj:', teamName);
           }
         } catch (error) {
           console.error('Error querying SupplierObj:', error);
         }
         
-        const searchTerm = teamName || teamId;
+        // Try multiple strategies to find workers
+        let results = [];
         
-        // Query workers
-        const query = env.DB_CRM.prepare(`
-          SELECT 
-            _id as id,
-            name,
-            phone_number__c,
-            abbreviation__c
-          FROM object_50hj8__c
-          WHERE shift_time__c__r LIKE ? OR shift_time__c LIKE ?
-          ORDER BY name
-          LIMIT 50
-        `);
-        
-        const { results } = await query.bind(`%${searchTerm}%`, `%${searchTerm}%`).all();
-        
-        // Return mock data if no results
-        if (!results || results.length === 0) {
-          // Mock data for testing
-          if (searchTerm.includes('愛德美特')) {
-            return new Response(JSON.stringify({
-              success: true,
-              data: [{
-                user_id: 'user_lai_junyinq',
-                name: '賴俊穎',
-                phone: '+886-963922033',
-                nickname: '穎',
-                team_id: teamId
-              }],
-              total: 1,
-              mock: true
-            }), { headers });
-          }
+        // Strategy 1: Match by exact team name in field_D1087__c__r
+        if (teamName) {
+          const exactQuery = await env.DB_CRM.prepare(`
+            SELECT 
+              _id as id,
+              name,
+              phone_number__c,
+              abbreviation__c,
+              field_D1087__c as team_id_field,
+              field_D1087__c__r as team_name
+            FROM object_50hj8__c
+            WHERE field_D1087__c__r = ?
+              AND is_deleted = 0
+              AND life_status = 'normal'
+            ORDER BY name
+            LIMIT 50
+          `).bind(teamName).all();
           
+          if (exactQuery.results && exactQuery.results.length > 0) {
+            results = exactQuery.results;
+            console.log(`[DEBUG] Found ${results.length} workers with exact match for: ${teamName}`);
+          }
+        }
+        
+        // Strategy 2: Partial match with team name
+        if ((!results || results.length === 0) && teamName) {
+          const partialQuery = await env.DB_CRM.prepare(`
+            SELECT 
+              _id as id,
+              name,
+              phone_number__c,
+              abbreviation__c,
+              field_D1087__c as team_id_field,
+              field_D1087__c__r as team_name
+            FROM object_50hj8__c
+            WHERE field_D1087__c__r LIKE ?
+              AND is_deleted = 0
+              AND life_status = 'normal'
+            ORDER BY name
+            LIMIT 50
+          `).bind(`%${teamName}%`).all();
+          
+          if (partialQuery.results && partialQuery.results.length > 0) {
+            results = partialQuery.results;
+            console.log(`[DEBUG] Found ${results.length} workers with partial match for: ${teamName}`);
+          }
+        }
+        
+        // Strategy 3: Match by team ID in field_D1087__c
+        if ((!results || results.length === 0)) {
+          const idQuery = await env.DB_CRM.prepare(`
+            SELECT 
+              _id as id,
+              name,
+              phone_number__c,
+              abbreviation__c,
+              field_D1087__c as team_id_field,
+              field_D1087__c__r as team_name
+            FROM object_50hj8__c
+            WHERE field_D1087__c = ?
+              AND is_deleted = 0
+              AND life_status = 'normal'
+            ORDER BY name
+            LIMIT 50
+          `).bind(teamId).all();
+          
+          if (idQuery.results && idQuery.results.length > 0) {
+            results = idQuery.results;
+            console.log(`[DEBUG] Found ${results.length} workers with team ID: ${teamId}`);
+          }
+        }
+        
+        console.log(`[DEBUG] Total workers found: ${results ? results.length : 0}`);
+        
+        // 如果沒有查詢到結果，返回空陣列
+        if (!results || results.length === 0) {
+          console.log('[DEBUG] No workers found for team:', teamName || teamId);
           return new Response(JSON.stringify({
             success: true,
             data: [],
-            total: 0
+            total: 0,
+            message: `未找到 ${teamName || teamId} 的工班成員`
           }), { headers });
         }
         
@@ -447,6 +516,7 @@ export default {
           phone: worker.phone_number__c || '',
           nickname: worker.abbreviation__c || (worker.name ? worker.name.slice(-1) : ''),
           team_id: teamId,
+          team_name: teamName || worker.team_name,
           source_type: 'crm_worker',
           source_id: worker.id
         }));
@@ -454,7 +524,8 @@ export default {
         return new Response(JSON.stringify({
           success: true,
           data: workers,
-          total: workers.length
+          total: workers.length,
+          team_name: teamName
         }), { headers });
         
       } catch (error) {
@@ -467,29 +538,62 @@ export default {
       }
     }
     
-    // Get admins from CRM
-    if (path === '/api/v1/admins' && method === 'GET') {
+    // Get admins from CRM - support both endpoints
+    if ((path === '/api/v1/admins' || path === '/api/v1/users/available/admins') && method === 'GET') {
       try {
-        const query = env.DB_CRM.prepare(`
-          SELECT 
-            _id as user_id,
-            name,
-            phone,
-            email
-          FROM employees_simple
-          WHERE is_deleted = 0
-          AND life_status = 'normal'
-          ORDER BY name
-          LIMIT 50
-        `);
+        // Try different column names since the table structure might vary
+        let results = [];
         
-        const { results } = await query.all();
+        try {
+          // First try with _id (common in MongoDB-style schemas)
+          const query1 = await env.DB_CRM.prepare(`
+            SELECT 
+              _id as user_id,
+              name,
+              phone,
+              email
+            FROM employees_simple
+            WHERE is_deleted = 0
+            AND life_status = 'normal'
+            ORDER BY name
+            LIMIT 50
+          `).all();
+          results = query1.results;
+        } catch (e1) {
+          console.log('[DEBUG] Failed with _id, trying id column:', e1.message);
+          try {
+            // Try with id instead
+            const query2 = await env.DB_CRM.prepare(`
+              SELECT 
+                id as user_id,
+                name,
+                phone,
+                email
+              FROM employees_simple
+              WHERE is_deleted = 0
+              AND life_status = 'normal'
+              ORDER BY name
+              LIMIT 50
+            `).all();
+            results = query2.results;
+          } catch (e2) {
+            console.log('[DEBUG] Failed with id too, trying without conditions:', e2.message);
+            // Last resort - minimal query
+            const query3 = await env.DB_CRM.prepare(`
+              SELECT * FROM employees_simple LIMIT 10
+            `).all();
+            results = query3.results;
+            console.log('[DEBUG] Got results from minimal query:', results.length);
+          }
+        }
         
         const admins = (results || []).map(admin => ({
           ...admin,
+          user_id: admin.user_id || admin.id || admin._id || admin.open_user_id,
+          phone: admin.phone || admin.mobile,
           nickname: admin.name ? admin.name.slice(-1) : '',
           source_type: 'crm_admin',
-          source_id: admin.user_id
+          source_id: admin.user_id || admin.id || admin._id || admin.open_user_id
         }));
         
         return new Response(JSON.stringify({
@@ -505,6 +609,22 @@ export default {
           message: error.message
         }), { status: 500, headers });
       }
+    }
+    
+    // Get owners - for now just return empty array  
+    if (path === '/api/v1/users/available/owners' && method === 'GET') {
+      return new Response(JSON.stringify({
+        success: true,
+        data: []
+      }), { headers });
+    }
+    
+    // Get workers - for now just return empty array
+    if (path === '/api/v1/users/available/workers' && method === 'GET') {
+      return new Response(JSON.stringify({
+        success: true,
+        data: []
+      }), { headers });
     }
     
     // Default 404
