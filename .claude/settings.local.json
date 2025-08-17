@@ -231,7 +231,8 @@
       "Bash(CLOUDFLARE_API_TOKEN=\"zBuiIQ-JNOkea8-LYvNc4gKjR6MoKCXXgOlBqy9o\" timeout 10 npx wrangler tail construction-management-api)",
       "Bash(CLOUDFLARE_API_TOKEN=\"zBuiIQ-JNOkea8-LYvNc4gKjR6MoKCXXgOlBqy9o\" timeout 60 npx wrangler deploy src/api-final.js)",
       "Bash(CLOUDFLARE_API_TOKEN=\"zBuiIQ-JNOkea8-LYvNc4gKjR6MoKCXXgOlBqy9o\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"zBuiIQ-JNOkea8-LYvNc4gKjR6MoKCXXgOlBqy9o\" npx wrangler pages deploy frontend --project-name construction-management-frontend-dev)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"zBuiIQ-JNOkea8-LYvNc4gKjR6MoKCXXgOlBqy9o\" npx wrangler pages deploy frontend --project-name construction-management-frontend-dev)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"3tVc_nswl8aAdEG6MFQA0y-vUrOo0K9v7nIMzmF9\" npx wrangler deploy --env=\"\" src/index.js)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
