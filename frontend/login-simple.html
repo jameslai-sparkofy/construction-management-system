@@ -72,22 +72,34 @@
     <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const phone = document.getElementById('phone').value;
-            const password = document.getElementById('password').value;
-            const errorDiv = document.getElementById('error-message');
-            
-            // 使用統一認證系統
-            const result = await window.UnifiedAuth.loginSimple(phone, password);
-            
-            if (result.success) {
-                // 登入成功，跳轉到專案列表
-                window.location.href = 'project-list.html';
-            } else {
-                errorDiv.textContent = result.error || '登入失敗';
-                errorDiv.classList.remove('hidden');
+        // 確保 DOM 載入完成後再綁定事件
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const phone = document.getElementById('phone').value;
+                    const password = document.getElementById('password').value;
+                    const errorDiv = document.getElementById('error-message');
+                    
+                    try {
+                        // 使用統一認證系統
+                        const result = await window.UnifiedAuth.loginSimple(phone, password);
+                        
+                        if (result.success) {
+                            // 登入成功，跳轉到專案列表
+                            window.location.href = 'project-list.html';
+                        } else {
+                            errorDiv.textContent = result.error || '登入失敗';
+                            errorDiv.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        errorDiv.textContent = '系統錯誤，請稍後再試';
+                        errorDiv.classList.remove('hidden');
+                    }
+                });
             }
         });
     </script>

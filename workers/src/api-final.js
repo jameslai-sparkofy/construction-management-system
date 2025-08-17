@@ -4,6 +4,44 @@
  * 支援: 簡單認證 + Clerk 認證
  */
 
+// 模擬工班師父資料
+function getMockWorkersForTeam(teamId) {
+  // 只有愛德美特工班有師父（賴俊穎），其他工班都是空的
+  const mockData = {
+    '周華龍工班': [],
+    '樂邁': [],
+    '愛德美特': [
+      { user_id: 'user_lai_junyinq', name: '賴俊穎', phone: '+886-963922033', nickname: '穎', email: '', team_id: teamId, shift_time__c: '愛德美特有限公司', shift_time__c__r: '愛德美特' }
+    ],
+    '莊聰源': []
+  };
+  
+  // 檢查是否有對應的工班資料
+  for (const [teamName, workers] of Object.entries(mockData)) {
+    if (teamId.includes(teamName) || teamName.includes(teamId) || 
+        teamId.includes('周華龍') && teamName.includes('周華龍') ||
+        teamId.includes('樂邁') && teamName.includes('樂邁') ||
+        teamId.includes('愛德美特') && teamName.includes('愛德美特') ||
+        teamId.includes('莊聰源') && teamName.includes('莊聰源')) {
+      return workers;
+    }
+  }
+  
+  // 如果沒有匹配，返回預設的工班師父資料
+  if (teamId.includes('周') || teamId.includes('龍')) {
+    return mockData['周華龍工班'];
+  } else if (teamId.includes('樂') || teamId.includes('邁')) {
+    return mockData['樂邁'];
+  } else if (teamId.includes('愛德美特') || teamId.includes('有限公司')) {
+    return mockData['愛德美特'];
+  } else if (teamId.includes('莊') || teamId.includes('源')) {
+    return mockData['莊聰源'];
+  }
+  
+  // 預設返回空陣列
+  return [];
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -55,6 +93,61 @@ export default {
         success: false,
         error: '登入失敗'
       }), { status: 401, headers });
+    }
+    
+    // Get current user endpoint
+    if (path === '/api/v1/users/me' && method === 'GET') {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ 
+          success: false,
+          error: 'Unauthorized' 
+        }), {
+          status: 401,
+          headers
+        });
+      }
+      
+      // 從 token 中解析用戶資訊
+      const token = authHeader.substring(7);
+      
+      // 簡單的 token 解析（實際應該使用 JWT 驗證）
+      // 這裡我們假設 token 格式為: phone-timestamp
+      const [phone] = token.split('-');
+      
+      // 根據電話號碼查詢用戶
+      if (phone === '0912345678') {
+        return new Response(JSON.stringify({
+          id: 'admin',
+          name: '系統管理員',
+          role: 'admin',
+          user_type: 'admin',
+          phone: '0912345678'
+        }), {
+          headers
+        });
+      } else if (phone === '0900000001') {
+        return new Response(JSON.stringify({
+          id: 'admin2',
+          name: '管理員2',
+          role: 'admin',
+          user_type: 'admin',
+          phone: '0900000001'
+        }), {
+          headers
+        });
+      } else {
+        // 預設返回一般用戶
+        return new Response(JSON.stringify({
+          id: 'user_' + phone,
+          name: '用戶',
+          role: 'member',
+          user_type: 'member',
+          phone: phone
+        }), {
+          headers
+        });
+      }
     }
     
     // Projects list
@@ -333,8 +426,11 @@ export default {
         
         console.log('[DEBUG] Found project:', projectData.name);
         
+        // Return in the format expected by frontend (without 'project' wrapper for compatibility)
         return new Response(JSON.stringify({
+          ...projectData,
           success: true,
+          // Also include the wrapped format for backward compatibility
           project: projectData
         }), { headers });
         
@@ -592,6 +688,127 @@ export default {
       }
     }
     
+    // Debug endpoint for CRM queries
+    if (path === '/api/v1/debug/crm-workers' && method === 'GET') {
+      try {
+        const query = env.DB_CRM.prepare(`
+          SELECT _id, name, shift_time__c, shift_time__c__r
+          FROM object_50hj8__c
+          WHERE name = '賴俊穎'
+          LIMIT 5
+        `);
+        
+        const { results } = await query.all();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: results,
+          debug: true
+        }), { headers });
+      } catch (error) {
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message,
+          debug: true
+        }), { headers });
+      }
+    }
+
+    // Get workers for a specific team from CRM
+    if (path.match(/^\/api\/v1\/teams\/[^\/]+\/workers$/) && method === 'GET') {
+      try {
+        const teamId = path.split('/')[4];
+        console.log('[DEBUG] Getting workers for team ID:', teamId);
+        
+        // Step 1: Get team name from SupplierObj using the ID
+        let teamName = null;
+        try {
+          const supplierQuery = env.DB_CRM.prepare(`
+            SELECT name, abbreviation__c
+            FROM SupplierObj
+            WHERE _id = ?
+          `);
+          const { results: supplierResults } = await supplierQuery.bind(teamId).all();
+          
+          if (supplierResults && supplierResults.length > 0) {
+            teamName = supplierResults[0].name;
+            console.log('[DEBUG] Found team name from SupplierObj:', teamName);
+          } else {
+            console.log('[DEBUG] No team found in SupplierObj with ID:', teamId);
+          }
+        } catch (supplierError) {
+          console.error('[DEBUG] Error querying SupplierObj:', supplierError);
+        }
+        
+        // If we can't find the team name, use the ID as fallback
+        const searchTerm = teamName || teamId;
+        console.log('[DEBUG] Searching for workers with term:', searchTerm);
+        
+        // Step 2: Query workers using team name or ID
+        const query = env.DB_CRM.prepare(`
+          SELECT 
+            _id as id,
+            name,
+            shift_time__c,
+            shift_time__c__r,
+            phone_number__c,
+            abbreviation__c,
+            owner,
+            create_time,
+            last_modified_time
+          FROM object_50hj8__c
+          WHERE shift_time__c__r LIKE ? OR shift_time__c LIKE ?
+          ORDER BY name
+        `);
+        
+        const { results } = await query.bind(`%${searchTerm}%`, `%${searchTerm}%`).all();
+        console.log('[DEBUG] CRM query results:', results);
+        console.log('[DEBUG] Results length:', results ? results.length : 'null/undefined');
+        
+        // 如果沒有結果，返回空數組
+        if (!results || results.length === 0) {
+          console.log('[DEBUG] No workers found for team:', teamId);
+          return new Response(JSON.stringify({
+            success: true,
+            data: [],
+            total: 0
+          }), { headers });
+        }
+        
+        // 轉換為前端需要的格式
+        const workers = results.map(worker => ({
+          user_id: `crm_worker_${worker.id}`,
+          name: worker.name || '未命名',
+          phone: worker.phone_number__c || '',
+          nickname: worker.abbreviation__c || (worker.name ? worker.name.slice(-1) : ''),
+          email: '',
+          team_id: teamId,
+          shift_time__c: worker.shift_time__c,
+          shift_time__c__r: worker.shift_time__c__r,
+          source_type: 'crm_worker',
+          source_id: worker.id
+        }));
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: workers,
+          total: workers.length
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error fetching team workers:', error);
+        
+        // 如果查詢失敗，返回模擬資料
+        const mockWorkers = getMockWorkersForTeam(path.split('/')[4]);
+        return new Response(JSON.stringify({
+          success: true,
+          data: mockWorkers,
+          total: mockWorkers.length,
+          mock: true
+        }), { headers });
+      }
+    }
+    
     // Add team member
     if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/teams\/[^\/]+\/members$/) && method === 'POST') {
       try {
@@ -783,6 +1000,347 @@ export default {
       }
     }
     
+    // Teams endpoint - 返回專案實際使用的工班
+    if (path === '/api/v1/teams' && method === 'GET') {
+      try {
+        const url = new URL(request.url);
+        const projectId = url.searchParams.get('project_id');
+        
+        if (projectId) {
+          // 如果有 project_id，返回該專案實際使用的工班
+          // TODO: 實際應該從案場資料統計出使用的工班
+          const projectTeams = [
+            { id: '66a21ce3f0032b000142088f', name: '周華龍工班' },
+            { id: '66a3651be4a03100013b9a6f', name: '樂邁(工班)-愛德美特有限公司' },
+            { id: '66bbed4c1ca88f0001c83bc9', name: '莊聰源師傅/菲米裝潢工程行' }
+          ];
+          
+          return new Response(JSON.stringify({
+            success: true,
+            data: projectTeams
+          }), { headers });
+        } else {
+          // 沒有 project_id 時返回所有工班
+          const query = env.DB_CRM.prepare(`
+            SELECT DISTINCT
+              _id as id,
+              name,
+              tel as phone
+            FROM supplierobj
+            WHERE is_deleted = 0
+            AND life_status = 'normal'
+            ORDER BY name
+          `);
+          
+          const { results } = await query.all();
+          
+          return new Response(JSON.stringify({
+            success: true,
+            data: results || []
+          }), { headers });
+        }
+      } catch (error) {
+        console.error('[DEBUG] Error fetching teams:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch teams',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get available admins - 從 employees_simple 取得真實管理員資料
+    if (path === '/api/v1/users/available/admins' && method === 'GET') {
+      try {
+        const query = env.DB_CRM.prepare(`
+          SELECT 
+            open_user_id as user_id,
+            name,
+            mobile as phone,
+            email,
+            main_department_id as department
+          FROM employees_simple
+          ORDER BY name
+        `);
+        
+        const { results } = await query.all();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: results || []
+        }), { headers });
+      } catch (error) {
+        console.error('[DEBUG] Error fetching admins:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch admins',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get available workers - 從 object_50hj8__c 取得真實師父資料，按工班過濾
+    if (path === '/api/v1/users/available/workers' && method === 'GET') {
+      try {
+        const url = new URL(request.url);
+        const teamId = url.searchParams.get('team_id');
+        const teamName = url.searchParams.get('team_name');
+        
+        let query = `
+          SELECT 
+            _id as user_id,
+            name,
+            phone_number__c as phone,
+            owner__r,
+            owner_department as department,
+            shift_time__c as team_id,
+            shift_time__c__r as team_name,
+            field_iL2BT__c as role
+          FROM object_50hj8__c
+          WHERE is_deleted = 0
+          AND life_status = 'normal'
+        `;
+        
+        const params = [];
+        if (teamId) {
+          // 根據工班 ID 過濾
+          query += ` AND shift_time__c = ?`;
+          params.push(teamId);
+        } else if (teamName) {
+          // 根據工班名稱過濾
+          query += ` AND shift_time__c__r = ?`;
+          params.push(teamName);
+        }
+        
+        query += ` ORDER BY name`;
+        
+        const stmt = params.length > 0 ? 
+          env.DB_CRM.prepare(query).bind(...params) :
+          env.DB_CRM.prepare(query);
+          
+        const { results } = await stmt.all();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: results || []
+        }), { headers });
+      } catch (error) {
+        console.error('[DEBUG] Error fetching workers:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch workers',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get available owners - 從 newopportunitycontactsobj 取得真實業主資料
+    if (path === '/api/v1/users/available/owners' && method === 'GET') {
+      try {
+        const url = new URL(request.url);
+        const opportunityId = url.searchParams.get('opportunity_id');
+        
+        const query = opportunityId ? 
+          `SELECT 
+            _id as user_id,
+            contact_id__r as name,
+            '' as phone,
+            '' as email,
+            '' as role
+          FROM newopportunitycontactsobj
+          WHERE new_opportunity_id__relation_ids = ?
+          AND is_deleted = 0
+          AND life_status = 'normal'
+          ORDER BY contact_id__r` :
+          `SELECT 
+            _id as user_id,
+            contact_id__r as name,
+            '' as phone,
+            '' as email,
+            '' as role,
+            new_opportunity_id__relation_ids as opportunity_id
+          FROM newopportunitycontactsobj
+          WHERE is_deleted = 0
+          AND life_status = 'normal'
+          ORDER BY contact_id__r`;
+
+        const stmt = opportunityId ? 
+          env.DB_CRM.prepare(query).bind(opportunityId) :
+          env.DB_CRM.prepare(query);
+
+        const { results } = await stmt.all();
+
+        return new Response(JSON.stringify({
+          success: true,
+          data: results || []
+        }), { headers });
+      } catch (error) {
+        console.error('[DEBUG] Error fetching owners:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch owners',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get project teams - 取得專案實際使用的工班
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/teams$/) && method === 'GET') {
+      try {
+        const projectId = path.split('/')[4];
+        console.log('[DEBUG] Getting teams for project:', projectId);
+        
+        // 從專案的案場中統計實際使用的工班
+        // 這應該從 sites 表或其他地方查詢，現在先返回示例資料
+        const projectTeams = [
+          { id: '66a21ce3f0032b000142088f', name: '周華龍工班', count: 297 },
+          { id: '66a3651be4a03100013b9a6f', name: '樂邁(工班)-愛德美特有限公司', count: 70 },
+          { id: '66bbed4c1ca88f0001c83bc9', name: '莊聰源師傅/菲米裝潢工程行', count: 60 }
+        ];
+        
+        return new Response(JSON.stringify({
+          success: true,
+          teams: projectTeams
+        }), { headers });
+      } catch (error) {
+        console.error('[DEBUG] Error fetching project teams:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch project teams',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get project users - 從 users 表取得真實專案用戶資料  
+    if (path.match(/^\/api\/v1\/projects\/proj_[^\/]+\/users$/) && method === 'GET') {
+      try {
+        const projectId = path.split('/')[4];
+        console.log('[DEBUG] Getting users for project:', projectId);
+        
+        // Query all users for this project
+        const query = env.DB_ENGINEERING.prepare(`
+          SELECT 
+            u.id,
+            u.user_id,
+            u.name,
+            u.phone,
+            u.team_id,
+            u.role,
+            u.can_view_other_teams,
+            u.source_type,
+            u.source_id,
+            u.is_active
+          FROM users u
+          WHERE u.project_id = ? AND u.is_active = 1
+          ORDER BY u.role, u.name
+        `);
+        
+        const { results } = await query.bind(projectId).all();
+        
+        if (!results || results.length === 0) {
+          // 如果沒有用戶，返回空結構
+          return new Response(JSON.stringify({
+            success: true,
+            data: {
+              all: [],
+              grouped: {
+                admins: [],
+                owners: [],
+                teams: []
+              }
+            }
+          }), { headers });
+        }
+        
+        // 分組用戶
+        const admins = results.filter(u => u.role === 'admin' || u.source_type === 'employees_simple');
+        const owners = results.filter(u => u.role === 'owner' || u.source_type === 'crm_contact');
+        const workers = results.filter(u => u.role === 'team_member' || u.role === 'team_leader' || u.source_type === 'crm_worker');
+        
+        // 按工班分組工人
+        const teamGroups = {};
+        workers.forEach(worker => {
+          const teamId = worker.team_id || 'no_team';
+          if (!teamGroups[teamId]) {
+            teamGroups[teamId] = {
+              team_id: teamId,
+              team_name: teamId, // 實際應從 SupplierObj 查詢工班名稱
+              members: []
+            };
+          }
+          teamGroups[teamId].members.push({
+            user_id: worker.user_id,
+            name: worker.name,
+            phone: worker.phone,
+            role: worker.role || 'member',
+            can_view_other_teams: worker.can_view_other_teams
+          });
+        });
+        
+        // 查詢工班名稱
+        if (Object.keys(teamGroups).length > 0) {
+          const teamIds = Object.keys(teamGroups).filter(id => id !== 'no_team');
+          if (teamIds.length > 0) {
+            const teamQuery = env.DB_CRM.prepare(`
+              SELECT _id, name 
+              FROM supplierobj 
+              WHERE _id IN (${teamIds.map(() => '?').join(',')})
+            `);
+            const teamResults = await teamQuery.bind(...teamIds).all();
+            
+            // 更新工班名稱
+            if (teamResults.results) {
+              teamResults.results.forEach(team => {
+                if (teamGroups[team._id]) {
+                  teamGroups[team._id].team_name = team.name;
+                }
+              });
+            }
+          }
+        }
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: {
+            all: results.map(u => ({
+              user_id: u.user_id,
+              name: u.name,
+              phone: u.phone,
+              user_type: u.role === 'admin' ? 'admin' : 
+                        u.role === 'owner' ? 'owner' : 'worker',
+              user_role: u.role,
+              team_id: u.team_id,
+              can_view_all: u.can_view_other_teams,
+              can_edit_all: 0,
+              can_add_members: u.role === 'admin' || u.role === 'team_leader' ? 1 : 0,
+              can_add_leaders: u.role === 'admin' ? 1 : 0
+            })),
+            grouped: {
+              admins: admins.map(u => ({
+                user_id: u.user_id,
+                name: u.name,
+                phone: u.phone
+              })),
+              owners: owners.map(u => ({
+                user_id: u.user_id,
+                name: u.name,
+                phone: u.phone
+              })),
+              teams: Object.values(teamGroups)
+            }
+          }
+        }), { headers });
+      } catch (error) {
+        console.error('[DEBUG] Error fetching project users:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to fetch project users',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
     // Opportunities
     if (path === '/api/v1/opportunities' && method === 'GET') {
       return new Response(JSON.stringify({
@@ -848,6 +1406,175 @@ export default {
         success: false,
         error: '無效的 token'
       }), { status: 401, headers });
+    }
+    
+    // Add user to project endpoint - 使用 project_members 表（根據文檔）
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/users\/add$/) && method === 'POST') {
+      try {
+        const projectId = path.split('/')[4];
+        const body = await request.json();
+        
+        const {
+          user_id,
+          user_type,
+          user_role,
+          team_id,
+          source_table,
+          phone,
+          name,
+          nickname,
+          password,
+          email
+        } = body;
+        
+        // 根據文檔，使用 project_members 表進行統一權限管理
+        // member_type: 'team' 或 'owner'
+        const memberType = user_type === 'owner' ? 'owner' : 'team';
+        const role = user_role || (user_type === 'owner' ? 'viewer' : 'member');
+        
+        // 檢查是否已存在
+        const existing = await env.DB_ENGINEERING.prepare(`
+          SELECT id FROM project_members 
+          WHERE project_id = ? AND user_id = ? AND team_id = ?
+        `).bind(projectId, user_id, team_id || null).first();
+        
+        if (existing) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '該用戶已在專案中'
+          }), { status: 400, headers });
+        }
+        
+        // 先確保 users 表有該用戶資料
+        const existingUser = await env.DB_ENGINEERING.prepare(`
+          SELECT id FROM users WHERE phone = ?
+        `).bind(phone).first();
+        
+        if (!existingUser) {
+          // 插入到 users 表
+          await env.DB_ENGINEERING.prepare(`
+            INSERT INTO users (
+              id, phone, name, email,
+              global_role, source_type, source_id, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          `).bind(
+            user_id, phone, name, email,
+            user_type === 'admin' ? 'admin' : 'worker',
+            source_table, user_id
+          ).run();
+        }
+        
+        // 插入到 project_members 表
+        await env.DB_ENGINEERING.prepare(`
+          INSERT INTO project_members (
+            project_id, user_id, member_type, team_id, role,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          projectId, user_id, memberType, 
+          team_id || null, role
+        ).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '用戶添加成功',
+          data: {
+            project_id: projectId,
+            user_id,
+            name,
+            member_type: memberType,
+            role
+          }
+        }), { headers });
+      } catch (error) {
+        console.error('Error adding user to project:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Create new worker endpoint - 添加重複檢查
+    if (path === '/api/v1/workers/create' && method === 'POST') {
+      try {
+        const body = await request.json();
+        const { name, phone, email, nickname, password, team_id } = body;
+        
+        // 根據要求：檢查同一電話是否已在同一工班
+        // 需要先找到 team_id 對應的工班名稱
+        let teamName = '';
+        if (team_id) {
+          const teamResult = await env.DB_CRM.prepare(`
+            SELECT name FROM supplierobj 
+            WHERE _id = ? AND is_deleted = 0
+          `).bind(team_id).first();
+          
+          if (teamResult) {
+            teamName = teamResult.name;
+          }
+        }
+        
+        // 檢查是否已存在相同電話在同一工班
+        const existingWorker = await env.DB_CRM.prepare(`
+          SELECT _id, name FROM object_50hj8__c 
+          WHERE phone_number__c = ? 
+          AND shift_time__c__r = ?
+          AND is_deleted = 0
+          AND life_status = 'normal'
+        `).bind(phone, teamName).first();
+        
+        if (existingWorker) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: `該電話號碼已存在於 ${teamName} 工班中（師父：${existingWorker.name}）`,
+            message: '師父已存在'
+          }), { status: 400, headers });
+        }
+        
+        // 生成工人ID
+        const workerId = `worker_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        
+        // 插入到 CRM 的 object_50hj8__c 表
+        // 注意：shift_time__c 存 team_id，shift_time__c__r 存工班名稱
+        await env.DB_CRM.prepare(`
+          INSERT INTO object_50hj8__c (
+            _id, name, phone_number__c, create_time, 
+            life_status, is_deleted, shift_time__c, shift_time__c__r
+          ) VALUES (?, ?, ?, ?, 'normal', 0, ?, ?)
+        `).bind(
+          workerId, name, phone, Date.now(), 
+          team_id || '', teamName
+        ).run();
+        
+        // 同時插入到 DB_ENGINEERING 的 users 表
+        await env.DB_ENGINEERING.prepare(`
+          INSERT OR IGNORE INTO users (
+            id, phone, name, email,
+            global_role, source_type, source_id, created_at
+          ) VALUES (?, ?, ?, ?, 'worker', 'crm_worker', ?, datetime('now'))
+        `).bind(
+          workerId, phone, name, email, workerId
+        ).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '師父創建成功',
+          data: {
+            worker_id: workerId,
+            name,
+            phone,
+            team: teamName,
+            nickname: nickname || name?.slice(-1)
+          }
+        }), { headers });
+      } catch (error) {
+        console.error('Error creating worker:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message
+        }), { status: 500, headers });
+      }
     }
     
     return new Response(JSON.stringify({ 

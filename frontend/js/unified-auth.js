@@ -112,7 +112,7 @@ class UnifiedAuth {
      */
     async loginSimple(phone, password) {
         try {
-            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/login`, {
+            const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/login`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -122,13 +122,13 @@ class UnifiedAuth {
             
             const data = await response.json();
             
-            if (data.success) {
+            if (data.success && data.data) {
                 this.saveAuth(
-                    data.token,
-                    data.user,
+                    data.data.token,
+                    data.data.user,
                     this.AUTH_TYPES.SIMPLE
                 );
-                return { success: true, user: data.user };
+                return { success: true, user: data.data.user };
             } else {
                 return { success: false, error: data.message || '登入失敗' };
             }
