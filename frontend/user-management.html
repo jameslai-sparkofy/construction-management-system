@@ -97,8 +97,8 @@
         }
 
         .user-item {
-            padding: 10px;
-            margin-bottom: 8px;
+            padding: 8px;
+            margin-bottom: 6px;
             background: #f9f9f9;
             border-radius: 6px;
             cursor: pointer;
@@ -106,6 +106,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 60px;
         }
 
         .user-item:hover {
@@ -165,6 +166,7 @@
             margin-bottom: 8px;
             font-size: 14px;
             color: #666;
+            font-weight: 500;
         }
 
         .team-select {
@@ -174,6 +176,42 @@
             border-radius: 4px;
             font-size: 14px;
             background: white;
+        }
+
+        /* 新增工班選擇按鈕樣式 */
+        #workerTeamTabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .worker-team-tab {
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .worker-team-tab:hover {
+            background: #f0f0f0;
+            border-color: #667eea;
+        }
+
+        .worker-team-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .worker-team-tab .team-count {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 2px;
         }
 
         /* 工班分頁 */
@@ -424,6 +462,14 @@
                     </button>
                 </div>
 
+                <!-- 工班選擇分頁（當選擇師父時顯示） -->
+                <div class="team-selector" id="teamSelectorForWorkers" style="display: none;">
+                    <label style="margin-bottom: 10px; display: block; color: #666;">請先選擇工班：</label>
+                    <div class="team-tab-buttons" id="workerTeamTabs">
+                        <!-- 動態生成工班按鈕 -->
+                    </div>
+                </div>
+
                 <!-- 可選用戶列表 -->
                 <div class="user-list" id="availableUsers">
                     <div class="loading">
@@ -432,12 +478,9 @@
                     </div>
                 </div>
 
-                <!-- 工班選擇（僅師父顯示） -->
-                <div class="team-selector" id="teamSelector" style="display: none;">
-                    <label>選擇工班：</label>
-                    <select id="teamSelect" class="team-select">
-                        <option value="">載入中...</option>
-                    </select>
+                <!-- 選擇師父但未選工班的提示 -->
+                <div id="selectTeamHint" style="display: none; padding: 20px; text-align: center; color: #666; background: #f9f9f9; border-radius: 6px; margin-top: 20px;">
+                    <p style="margin: 0;">👆 請先選擇上方的工班，系統將載入該工班的師父列表</p>
                 </div>
 
                 <!-- 添加按鈕 -->
@@ -454,15 +497,29 @@
                 <div class="new-worker-form" id="newWorkerForm">
                     <div class="form-group">
                         <label>姓名：</label>
-                        <input type="text" id="workerName" placeholder="輸入師父姓名">
+                        <input type="text" id="workerName" placeholder="輸入師父姓名" onchange="updateNickname()">
                     </div>
                     <div class="form-group">
-                        <label>電話：</label>
-                        <input type="tel" id="workerPhone" placeholder="輸入手機號碼">
+                        <label>簡稱：</label>
+                        <input type="text" id="workerNickname" placeholder="自動取姓名最後一字">
                     </div>
                     <div class="form-group">
-                        <label>Email（選填）：</label>
+                        <label>電話/帳號：</label>
+                        <input type="tel" id="workerPhone" placeholder="輸入手機號碼" onchange="updatePassword()">
+                    </div>
+                    <div class="form-group">
+                        <label>密碼：</label>
+                        <input type="text" id="workerPassword" placeholder="預設為電話後3碼">
+                    </div>
+                    <div class="form-group">
+                        <label>Email（找回密碼用）：</label>
                         <input type="email" id="workerEmail" placeholder="輸入電子郵件">
+                    </div>
+                    <div class="form-group">
+                        <label>工班：</label>
+                        <select id="workerTeam">
+                            <option value="">選擇工班...</option>
+                        </select>
                     </div>
                     <div class="form-actions">
                         <button class="action-button" onclick="cancelNewWorker()">取消</button>
@@ -522,7 +579,7 @@
     <script>
         // 配置
         // 使用與其他頁面相同的 API URL - 確保使用正確的 development API
-        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
+        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-d1-api.lai-jameslai.workers.dev';
         let projectId = null;
         let currentUserData = null;
         let selectedUser = null;
@@ -572,7 +629,7 @@
             
             if (!token) {
                 console.error('No token found in localStorage');
-                window.location.href = 'login.html';
+                window.location.href = 'login-simple.html';
                 return;
             }
 
@@ -592,7 +649,7 @@
                 } else if (response.status === 401) {
                     // Token 無效，返回登入頁
                     localStorage.removeItem('token');
-                    window.location.href = 'login.html';
+                    window.location.href = 'login-simple.html';
                 }
             } catch (error) {
                 console.error('Error fetching current user:', error);
@@ -624,7 +681,8 @@
         async function loadTeams() {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/api/v1/teams`, {
+                // 傳遞 project_id 來獲取專案特定的工班
+                const response = await fetch(`${API_BASE}/api/v1/teams?project_id=${projectId}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -682,6 +740,31 @@
         async function loadAvailableUsers(source) {
             currentSource = source;
             const listElement = document.getElementById('availableUsers');
+            const teamSelectorDiv = document.getElementById('teamSelectorForWorkers');
+            const selectTeamHint = document.getElementById('selectTeamHint');
+            const createWorkerToggle = document.getElementById('createWorkerToggle');
+            
+            // 重置選擇狀態
+            selectedTeam = null;
+            
+            if (source === 'workers') {
+                // 顯示工班選擇器
+                teamSelectorDiv.style.display = 'block';
+                selectTeamHint.style.display = 'block';
+                listElement.style.display = 'none';
+                createWorkerToggle.style.display = 'none';
+                
+                // 載入工班選項
+                await loadTeamTabsForWorkers();
+                return;
+            } else {
+                // 隱藏工班選擇器
+                teamSelectorDiv.style.display = 'none';
+                selectTeamHint.style.display = 'none';
+                listElement.style.display = 'block';
+                createWorkerToggle.style.display = 'none';
+            }
+            
             listElement.innerHTML = '<div class="loading"><div class="spinner"></div>載入中...</div>';
 
             try {
@@ -689,9 +772,6 @@
                 if (source === 'owners') {
                     // 如果是業主，可以傳遞 opportunity_id
                     url += `?opportunity_id=${projectId}`;
-                } else if (source === 'workers' && selectedTeam) {
-                    // 如果是師父且選擇了工班，按工班過濾
-                    url += `?team_id=${selectedTeam}`;
                 }
 
                 const token = localStorage.getItem('token');
@@ -712,6 +792,101 @@
             }
         }
 
+        // 載入工班選項供師父選擇
+        async function loadTeamTabsForWorkers() {
+            const tabsContainer = document.getElementById('workerTeamTabs');
+            
+            if (teamsList.length === 0) {
+                tabsContainer.innerHTML = '<div style="color: #999;">沒有可用的工班</div>';
+                return;
+            }
+            
+            // 生成工班按鈕
+            tabsContainer.innerHTML = teamsList.map(team => `
+                <button class="worker-team-tab" data-team-id="${team.id}" data-team-name="${team.name}">
+                    <div>${team.name}</div>
+                    <div class="team-count">${team.member_count || 0} 位師父</div>
+                </button>
+            `).join('');
+            
+            // 綁定點擊事件
+            tabsContainer.querySelectorAll('.worker-team-tab').forEach(tab => {
+                tab.addEventListener('click', () => selectTeamForWorkers(tab));
+            });
+        }
+
+        // 選擇工班並載入該工班的師父
+        async function selectTeamForWorkers(tabElement) {
+            // 移除其他 active 狀態
+            document.querySelectorAll('.worker-team-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // 添加 active 狀態
+            tabElement.classList.add('active');
+            
+            // 記錄選中的工班
+            selectedTeam = tabElement.dataset.teamId;
+            const teamName = tabElement.dataset.teamName;
+            
+            // 隱藏提示，顯示列表
+            document.getElementById('selectTeamHint').style.display = 'none';
+            const listElement = document.getElementById('availableUsers');
+            listElement.style.display = 'block';
+            listElement.innerHTML = '<div class="loading"><div class="spinner"></div>載入 ' + teamName + ' 的師父...</div>';
+            
+            // 顯示創建新師父按鈕
+            document.getElementById('createWorkerToggle').style.display = 'block';
+            
+            try {
+                // 從 CRM 的 object_50HJ8__c 表載入該工班的師父
+                const url = `${API_BASE}/api/v1/teams/${selectedTeam}/workers`;
+                const token = localStorage.getItem('token');
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    availableUsersList = result.data || [];
+                    displayAvailableUsers(availableUsersList);
+                } else {
+                    // 如果 API 不存在，使用模擬資料
+                    console.warn('API not found, using mock data');
+                    availableUsersList = getMockWorkersForTeam(teamName);
+                    displayAvailableUsers(availableUsersList);
+                }
+            } catch (error) {
+                console.error('Error loading team workers:', error);
+                // 使用模擬資料
+                availableUsersList = getMockWorkersForTeam(teamName);
+                displayAvailableUsers(availableUsersList);
+            }
+        }
+
+        // 模擬資料函數
+        function getMockWorkersForTeam(teamName) {
+            const mockData = {
+                '周華龍工班': [
+                    { user_id: 'w001', name: '周華龍', phone: '0963922033', nickname: '龍', email: '' },
+                    { user_id: 'w002', name: '張師傅', phone: '0912345678', nickname: '張', email: '' },
+                    { user_id: 'w003', name: '李師傅', phone: '0923456789', nickname: '李', email: '' }
+                ],
+                '樂邁': [
+                    { user_id: 'w004', name: '陳師傅', phone: '0934567890', nickname: '陳', email: '' },
+                    { user_id: 'w005', name: '林師傅', phone: '0945678901', nickname: '林', email: '' }
+                ],
+                '莊聰源': [
+                    { user_id: 'w006', name: '莊聰源', phone: '0956789012', nickname: '源', email: '' },
+                    { user_id: 'w007', name: '王師傅', phone: '0967890123', nickname: '王', email: '' }
+                ]
+            };
+            
+            return mockData[teamName] || [];
+        }
+
         // 顯示可用用戶
         function displayAvailableUsers(users) {
             const listElement = document.getElementById('availableUsers');
@@ -721,16 +896,30 @@
                 return;
             }
 
-            listElement.innerHTML = users.map(user => `
-                <div class="user-item" data-user-id="${user.user_id}">
+            listElement.innerHTML = users.map(user => {
+                // 生成預設密碼（電話後3碼）
+                const defaultPassword = user.phone ? user.phone.slice(-3) : '000';
+                
+                return `
+                <div class="user-item" data-user-id="${user.user_id}" 
+                     data-nickname="${user.nickname || ''}" 
+                     data-phone="${user.phone || ''}" 
+                     data-email="${user.email || ''}" 
+                     data-password="${defaultPassword}">
                     <div class="user-info">
                         <div class="user-name">${user.name || '未命名'}</div>
                         <div class="user-detail">
-                            ${user.phone || user.email || user.department || ''}
+                            <div>簡稱: ${user.nickname || user.name?.slice(-1) || '無'}</div>
+                            <div>電話/帳號: ${user.phone || '無'}</div>
+                            <div>密碼: <span id="pwd_${user.user_id}">${defaultPassword}</span> 
+                                <button onclick="editPassword('${user.user_id}')" style="font-size: 10px; padding: 2px 5px;">改</button>
+                            </div>
+                            <div>Email: ${user.email || '未設定'}</div>
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             // 綁定選擇事件
             listElement.querySelectorAll('.user-item').forEach(item => {
@@ -748,9 +937,15 @@
             // 添加選中狀態
             element.classList.add('selected');
             
-            // 記錄選中的用戶
+            // 記錄選中的用戶及其資料
             const userId = element.dataset.userId;
             selectedUser = availableUsersList.find(u => u.user_id === userId);
+            
+            // 加入額外資料
+            if (selectedUser) {
+                selectedUser.nickname = element.dataset.nickname || selectedUser.name?.slice(-1);
+                selectedUser.password = document.getElementById(`pwd_${userId}`)?.textContent || element.dataset.password;
+            }
             
             // 啟用添加按鈕
             document.getElementById('addUserButton').disabled = false;
@@ -765,6 +960,20 @@
                 }
             } else {
                 teamSelector.style.display = 'none';
+            }
+        }
+        
+        // 編輯密碼功能
+        function editPassword(userId) {
+            const pwdSpan = document.getElementById(`pwd_${userId}`);
+            const currentPwd = pwdSpan.textContent;
+            const newPwd = prompt('請輸入新密碼:', currentPwd);
+            if (newPwd && newPwd !== currentPwd) {
+                pwdSpan.textContent = newPwd;
+                // 如果這是當前選中的用戶，更新密碼
+                if (selectedUser && selectedUser.user_id === userId) {
+                    selectedUser.password = newPwd;
+                }
             }
         }
 
@@ -885,7 +1094,9 @@
                              currentSource === 'workers' ? 'object_50hj8__c' : 'newopportunitycontactsobj',
                 phone: selectedUser.phone || selectedUser.contact_phone,
                 name: selectedUser.name || selectedUser.contact_name,
-                email: selectedUser.email || selectedUser.contact_email
+                nickname: selectedUser.nickname || selectedUser.name?.slice(-1) || '',
+                password: selectedUser.password || (selectedUser.phone ? selectedUser.phone.slice(-3) : '000'),
+                email: selectedUser.email || selectedUser.contact_email || ''
             };
 
             try {
@@ -977,14 +1188,40 @@
             }
         }
 
+        // 更新簡稱（根據姓名）
+        function updateNickname() {
+            const name = document.getElementById('workerName').value.trim();
+            const nicknameInput = document.getElementById('workerNickname');
+            if (name && !nicknameInput.value) {
+                nicknameInput.value = name.slice(-1);  // 取最後一字
+            }
+        }
+
+        // 更新密碼（根據電話）
+        function updatePassword() {
+            const phone = document.getElementById('workerPhone').value.trim();
+            const passwordInput = document.getElementById('workerPassword');
+            if (phone && !passwordInput.value) {
+                passwordInput.value = phone.slice(-3);  // 取後3碼
+            }
+        }
+
         // 創建新工人
         async function createNewWorker() {
             const name = document.getElementById('workerName').value.trim();
+            const nickname = document.getElementById('workerNickname').value.trim() || name.slice(-1);
             const phone = document.getElementById('workerPhone').value.trim();
+            const password = document.getElementById('workerPassword').value.trim() || phone.slice(-3);
             const email = document.getElementById('workerEmail').value.trim();
+            const teamId = document.getElementById('workerTeam').value;
 
             if (!name || !phone) {
                 alert('請填寫姓名和電話');
+                return;
+            }
+
+            if (!teamId) {
+                alert('請選擇工班');
                 return;
             }
 
@@ -995,23 +1232,33 @@
                         'Authorization': `Bearer ${localStorage.getItem('token')}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, phone, email })
+                    body: JSON.stringify({ 
+                        name, 
+                        nickname,
+                        phone, 
+                        password,
+                        email,
+                        team_id: teamId 
+                    })
                 });
 
                 const result = await response.json();
                 
                 if (result.success) {
-                    alert('工人創建成功！');
+                    alert('師父創建成功！');
                     // 隱藏表單
                     document.getElementById('newWorkerForm').classList.remove('show');
                     // 清空表單
                     document.getElementById('workerName').value = '';
+                    document.getElementById('workerNickname').value = '';
                     document.getElementById('workerPhone').value = '';
+                    document.getElementById('workerPassword').value = '';
                     document.getElementById('workerEmail').value = '';
+                    document.getElementById('workerTeam').value = '';
                     // 重新載入工人列表
                     await loadAvailableUsers('workers');
                 } else {
-                    alert('創建失敗：' + result.error);
+                    alert('創建失敗：' + (result.error || result.message));
                 }
             } catch (error) {
                 console.error('Error creating worker:', error);
@@ -1034,33 +1281,14 @@
                     // 添加 active
                     button.classList.add('active');
                     
-                    // 顯示/隱藏創建新師父按鈕
-                    const createWorkerBtn = document.getElementById('createWorkerToggle');
-                    if (button.dataset.source === 'workers') {
-                        createWorkerBtn.style.display = 'block';
-                    } else {
-                        createWorkerBtn.style.display = 'none';
-                    }
+                    // 創建新師父按鈕由 loadAvailableUsers 和 selectTeamForWorkers 管理
                     
                     // 載入對應的用戶
                     loadAvailableUsers(button.dataset.source);
                 });
             });
 
-            // 工班選擇
-            document.getElementById('teamSelect').addEventListener('change', (e) => {
-                selectedTeam = e.target.value;
-                // 重新載入師父列表
-                if (currentSource === 'workers') {
-                    loadAvailableUsers('workers');
-                }
-                // 更新添加按鈕狀態
-                if (selectedUser && selectedTeam) {
-                    document.getElementById('addUserButton').disabled = false;
-                } else {
-                    document.getElementById('addUserButton').disabled = true;
-                }
-            });
+            // 工班選擇已由 selectTeamForWorkers 處理
 
             // 工班分頁切換
             document.addEventListener('click', (e) => {
@@ -1083,6 +1311,18 @@
             document.getElementById('createWorkerToggle').addEventListener('click', () => {
                 const form = document.getElementById('newWorkerForm');
                 form.classList.toggle('show');
+                
+                // 填充工班選項
+                if (form.classList.contains('show')) {
+                    const workerTeamSelect = document.getElementById('workerTeam');
+                    workerTeamSelect.innerHTML = '<option value="">選擇工班...</option>';
+                    teamsList.forEach(team => {
+                        const option = document.createElement('option');
+                        option.value = team.id;
+                        option.textContent = team.name;
+                        workerTeamSelect.appendChild(option);
+                    });
+                }
             });
         }
 

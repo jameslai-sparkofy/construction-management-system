@@ -1,7 +1,7 @@
 // 開發環境配置
 const CONFIG = {
   API: {
-    // 開發環境 API
+    // 開發環境 API - 使用正確的 D1 API
     WORKER_API_URL: 'https://construction-management-api.lai-jameslai.workers.dev',
     
     // CRM API (共用)
