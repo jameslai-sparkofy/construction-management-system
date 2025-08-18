@@ -597,11 +597,15 @@
             <h1>專案管理系統 <span style="font-size: 0.6em; color: #84C7D0;">v1.2.0</span></h1>
             <div class="user-info">
                 <span class="user-name" id="userName">載入中...</span>
+                <button class="admin-btn" onclick="window.location.href='user-profile.html'">
+                    ⚙️ 個人設定
+                </button>
                 <div class="admin-menu" id="adminMenu">
                     <button class="admin-btn" onclick="toggleAdminDropdown()" id="adminBtn">
                         🔧 管理功能
                     </button>
                     <div class="admin-dropdown" id="adminDropdown">
+                        <a href="super-admin-users.html" class="admin-dropdown-item" id="superAdminUsersLink" style="display: none;">🔑 全站用戶管理</a>
                         <a href="user-management.html" class="admin-dropdown-item">👤 用戶管理</a>
                         <a href="member-management.html" class="admin-dropdown-item">👥 成員管理</a>
                         <a href="owner-management.html" class="admin-dropdown-item">🏢 業主管理</a>
@@ -785,6 +789,14 @@
                     if (isAdmin) {
                         const adminMenu = document.getElementById('adminMenu');
                         adminMenu.classList.add('show');
+                    }
+                }
+
+                // 檢查 Super Admin 權限
+                if (currentUser && currentUser.role === 'super_admin') {
+                    const superAdminLink = document.getElementById('superAdminUsersLink');
+                    if (superAdminLink) {
+                        superAdminLink.style.display = 'block';
                     }
                 }
             } catch (error) {

@@ -44,6 +44,31 @@
             font-size: 14px;
         }
 
+        .back-button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .back-button:before {
+            content: "←";
+            font-size: 16px;
+        }
+
         .main-content {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -485,6 +510,7 @@
                 <div id="projectName">載入中...</div>
                 <div id="currentUser" style="margin-top: 5px; font-size: 12px;"></div>
             </div>
+            <a href="#" class="back-button" id="backToProject">回到專案詳情</a>
         </div>
 
         <div class="main-content">
@@ -704,6 +730,12 @@
                 // 返回專案列表而不是無限循環
                 window.location.href = 'project-list.html';
                 return;
+            }
+
+            // 設置回到專案詳情按鈕連結
+            const backButton = document.getElementById('backToProject');
+            if (backButton) {
+                backButton.href = `project-detail.html?id=${projectId}`;
             }
 
             // 獲取當前用戶

@@ -1701,6 +1701,276 @@ export default {
         }), { status: 500, headers });
       }
     }
+
+    // Super Admin: Get all users
+    if (path === '/api/v1/admin/users' && method === 'GET') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        // 獲取所有用戶及其專案角色
+        const usersQuery = await env.DB_ENGINEERING.prepare(`
+          SELECT 
+            u.id as user_id,
+            u.phone,
+            u.name,
+            u.email,
+            u.global_role as role,
+            u.user_status,
+            u.last_login,
+            u.login_count,
+            u.created_at,
+            u.updated_at
+          FROM users u
+          ORDER BY u.created_at DESC
+        `).all();
+
+        const users = usersQuery.results || [];
+
+        // 為每個用戶獲取專案參與資訊
+        for (let user of users) {
+          try {
+            const projectsQuery = await env.DB_ENGINEERING.prepare(`
+              SELECT 
+                pu.project_id,
+                pu.user_type as user_role,
+                pu.team_name,
+                pu.role as team_role,
+                pu.added_at as joined_at,
+                p.name as project_name,
+                p.status as project_status
+              FROM project_users pu
+              LEFT JOIN projects p ON pu.project_id = p.id
+              WHERE pu.user_id = ?
+              ORDER BY pu.added_at DESC
+            `).bind(user.user_id).all();
+
+            user.projects = projectsQuery.results || [];
+            user.project_count = user.projects.length;
+          } catch (error) {
+            console.error('Error loading user projects:', error);
+            user.projects = [];
+            user.project_count = 0;
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          users: users,
+          total: users.length
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error getting all users:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get users',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // Super Admin: Get all projects
+    if (path === '/api/v1/admin/projects' && method === 'GET') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        // 獲取所有專案及其用戶統計
+        const projectsQuery = await env.DB_ENGINEERING.prepare(`
+          SELECT 
+            p.id as project_id,
+            p.name,
+            p.opportunity_id as company,
+            p.status as project_status,
+            '' as start_date,
+            '' as end_date,
+            p.created_at,
+            p.updated_at,
+            COUNT(pu.user_id) as user_count
+          FROM projects p
+          LEFT JOIN project_users pu ON p.id = pu.project_id
+          GROUP BY p.id, p.name, p.opportunity_id, p.status, p.created_at, p.updated_at
+          ORDER BY p.created_at DESC
+        `).all();
+
+        const projects = projectsQuery.results || [];
+
+        return new Response(JSON.stringify({
+          success: true,
+          projects: projects,
+          total: projects.length
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error getting all projects:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get projects',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // Super Admin: Get user's project roles
+    if (path.match(/^\/api\/v1\/admin\/users\/[^\/]+\/projects$/) && method === 'GET') {
+      try {
+        const userId = path.split('/')[5];
+
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        // 獲取用戶的所有專案角色
+        const projectsQuery = await env.DB_ENGINEERING.prepare(`
+          SELECT 
+            pu.project_id,
+            pu.user_type as user_role,
+            pu.team_name,
+            pu.role as team_role,
+            pu.added_at as joined_at,
+            p.name as project_name,
+            p.opportunity_id as project_company,
+            p.status as project_status
+          FROM project_users pu
+          LEFT JOIN projects p ON pu.project_id = p.id
+          WHERE pu.user_id = ?
+          ORDER BY pu.added_at DESC
+        `).bind(userId).all();
+
+        const projects = projectsQuery.results || [];
+
+        return new Response(JSON.stringify({
+          success: true,
+          projects: projects,
+          user_id: userId
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error getting user projects:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get user projects',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // Super Admin: Update user status
+    if (path.match(/^\/api\/v1\/admin\/users\/[^\/]+\/status$/) && method === 'PUT') {
+      try {
+        const userId = path.split('/')[5];
+        const body = await request.json();
+        const { status } = body;
+
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        // 驗證狀態值
+        if (!['active', 'pending', 'suspended'].includes(status)) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Invalid status value'
+          }), { status: 400, headers });
+        }
+
+        // 檢查用戶是否存在且不是 super_admin
+        const user = await env.DB_ENGINEERING.prepare(`
+          SELECT id as user_id, global_role as role FROM users WHERE id = ?
+        `).bind(userId).first();
+
+        if (!user) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'User not found'
+          }), { status: 404, headers });
+        }
+
+        if (user.role === 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Cannot modify Super Admin status'
+          }), { status: 403, headers });
+        }
+
+        // 更新用戶狀態
+        await env.DB_ENGINEERING.prepare(`
+          UPDATE users 
+          SET user_status = ?, updated_at = datetime('now')
+          WHERE id = ?
+        `).bind(status, userId).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'User status updated successfully',
+          user_id: userId,
+          new_status: status
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error updating user status:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update user status',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
     
     // Default 404
     return new Response(JSON.stringify({

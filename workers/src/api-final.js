@@ -4,43 +4,6 @@
  * 支援: 簡單認證 + Clerk 認證
  */
 
-// 模擬工班師父資料
-function getMockWorkersForTeam(teamId) {
-  // 只有愛德美特工班有師父（賴俊穎），其他工班都是空的
-  const mockData = {
-    '周華龍工班': [],
-    '樂邁': [],
-    '愛德美特': [
-      { user_id: 'user_lai_junyinq', name: '賴俊穎', phone: '+886-963922033', nickname: '穎', email: '', team_id: teamId, shift_time__c: '愛德美特有限公司', shift_time__c__r: '愛德美特' }
-    ],
-    '莊聰源': []
-  };
-  
-  // 檢查是否有對應的工班資料
-  for (const [teamName, workers] of Object.entries(mockData)) {
-    if (teamId.includes(teamName) || teamName.includes(teamId) || 
-        teamId.includes('周華龍') && teamName.includes('周華龍') ||
-        teamId.includes('樂邁') && teamName.includes('樂邁') ||
-        teamId.includes('愛德美特') && teamName.includes('愛德美特') ||
-        teamId.includes('莊聰源') && teamName.includes('莊聰源')) {
-      return workers;
-    }
-  }
-  
-  // 如果沒有匹配，返回預設的工班師父資料
-  if (teamId.includes('周') || teamId.includes('龍')) {
-    return mockData['周華龍工班'];
-  } else if (teamId.includes('樂') || teamId.includes('邁')) {
-    return mockData['樂邁'];
-  } else if (teamId.includes('愛德美特') || teamId.includes('有限公司')) {
-    return mockData['愛德美特'];
-  } else if (teamId.includes('莊') || teamId.includes('源')) {
-    return mockData['莊聰源'];
-  }
-  
-  // 預設返回空陣列
-  return [];
-}
 
 export default {
   async fetch(request, env, ctx) {
@@ -744,24 +707,26 @@ export default {
         const searchTerm = teamName || teamId;
         console.log('[DEBUG] Searching for workers with term:', searchTerm);
         
-        // Step 2: Query workers using team name or ID
+        // Step 2: Query workers using field_D1087__c (team ID) or field_D1087__c__r (team name)
         const query = env.DB_CRM.prepare(`
           SELECT 
             _id as id,
             name,
-            shift_time__c,
-            shift_time__c__r,
+            field_D1087__c as team_id_field,
+            field_D1087__c__r as team_name_field,
             phone_number__c,
             abbreviation__c,
             owner,
             create_time,
             last_modified_time
           FROM object_50hj8__c
-          WHERE shift_time__c__r LIKE ? OR shift_time__c LIKE ?
+          WHERE (field_D1087__c__r LIKE ? OR field_D1087__c = ?)
+            AND is_deleted = 0
+            AND life_status = 'normal'
           ORDER BY name
         `);
         
-        const { results } = await query.bind(`%${searchTerm}%`, `%${searchTerm}%`).all();
+        const { results } = await query.bind(`%${searchTerm}%`, teamId).all();
         console.log('[DEBUG] CRM query results:', results);
         console.log('[DEBUG] Results length:', results ? results.length : 'null/undefined');
         
@@ -782,9 +747,8 @@ export default {
           phone: worker.phone_number__c || '',
           nickname: worker.abbreviation__c || (worker.name ? worker.name.slice(-1) : ''),
           email: '',
-          team_id: teamId,
-          shift_time__c: worker.shift_time__c,
-          shift_time__c__r: worker.shift_time__c__r,
+          team_id: worker.team_id_field || teamId,
+          team_name: worker.team_name_field || teamName || '',
           source_type: 'crm_worker',
           source_id: worker.id
         }));
@@ -1207,6 +1171,52 @@ export default {
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to fetch project teams',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // Get project teams - 從專案用戶表提取工班資訊
+    if (path.match(/^\/api\/v1\/projects\/[^\/]+\/teams$/) && method === 'GET') {
+      try {
+        const projectId = path.split('/')[4];
+        console.log('[DEBUG] Getting teams for project:', projectId);
+        
+        // 從 project_users 表獲取工班資訊
+        const { results } = await env.DB_ENGINEERING.prepare(`
+          SELECT DISTINCT 
+            team_id, 
+            team_name,
+            COUNT(*) as member_count
+          FROM project_users 
+          WHERE project_id = ? 
+            AND team_id IS NOT NULL 
+            AND team_name IS NOT NULL
+          GROUP BY team_id, team_name
+          ORDER BY team_name
+        `).bind(projectId).all();
+        
+        console.log('[DEBUG] Teams found:', results);
+        
+        // 轉換為前端需要的格式
+        const teams = results.map(team => ({
+          id: team.team_id,
+          name: team.team_name,
+          memberCount: team.member_count,
+          members: [] // 這裡不載入成員詳情，需要時再查詢
+        }));
+        
+        return new Response(JSON.stringify({
+          success: true,
+          teams: teams,
+          total: teams.length
+        }), { headers });
+        
+      } catch (error) {
+        console.error('[DEBUG] Error getting project teams:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get project teams',
           message: error.message
         }), { status: 500, headers });
       }
