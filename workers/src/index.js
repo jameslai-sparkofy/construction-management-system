@@ -3,6 +3,270 @@
  * 使用單一 project_users 表的簡化設計
  */
 
+// 直接在檔案中實作認證邏輯
+
+// 簡化的認證工具類
+class AuthUtils {
+  constructor(env) {
+    this.env = env;
+    this.jwtSecret = env.JWT_SECRET || 'default-jwt-secret';
+  }
+
+  // 標準化手機號碼
+  normalizePhone(phone) {
+    if (!phone) return null;
+    
+    // 移除所有非數字字符
+    let cleaned = phone.replace(/\D/g, '');
+    
+    // 處理國碼
+    if (cleaned.startsWith('886')) {
+      cleaned = '0' + cleaned.substring(3);
+    }
+    
+    // 確保是 10 位數並以 09 開頭
+    if (cleaned.length === 10 && cleaned.startsWith('09')) {
+      return cleaned;
+    }
+    
+    return null;
+  }
+
+  // 生成簡化的 token
+  generateToken(user) {
+    const payload = {
+      user_id: user.id,
+      phone: user.phone,
+      role: user.global_role,
+      name: user.name,
+      exp: Math.floor(Date.now() / 1000) + (30 * 24 * 3600) // 30天
+    };
+    
+    // 簡化的 token (使用 TextEncoder 處理 UTF-8)
+    const tokenData = JSON.stringify(payload);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(tokenData);
+    const base64String = btoa(String.fromCharCode(...data));
+    return 'jwt_' + base64String + '_' + Date.now();
+  }
+
+  // 驗證 token
+  verifyToken(token) {
+    try {
+      if (!token || !token.startsWith('jwt_')) {
+        return { valid: false, error: 'Invalid token format' };
+      }
+      
+      const parts = token.split('_');
+      if (parts.length < 3) {
+        return { valid: false, error: 'Invalid token structure' };
+      }
+      
+      const encodedPayload = parts[1];
+      // 使用 TextDecoder 處理 UTF-8
+      const decodedBytes = atob(encodedPayload);
+      const bytes = new Uint8Array(decodedBytes.length);
+      for (let i = 0; i < decodedBytes.length; i++) {
+        bytes[i] = decodedBytes.charCodeAt(i);
+      }
+      const decoder = new TextDecoder();
+      const jsonString = decoder.decode(bytes);
+      const payload = JSON.parse(jsonString);
+      
+      // 檢查過期
+      if (payload.exp < Math.floor(Date.now() / 1000)) {
+        return { valid: false, error: 'Token expired' };
+      }
+      
+      return { valid: true, payload };
+    } catch (error) {
+      return { valid: false, error: 'Token verification failed' };
+    }
+  }
+
+  // 登入驗證
+  async login(phone, password) {
+    try {
+      const normalizedPhone = this.normalizePhone(phone);
+      if (!normalizedPhone) {
+        return { success: false, error: '手機號碼格式不正確' };
+      }
+
+      // 查詢用戶
+      const user = await this.env.DB_ENGINEERING.prepare(`
+        SELECT id, phone, password_suffix, name, email, global_role, 
+               is_active, user_status
+        FROM users 
+        WHERE phone = ? AND is_active = 1
+      `).bind(normalizedPhone).first();
+
+      if (!user) {
+        return { success: false, error: '用戶不存在或已停用' };
+      }
+
+      // 檢查用戶狀態
+      if (user.user_status === 'suspended') {
+        return { success: false, error: '帳號已暫停使用' };
+      }
+
+      // 驗證密碼
+      if (user.password_suffix !== password) {
+        return { success: false, error: '密碼錯誤' };
+      }
+
+      // 生成 token
+      const token = this.generateToken(user);
+
+      // 更新登入資訊
+      await this.env.DB_ENGINEERING.prepare(`
+        UPDATE users 
+        SET last_login = ?, 
+            login_count = login_count + 1,
+            session_token = ?
+        WHERE id = ?
+      `).bind(
+        new Date().toISOString(),
+        token,
+        user.id
+      ).run();
+
+      return {
+        success: true,
+        data: {
+          user: {
+            id: user.id,
+            name: user.name,
+            phone: user.phone,
+            email: user.email,
+            role: user.global_role,
+            user_type: user.global_role
+          },
+          token: token,
+          expires_in: 30 * 24 * 3600 // 30天
+        }
+      };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: `登入失敗: ${error.message}` };
+    }
+  }
+
+  // 用戶同步機制 - 當在專案中新增用戶時，檢查並同步到 users 表
+  async syncUserToUsersTable(phone, name, sourceType = 'manual', sourceId = null) {
+    try {
+      const normalizedPhone = this.normalizePhone(phone);
+      if (!normalizedPhone) {
+        return { success: false, error: '手機號碼格式不正確' };
+      }
+
+      // 檢查用戶是否已存在於 users 表
+      const existingUser = await this.env.DB_ENGINEERING.prepare(`
+        SELECT id, phone, name, global_role, is_active 
+        FROM users 
+        WHERE phone = ?
+      `).bind(normalizedPhone).first();
+
+      if (existingUser) {
+        // 用戶已存在，更新資訊
+        if (existingUser.is_active === 0) {
+          // 重新啟用停用的用戶
+          await this.env.DB_ENGINEERING.prepare(`
+            UPDATE users 
+            SET is_active = 1, 
+                name = COALESCE(?, name),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE phone = ?
+          `).bind(name, normalizedPhone).run();
+        } else if (name && name !== existingUser.name) {
+          // 更新用戶名稱
+          await this.env.DB_ENGINEERING.prepare(`
+            UPDATE users 
+            SET name = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE phone = ?
+          `).bind(name, normalizedPhone).run();
+        }
+
+        return { 
+          success: true, 
+          user: {
+            id: existingUser.id,
+            phone: normalizedPhone,
+            name: name || existingUser.name,
+            role: existingUser.global_role
+          },
+          action: 'updated'
+        };
+      } else {
+        // 創建新用戶
+        const newUserId = 'user_' + crypto.randomUUID().replace(/-/g, '').substring(0, 16);
+        const passwordSuffix = normalizedPhone.slice(-3); // 預設密碼為手機後3碼
+
+        await this.env.DB_ENGINEERING.prepare(`
+          INSERT INTO users (
+            id, phone, password_suffix, name, global_role,
+            source_type, source_id, is_active, is_verified, user_status,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 'pending', CURRENT_TIMESTAMP)
+        `).bind(
+          newUserId,
+          normalizedPhone,
+          passwordSuffix,
+          name || '未命名用戶',
+          'user', // 預設為一般用戶
+          sourceType,
+          sourceId
+        ).run();
+
+        return { 
+          success: true, 
+          user: {
+            id: newUserId,
+            phone: normalizedPhone,
+            name: name || '未命名用戶',
+            role: 'user'
+          },
+          action: 'created'
+        };
+      }
+    } catch (error) {
+      console.error('User sync error:', error);
+      return { success: false, error: `用戶同步失敗: ${error.message}` };
+    }
+  }
+
+  // 批量用戶同步
+  async batchSyncUsers(userList) {
+    const results = {
+      successful: [],
+      failed: []
+    };
+
+    for (const userData of userList) {
+      const result = await this.syncUserToUsersTable(
+        userData.phone, 
+        userData.name, 
+        userData.sourceType || 'manual',
+        userData.sourceId
+      );
+
+      if (result.success) {
+        results.successful.push({
+          ...result.user,
+          action: result.action
+        });
+      } else {
+        results.failed.push({
+          phone: userData.phone,
+          name: userData.name,
+          error: result.error
+        });
+      }
+    }
+
+    return results;
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -30,48 +294,362 @@ export default {
       }), { headers });
     }
     
-    // Simple login
-    if (path === '/api/v1/auth/login' && method === 'POST') {
-      const body = await request.json();
-      const { phone, password } = body;
-      
-      if (phone === '0912345678' && password === '678') {
-        return new Response(JSON.stringify({
-          success: true,
-          data: {
-            user: { id: 'admin', name: '系統管理員' },
-            token: 'token-' + Date.now()
-          }
-        }), { headers });
+    // 初始化認證工具
+    const authUtils = new AuthUtils(env);
+    
+    // 權限檢查函數
+    async function checkAuth(request) {
+      const authHeader = request.headers.get('Authorization');
+      if (!authHeader) {
+        return { authenticated: false, error: 'No authorization header' };
       }
       
-      return new Response(JSON.stringify({
-        success: false,
-        error: '登入失敗'
-      }), { status: 401, headers });
+      const tokenResult = authUtils.verifyToken(authHeader.replace('Bearer ', ''));
+      if (!tokenResult.valid) {
+        return { authenticated: false, error: tokenResult.error };
+      }
+      
+      // 從 token 中獲取用戶資訊
+      const verification = {
+        valid: true,
+        user: {
+          id: tokenResult.payload.user_id,
+          name: tokenResult.payload.name,
+          phone: tokenResult.payload.phone,
+          role: tokenResult.payload.role,
+          user_type: tokenResult.payload.role
+        }
+      };
+      
+      return { authenticated: true, user: verification.user };
+    }
+    
+    // 真實用戶登入
+    if (path === '/api/v1/auth/login' && method === 'POST') {
+      try {
+        const body = await request.json();
+        const { phone, password } = body;
+        
+        const result = await authUtils.login(phone, password);
+        
+        if (result.success) {
+          return new Response(JSON.stringify(result), { headers });
+        } else {
+          return new Response(JSON.stringify(result), { 
+            status: 401, 
+            headers 
+          });
+        }
+      } catch (error) {
+        console.error('Login API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: '登入系統錯誤'
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 登出
+    if (path === '/api/v1/auth/logout' && method === 'POST') {
+      try {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'No authorization header'
+          }), { status: 401, headers });
+        }
+        
+        // 簡化的登出處理
+        const result = { success: true };
+        return new Response(JSON.stringify(result), { headers });
+      } catch (error) {
+        console.error('Logout API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Logout failed'
+        }), { status: 500, headers });
+      }
     }
     
     // Get current user
     if (path === '/api/v1/users/me' && method === 'GET') {
-      return new Response(JSON.stringify({
-        success: true,
-        user: { 
-          id: 'admin', 
-          name: '系統管理員', 
-          role: 'admin',
-          user_type: 'admin'  // 添加 user_type 字段
+      try {
+        const authHeader = request.headers.get('Authorization');
+        if (!authHeader) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
         }
-      }), { headers });
+        
+        const tokenResult = authUtils.verifyToken(authHeader.replace('Bearer ', ''));
+        if (!tokenResult.valid) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: tokenResult.error
+          }), { status: 401, headers });
+        }
+        
+        const verification = {
+          user: {
+            id: tokenResult.payload.user_id,
+            name: tokenResult.payload.name,
+            phone: tokenResult.payload.phone,
+            role: tokenResult.payload.role,
+            user_type: tokenResult.payload.role
+          }
+        };
+        
+        return new Response(JSON.stringify({
+          success: true,
+          user: verification.user
+        }), { headers });
+      } catch (error) {
+        console.error('Get user API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get user info'
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 更新用戶個人資料
+    if (path === '/api/v1/users/me' && method === 'PUT') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+        
+        const body = await request.json();
+        const { name, email } = body;
+        
+        // 更新用戶資料
+        const updateFields = [];
+        const values = [];
+        
+        if (name) {
+          updateFields.push('name = ?');
+          values.push(name);
+        }
+        
+        if (email) {
+          updateFields.push('email = ?');
+          values.push(email);
+        }
+        
+        if (updateFields.length === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '沒有提供需要更新的資料'
+          }), { status: 400, headers });
+        }
+        
+        updateFields.push('updated_at = CURRENT_TIMESTAMP');
+        values.push(auth.user.id);
+        
+        await env.DB_ENGINEERING.prepare(`
+          UPDATE users 
+          SET ${updateFields.join(', ')}
+          WHERE id = ?
+        `).bind(...values).run();
+        
+        // 獲取更新後的用戶資料
+        const updatedUser = await env.DB_ENGINEERING.prepare(`
+          SELECT id, phone, name, email, global_role, user_status, last_login, login_count
+          FROM users 
+          WHERE id = ?
+        `).bind(auth.user.id).first();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '用戶資料更新成功',
+          user: {
+            id: updatedUser.id,
+            phone: updatedUser.phone,
+            name: updatedUser.name,
+            email: updatedUser.email,
+            role: updatedUser.global_role,
+            user_type: updatedUser.global_role,
+            user_status: updatedUser.user_status,
+            last_login: updatedUser.last_login,
+            login_count: updatedUser.login_count
+          }
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Update user profile error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update user profile',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 修改密碼
+    if (path === '/api/v1/users/change-password' && method === 'POST') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+        
+        const body = await request.json();
+        const { current_password, new_password } = body;
+        
+        if (!current_password || !new_password) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '請提供目前密碼和新密碼'
+          }), { status: 400, headers });
+        }
+        
+        // 驗證新密碼格式 (應為3位數字)
+        if (!/^\d{3}$/.test(new_password)) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '新密碼必須為3位數字'
+          }), { status: 400, headers });
+        }
+        
+        // 獲取用戶當前密碼
+        const user = await env.DB_ENGINEERING.prepare(`
+          SELECT password_suffix FROM users WHERE id = ?
+        `).bind(auth.user.id).first();
+        
+        if (!user) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '用戶不存在'
+          }), { status: 404, headers });
+        }
+        
+        // 驗證當前密碼
+        if (user.password_suffix !== current_password) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '目前密碼不正確'
+          }), { status: 400, headers });
+        }
+        
+        // 更新密碼
+        await env.DB_ENGINEERING.prepare(`
+          UPDATE users 
+          SET password_suffix = ?, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?
+        `).bind(new_password, auth.user.id).run();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '密碼修改成功'
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Change password error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to change password',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 獲取用戶在各專案中的角色
+    if (path === '/api/v1/users/me/projects' && method === 'GET') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+        
+        // 查詢用戶參與的專案和角色
+        const { results } = await env.DB_ENGINEERING.prepare(`
+          SELECT 
+            p.id as project_id,
+            p.name as project_name,
+            p.status as project_status,
+            pu.user_type,
+            pu.role,
+            pu.team_id,
+            pu.team_name,
+            pu.added_at
+          FROM project_users pu
+          INNER JOIN projects p ON pu.project_id = p.id
+          WHERE pu.phone = ? AND p.status = 'active'
+          ORDER BY pu.added_at DESC
+        `).bind(auth.user.phone).all();
+        
+        const projects = results.map(proj => ({
+          project_id: proj.project_id,
+          project_name: proj.project_name,
+          project_status: proj.project_status,
+          user_role: proj.user_type,
+          team_role: proj.role,
+          team_id: proj.team_id,
+          team_name: proj.team_name,
+          joined_at: proj.added_at
+        }));
+        
+        return new Response(JSON.stringify({
+          success: true,
+          projects: projects,
+          total: projects.length
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Get user projects error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get user projects',
+          message: error.message
+        }), { status: 500, headers });
+      }
     }
     
     // Get projects
     if (path === '/api/v1/projects' && method === 'GET') {
       try {
-        const query = env.DB_ENGINEERING.prepare(`
-          SELECT * FROM projects WHERE status = 'active' ORDER BY created_at DESC
-        `);
+        // 檢查認證
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: auth.error
+          }), { status: 401, headers });
+        }
         
-        const { results } = await query.all();
+        // 根據用戶角色獲取專案
+        let query;
+        if (auth.user.role === 'super_admin') {
+          // Super Admin 可以看所有專案
+          query = env.DB_ENGINEERING.prepare(`
+            SELECT * FROM projects WHERE status = 'active' ORDER BY created_at DESC
+          `);
+        } else {
+          // 其他用戶只能看參與的專案
+          query = env.DB_ENGINEERING.prepare(`
+            SELECT DISTINCT p.* FROM projects p
+            INNER JOIN project_users pu ON p.id = pu.project_id
+            WHERE p.status = 'active' 
+              AND pu.phone = ?
+            ORDER BY p.created_at DESC
+          `);
+        }
+        
+        const { results } = auth.user.role === 'super_admin' 
+          ? await query.all()
+          : await query.bind(auth.user.phone).all();
         
         const projects = results.map(proj => {
           const spcEng = proj.spc_engineering ? JSON.parse(proj.spc_engineering) : {};
@@ -202,6 +780,23 @@ export default {
           sourceId = user_id.replace('crm_worker_', '');
         }
         
+        // 同步用戶到 users 表
+        if (phone) {
+          const syncResult = await authUtils.syncUserToUsersTable(
+            phone, 
+            name, 
+            source_table === 'employees_simple' ? 'system' : 
+            source_table?.startsWith('object_') ? 'crm_worker' : 'manual',
+            sourceId
+          );
+          
+          if (!syncResult.success) {
+            console.warn('用戶同步失敗，但繼續添加到專案:', syncResult.error);
+          } else {
+            console.log('用戶同步成功:', syncResult.action, syncResult.user.id);
+          }
+        }
+
         // Insert new project user with role and source_id
         await env.DB_ENGINEERING.prepare(`
           INSERT INTO project_users (
@@ -339,6 +934,168 @@ export default {
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to remove user',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 用戶同步管理 API 端點
+    
+    // 手動同步單個用戶到 users 表
+    if (path === '/api/v1/users/sync' && method === 'POST') {
+      try {
+        // 檢查認證
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: auth.error
+          }), { status: 401, headers });
+        }
+        
+        // 只有管理員可以執行同步
+        if (auth.user.role !== 'super_admin' && auth.user.role !== 'admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '權限不足，只有管理員可以執行用戶同步'
+          }), { status: 403, headers });
+        }
+        
+        const body = await request.json();
+        const { phone, name, sourceType, sourceId } = body;
+        
+        if (!phone) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '手機號碼為必填項目'
+          }), { status: 400, headers });
+        }
+        
+        const result = await authUtils.syncUserToUsersTable(phone, name, sourceType, sourceId);
+        
+        return new Response(JSON.stringify(result), {
+          status: result.success ? 200 : 400,
+          headers
+        });
+        
+      } catch (error) {
+        console.error('User sync API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to sync user',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 批量同步專案用戶到 users 表
+    if (path === '/api/v1/users/batch-sync' && method === 'POST') {
+      try {
+        // 檢查認證
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: auth.error
+          }), { status: 401, headers });
+        }
+        
+        // 只有管理員可以執行批量同步
+        if (auth.user.role !== 'super_admin' && auth.user.role !== 'admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '權限不足，只有管理員可以執行批量同步'
+          }), { status: 403, headers });
+        }
+        
+        const body = await request.json();
+        const { users } = body;
+        
+        if (!users || !Array.isArray(users)) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '用戶清單格式不正確'
+          }), { status: 400, headers });
+        }
+        
+        const results = await authUtils.batchSyncUsers(users);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          results: results,
+          summary: {
+            total: users.length,
+            successful: results.successful.length,
+            failed: results.failed.length
+          }
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Batch sync API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to batch sync users',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+    
+    // 從 project_users 自動同步所有用戶到 users 表
+    if (path === '/api/v1/users/sync-from-projects' && method === 'POST') {
+      try {
+        // 檢查認證
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: auth.error
+          }), { status: 401, headers });
+        }
+        
+        // 只有 Super Admin 可以執行全量同步
+        if (auth.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: '權限不足，只有 Super Admin 可以執行全量同步'
+          }), { status: 403, headers });
+        }
+        
+        // 獲取所有 project_users 中的唯一用戶
+        const { results } = await env.DB_ENGINEERING.prepare(`
+          SELECT DISTINCT 
+            phone, name, source_table, source_id
+          FROM project_users 
+          WHERE phone IS NOT NULL 
+            AND trim(phone) != ''
+            AND phone NOT IN ('0912345678', '0963922033')
+        `).all();
+        
+        const userList = results.map(user => ({
+          phone: user.phone,
+          name: user.name,
+          sourceType: user.source_table === 'employees_simple' ? 'system' :
+                     user.source_table?.startsWith('object_') ? 'crm_worker' : 'manual',
+          sourceId: user.source_id
+        }));
+        
+        const syncResults = await authUtils.batchSyncUsers(userList);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: '專案用戶同步完成',
+          results: syncResults,
+          summary: {
+            total: userList.length,
+            successful: syncResults.successful.length,
+            failed: syncResults.failed.length
+          }
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Project users sync API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to sync project users',
           message: error.message
         }), { status: 500, headers });
       }
@@ -857,15 +1614,23 @@ export default {
           }), { status: 400, headers });
         }
         
-        // 檢查手機號碼在該工班中的唯一性
-        const existingWorker = await env.DB_CRM.prepare(`
-          SELECT _id, name FROM object_50hj8__c 
-          WHERE phone_number__c = ? 
-            AND field_D1087__c = ?
-            AND is_deleted = 0 
-            AND life_status = 'normal'
-          LIMIT 1
-        `).bind(phone, team_id).first();
+        // 檢查手機號碼在該工班中的唯一性（如果 env.DB_CRM 可用）
+        let existingWorker = null;
+        try {
+          if (env.DB_CRM) {
+            existingWorker = await env.DB_CRM.prepare(`
+              SELECT _id, name FROM object_50hj8__c 
+              WHERE phone_number__c = ? 
+                AND field_D1087__c = ?
+                AND is_deleted = 0 
+                AND life_status = 'normal'
+              LIMIT 1
+            `).bind(phone, team_id).first();
+          }
+        } catch (error) {
+          console.error('Error checking existing worker:', error);
+          // 繼續處理，不因檢查失敗而中斷
+        }
         
         if (existingWorker) {
           return new Response(JSON.stringify({
@@ -877,33 +1642,43 @@ export default {
         // 生成唯一 ID
         const workerId = 'worker_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         
-        // 獲取工班名稱
+        // 獲取工班名稱（如果 env.DB_CRM 可用）
         let teamName = null;
         try {
-          const team = await env.DB_CRM.prepare(`
-            SELECT name FROM SupplierObj WHERE _id = ?
-          `).bind(team_id).first();
-          teamName = team ? team.name : null;
+          if (env.DB_CRM) {
+            const team = await env.DB_CRM.prepare(`
+              SELECT name FROM SupplierObj WHERE _id = ?
+            `).bind(team_id).first();
+            teamName = team ? team.name : null;
+          }
         } catch (error) {
           console.error('Error getting team name:', error);
         }
         
-        // 插入新師父到 CRM 數據庫
-        await env.DB_CRM.prepare(`
-          INSERT INTO object_50hj8__c (
-            _id, name, abbreviation__c, phone_number__c, 
-            field_D1087__c, field_D1087__c__r, email__c,
-            is_deleted, life_status, create_time, last_modified_time
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, 0, 'normal', datetime('now'), datetime('now'))
-        `).bind(
-          workerId,
-          name,
-          nickname || name.slice(-1),
-          phone,
-          team_id,
-          teamName,
-          email || null
-        ).run();
+        // 插入新師父到 CRM 數據庫（如果 env.DB_CRM 可用）
+        try {
+          if (env.DB_CRM) {
+            await env.DB_CRM.prepare(`
+              INSERT INTO object_50hj8__c (
+                _id, name, abbreviation__c, phone_number__c, 
+                field_D1087__c, field_D1087__c__r,
+                is_deleted, life_status, create_time, last_modified_time
+              ) VALUES (?, ?, ?, ?, ?, ?, 0, 'normal', datetime('now'), datetime('now'))
+            `).bind(
+              workerId,
+              name,
+              nickname || name.slice(-1),
+              phone,
+              team_id,
+              teamName
+            ).run();
+          } else {
+            throw new Error('DB_CRM binding not available');
+          }
+        } catch (error) {
+          console.error('Database insert error:', error);
+          throw new Error(`Failed to insert worker into database: ${error.message}`);
+        }
         
         return new Response(JSON.stringify({
           success: true,
