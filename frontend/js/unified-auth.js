@@ -179,6 +179,10 @@ class UnifiedAuth {
         localStorage.setItem(this.STORAGE_KEYS.USER, JSON.stringify(user));
         localStorage.setItem(this.STORAGE_KEYS.AUTH_TYPE, authType);
         
+        // 同時儲存到舊的 key 以確保相容性
+        localStorage.setItem(this.STORAGE_KEYS.LEGACY_TOKEN, token);
+        localStorage.setItem(this.STORAGE_KEYS.LEGACY_USER, JSON.stringify(user));
+        
         // 觸發認證狀態改變事件
         this.dispatchAuthEvent('login', { user, authType });
     }

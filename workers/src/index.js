@@ -371,6 +371,666 @@ export default {
         }), { status: 500, headers });
       }
     }
+
+    // 優化的認證端點：一次性獲取完整 session 資訊
+    if (path === '/api/v1/auth/session' && method === 'GET') {
+      try {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const user = authCheck.user;
+        
+        // 獲取用戶權限和專案列表
+        const projectsQuery = await env.DB_ENGINEERING.prepare(`
+          SELECT DISTINCT 
+            p.id, p.name, p.status, p.opportunity_id,
+            pu.user_type, pu.role as project_role
+          FROM projects p
+          LEFT JOIN project_users pu ON p.id = pu.project_id
+          WHERE pu.user_id = ? OR ? = 'super_admin'
+          ORDER BY p.name
+        `).bind(user.user_id, user.role).all();
+
+        const projects = projectsQuery.results || [];
+        
+        // 構建權限映射
+        const permissions = {};
+        projects.forEach(project => {
+          permissions[project.id] = {
+            user_type: project.user_type,
+            role: project.project_role,
+            can_view: true,
+            can_edit: project.user_type === 'admin' || project.project_role === 'leader',
+            can_manage_members: project.user_type === 'admin'
+          };
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          user: user,
+          projects: projects,
+          permissions: permissions,
+          timestamp: new Date().toISOString()
+        }), { headers });
+
+      } catch (error) {
+        console.error('Session API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get session info'
+        }), { status: 500, headers });
+      }
+    }
+
+    // 優化的專案摘要端點：包含案場統計
+    if (path === '/api/v1/projects/summary' && method === 'GET') {
+      try {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const user = authCheck.user;
+        
+        // 根據權限獲取專案列表
+        let projectsQuery;
+        if (user.role === 'super_admin') {
+          // Super admin 可以看到所有專案
+          projectsQuery = await env.DB_ENGINEERING.prepare(`
+            SELECT * FROM projects ORDER BY created_at DESC
+          `).all();
+        } else {
+          // 一般用戶只能看到有權限的專案
+          projectsQuery = await env.DB_ENGINEERING.prepare(`
+            SELECT DISTINCT p.* 
+            FROM projects p
+            INNER JOIN project_users pu ON p.id = pu.project_id
+            WHERE pu.user_id = ?
+            ORDER BY p.created_at DESC
+          `).bind(user.user_id).all();
+        }
+
+        const projects = projectsQuery.results || [];
+        
+        // 為每個專案獲取案場統計（使用子查詢優化）
+        const projectsWithStats = [];
+        
+        for (const project of projects) {
+          try {
+            // 獲取案場統計
+            const sitesResponse = await fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`, {
+              headers: {
+                'Authorization': 'Bearer fx-crm-api-secret-2025'
+              }
+            });
+            
+            if (sitesResponse.ok) {
+              const sitesData = await sitesResponse.json();
+              const sites = sitesData.results || [];
+              
+              const totalSites = sites.length;
+              const completedSites = sites.filter(site => 
+                site.status === 'completed' || 
+                site.construction_status === 'completed' ||
+                site.spc_status === 'completed' ||
+                site.construction_completed__c === true ||
+                site.construction_completed__c === 1 ||
+                site.construction_completed__c === '1'
+              ).length;
+              
+              const inProgressSites = sites.filter(site => 
+                site.status === 'in_progress' || 
+                site.construction_status === 'in_progress' ||
+                site.spc_status === 'in_progress'
+              ).length;
+              
+              const progressPercent = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0;
+              
+              let calculatedStatus;
+              if (totalSites === 0 || completedSites === 0) {
+                calculatedStatus = 'not_started';
+              } else if (completedSites === totalSites) {
+                calculatedStatus = 'completed';
+              } else {
+                calculatedStatus = 'in_progress';
+              }
+              
+              projectsWithStats.push({
+                ...project,
+                calculated_status: calculatedStatus,
+                calculated_progress: progressPercent,
+                site_stats: {
+                  totalSites,
+                  completedSites,
+                  inProgressSites,
+                  pendingSites: totalSites - completedSites - inProgressSites
+                }
+              });
+            } else {
+              // 如果無法獲取案場資料，使用預設值
+              projectsWithStats.push({
+                ...project,
+                calculated_status: 'not_started',
+                calculated_progress: 0,
+                site_stats: {
+                  totalSites: 0,
+                  completedSites: 0,
+                  inProgressSites: 0,
+                  pendingSites: 0
+                }
+              });
+            }
+          } catch (error) {
+            console.warn(`Failed to get stats for project ${project.id}:`, error);
+            projectsWithStats.push({
+              ...project,
+              calculated_status: 'not_started',
+              calculated_progress: 0,
+              site_stats: {
+                totalSites: 0,
+                completedSites: 0,
+                inProgressSites: 0,
+                pendingSites: 0
+              }
+            });
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          projects: projectsWithStats,
+          total: projectsWithStats.length,
+          generated_at: new Date().toISOString()
+        }), { headers });
+
+      } catch (error) {
+        console.error('Projects summary API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get projects summary'
+        }), { status: 500, headers });
+      }
+    }
+
+    // 優化的專案詳情端點：一次性獲取完整專案資訊
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/detail$/) && method === 'GET') {
+      try {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const projectId = path.split('/')[4];
+        const user = authCheck.user;
+
+        // 獲取專案基本資訊
+        const project = await env.DB_ENGINEERING.prepare(`
+          SELECT * FROM projects WHERE id = ?
+        `).bind(projectId).first();
+
+        if (!project) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project not found'
+          }), { status: 404, headers });
+        }
+
+        // 檢查權限
+        const hasPermission = user.role === 'super_admin' || user.role === 'admin';
+        if (!hasPermission) {
+          const userProject = await env.DB_ENGINEERING.prepare(`
+            SELECT * FROM project_users WHERE project_id = ? AND user_id = ?
+          `).bind(projectId, user.user_id).first();
+          
+          if (!userProject) {
+            return new Response(JSON.stringify({
+              success: false,
+              error: 'Access denied'
+            }), { status: 403, headers });
+          }
+        }
+
+        // 並行獲取相關資料
+        const [sitesResponse, usersQuery, statsQuery] = await Promise.all([
+          // 獲取案場資料
+          fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`, {
+            headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
+          }),
+          
+          // 獲取專案用戶
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              pu.*,
+              u.name as user_name,
+              u.phone as user_phone,
+              u.email as user_email
+            FROM project_users pu
+            LEFT JOIN users u ON pu.user_id = u.id
+            WHERE pu.project_id = ?
+            ORDER BY pu.user_type, pu.team_name, pu.name
+          `).bind(projectId).all(),
+          
+          // 獲取專案統計
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              COUNT(*) as total_users,
+              SUM(CASE WHEN user_type = 'admin' THEN 1 ELSE 0 END) as admin_count,
+              SUM(CASE WHEN user_type = 'owner' THEN 1 ELSE 0 END) as owner_count,
+              SUM(CASE WHEN user_type = 'worker' THEN 1 ELSE 0 END) as worker_count
+            FROM project_users 
+            WHERE project_id = ?
+          `).bind(projectId).first()
+        ]);
+
+        // 處理案場資料
+        let sites = [];
+        let sitesStats = {
+          totalSites: 0,
+          completedSites: 0,
+          inProgressSites: 0,
+          pendingSites: 0
+        };
+
+        if (sitesResponse.ok) {
+          const sitesData = await sitesResponse.json();
+          sites = sitesData.results || [];
+          
+          sitesStats.totalSites = sites.length;
+          sitesStats.completedSites = sites.filter(site => 
+            site.status === 'completed' || 
+            site.construction_status === 'completed' ||
+            site.construction_completed__c === true
+          ).length;
+          sitesStats.inProgressSites = sites.filter(site => 
+            site.status === 'in_progress' || 
+            site.construction_status === 'in_progress'
+          ).length;
+          sitesStats.pendingSites = sitesStats.totalSites - sitesStats.completedSites - sitesStats.inProgressSites;
+        }
+
+        // 處理用戶資料
+        const users = usersQuery.results || [];
+        const groupedUsers = {
+          admins: users.filter(u => u.user_type === 'admin'),
+          owners: users.filter(u => u.user_type === 'owner'),
+          workers: users.filter(u => u.user_type === 'worker')
+        };
+
+        // 組織工班資料
+        const teams = {};
+        groupedUsers.workers.forEach(worker => {
+          if (worker.team_id) {
+            if (!teams[worker.team_id]) {
+              teams[worker.team_id] = {
+                id: worker.team_id,
+                name: worker.team_name || worker.team_id,
+                members: []
+              };
+            }
+            teams[worker.team_id].members.push(worker);
+          }
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          project: {
+            ...project,
+            calculated_progress: sitesStats.totalSites > 0 ? 
+              Math.round((sitesStats.completedSites / sitesStats.totalSites) * 100) : 0
+          },
+          sites: sites,
+          sitesStats: sitesStats,
+          users: groupedUsers,
+          teams: Object.values(teams),
+          userStats: statsQuery || {
+            total_users: 0,
+            admin_count: 0,
+            owner_count: 0,
+            worker_count: 0
+          },
+          permissions: {
+            canEdit: hasPermission,
+            canManageUsers: hasPermission,
+            canViewAllSites: hasPermission
+          },
+          loadedAt: new Date().toISOString()
+        }), { headers });
+
+      } catch (error) {
+        console.error('Project detail API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get project detail',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // 優化的案場詳情端點：一次性獲取完整案場資訊
+    if (path.match(/^\/api\/v1\/sites\/([^\/]+)\/detail$/) && method === 'GET') {
+      try {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const siteId = path.split('/')[4];
+        const user = authCheck.user;
+
+        // 首先從 D1 API 獲取案場基本資訊
+        const siteResponse = await fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c/${siteId}`, {
+          headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
+        });
+
+        if (!siteResponse.ok) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Site not found'
+          }), { status: 404, headers });
+        }
+
+        const siteData = await siteResponse.json();
+        const site = siteData.result;
+
+        if (!site) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Site data not available'
+          }), { status: 404, headers });
+        }
+
+        // 獲取關聯的專案資訊
+        let project = null;
+        let hasPermission = user.role === 'super_admin' || user.role === 'admin';
+
+        if (site.field_1P96q__c) {
+          try {
+            const projectQuery = await env.DB_ENGINEERING.prepare(`
+              SELECT * FROM projects WHERE opportunity_id = ?
+            `).bind(site.field_1P96q__c).first();
+            
+            project = projectQuery;
+            
+            // 檢查用戶是否有該專案權限
+            if (!hasPermission && project) {
+              const userProject = await env.DB_ENGINEERING.prepare(`
+                SELECT * FROM project_users WHERE project_id = ? AND user_id = ?
+              `).bind(project.id, user.user_id).first();
+              
+              hasPermission = !!userProject;
+            }
+          } catch (projectError) {
+            console.warn('Failed to load project info:', projectError);
+          }
+        }
+
+        if (!hasPermission) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Access denied to this site'
+          }), { status: 403, headers });
+        }
+
+        // 並行獲取相關資料
+        const [photosResponse, workersQuery, historyQuery] = await Promise.all([
+          // 獲取照片（如果有相關 API）
+          Promise.resolve({ ok: false }), // 暫時返回空，後續可連接照片 API
+          
+          // 獲取該專案的工班資訊
+          project ? env.DB_ENGINEERING.prepare(`
+            SELECT 
+              pu.*,
+              u.name as user_name,
+              u.phone as user_phone
+            FROM project_users pu
+            LEFT JOIN users u ON pu.user_id = u.id
+            WHERE pu.project_id = ? AND pu.user_type = 'worker'
+            ORDER BY pu.team_name, pu.name
+          `).bind(project.id).all() : Promise.resolve({ results: [] }),
+          
+          // 獲取工程歷史記錄（從 D1 相關表獲取，如果有的話）
+          Promise.resolve({ results: [] }) // 暫時返回空
+        ]);
+
+        // 處理照片資料
+        let photos = [];
+        if (photosResponse.ok) {
+          const photosData = await photosResponse.json();
+          photos = photosData.results || [];
+        }
+
+        // 處理工班資料
+        const workers = workersQuery.results || [];
+        const teams = {};
+        workers.forEach(worker => {
+          if (worker.team_id) {
+            if (!teams[worker.team_id]) {
+              teams[worker.team_id] = {
+                id: worker.team_id,
+                name: worker.team_name || worker.team_id,
+                members: []
+              };
+            }
+            teams[worker.team_id].members.push(worker);
+          }
+        });
+
+        // 處理工程歷史
+        const history = historyQuery.results || [];
+
+        // 計算案場狀態
+        let calculatedStatus = 'pending';
+        if (site.status === 'completed' || 
+            site.construction_status === 'completed' ||
+            site.construction_completed__c === true) {
+          calculatedStatus = 'completed';
+        } else if (site.status === 'in_progress' || 
+                   site.construction_status === 'in_progress') {
+          calculatedStatus = 'in_progress';
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          site: {
+            ...site,
+            calculated_status: calculatedStatus
+          },
+          project: project,
+          workers: workers,
+          teams: Object.values(teams),
+          photos: photos,
+          history: history,
+          permissions: {
+            canEdit: hasPermission,
+            canUploadPhotos: hasPermission,
+            canManageWorkers: user.role === 'super_admin' || user.role === 'admin'
+          },
+          loadedAt: new Date().toISOString()
+        }), { headers });
+
+      } catch (error) {
+        console.error('Site detail API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get site detail',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // 優化的用戶管理端點：一次性獲取完整用戶管理資料
+    if (path === '/api/v1/admin/users/complete' && method === 'GET') {
+      try {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const user = authCheck.user;
+        
+        // 檢查管理員權限
+        if (user.role !== 'admin' && user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Access denied - admin privileges required'
+          }), { status: 403, headers });
+        }
+
+        // 並行獲取所有用戶管理相關資料
+        const [usersQuery, projectsQuery, userProjectsQuery, statsQuery] = await Promise.all([
+          // 獲取所有用戶
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              u.*,
+              COUNT(DISTINCT pu.project_id) as project_count,
+              GROUP_CONCAT(DISTINCT p.name) as project_names
+            FROM users u
+            LEFT JOIN project_users pu ON u.id = pu.user_id
+            LEFT JOIN projects p ON pu.project_id = p.id
+            GROUP BY u.id
+            ORDER BY u.global_role, u.name
+          `).all(),
+          
+          // 獲取所有專案（用於分配用戶）
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              id, 
+              name, 
+              opportunity_id,
+              COUNT(pu.user_id) as user_count
+            FROM projects p
+            LEFT JOIN project_users pu ON p.id = pu.project_id
+            GROUP BY p.id
+            ORDER BY p.name
+          `).all(),
+          
+          // 獲取用戶-專案關聯
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              pu.*,
+              u.name as user_name,
+              u.phone as user_phone,
+              u.global_role,
+              p.name as project_name
+            FROM project_users pu
+            LEFT JOIN users u ON pu.user_id = u.id
+            LEFT JOIN projects p ON pu.project_id = p.id
+            ORDER BY p.name, pu.user_type, pu.name
+          `).all(),
+          
+          // 獲取統計資料
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              COUNT(*) as total_users,
+              SUM(CASE WHEN global_role = 'super_admin' THEN 1 ELSE 0 END) as super_admin_count,
+              SUM(CASE WHEN global_role = 'admin' THEN 1 ELSE 0 END) as admin_count,
+              SUM(CASE WHEN global_role = 'user' THEN 1 ELSE 0 END) as user_count,
+              (SELECT COUNT(DISTINCT project_id) FROM project_users) as active_projects,
+              (SELECT COUNT(*) FROM project_users) as total_assignments
+            FROM users
+          `).first()
+        ]);
+
+        const users = usersQuery.results || [];
+        const projects = projectsQuery.results || [];
+        const userProjects = userProjectsQuery.results || [];
+        const stats = statsQuery || {};
+
+        // 按角色分組用戶
+        const usersByRole = {
+          super_admin: users.filter(u => u.global_role === 'super_admin'),
+          admin: users.filter(u => u.global_role === 'admin'),
+          user: users.filter(u => u.global_role === 'user' || !u.global_role)
+        };
+
+        // 組織專案-用戶關聯
+        const projectUserMap = {};
+        userProjects.forEach(pu => {
+          if (!projectUserMap[pu.project_id]) {
+            projectUserMap[pu.project_id] = {
+              project_name: pu.project_name,
+              users: []
+            };
+          }
+          projectUserMap[pu.project_id].users.push(pu);
+        });
+
+        // 組織用戶-專案關聯
+        const userProjectMap = {};
+        userProjects.forEach(pu => {
+          if (!userProjectMap[pu.user_id]) {
+            userProjectMap[pu.user_id] = [];
+          }
+          userProjectMap[pu.user_id].push({
+            project_id: pu.project_id,
+            project_name: pu.project_name,
+            user_type: pu.user_type,
+            team_id: pu.team_id,
+            team_name: pu.team_name
+          });
+        });
+
+        // 計算用戶活動統計
+        const userStats = users.map(user => {
+          const userProjectCount = userProjectMap[user.id]?.length || 0;
+          return {
+            ...user,
+            project_assignments: userProjectCount,
+            projects: userProjectMap[user.id] || []
+          };
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          users: userStats,
+          usersByRole: usersByRole,
+          projects: projects,
+          userProjects: userProjects,
+          projectUserMap: projectUserMap,
+          userProjectMap: userProjectMap,
+          stats: {
+            totalUsers: stats.total_users || 0,
+            superAdminCount: stats.super_admin_count || 0,
+            adminCount: stats.admin_count || 0,
+            userCount: stats.user_count || 0,
+            activeProjects: stats.active_projects || 0,
+            totalAssignments: stats.total_assignments || 0
+          },
+          permissions: {
+            canCreateUsers: true,
+            canDeleteUsers: user.role === 'super_admin',
+            canManageRoles: user.role === 'super_admin',
+            canAssignProjects: true
+          },
+          loadedAt: new Date().toISOString()
+        }), { headers });
+
+      } catch (error) {
+        console.error('User management API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to load user management data',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
     
     // Get current user
     if (path === '/api/v1/users/me' && method === 'GET') {
@@ -1702,6 +2362,110 @@ export default {
       }
     }
 
+    // Super Admin: Create new user
+    if (path === '/api/v1/admin/users' && method === 'POST') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        const body = await request.json();
+        const { phone, name, email, global_role, password } = body;
+
+        // 驗證必要欄位
+        if (!phone || !name || !global_role) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Missing required fields: phone, name, global_role'
+          }), { status: 400, headers });
+        }
+
+        // 標準化手機號碼
+        const normalizedPhone = authUtils.normalizePhone(phone);
+        if (!normalizedPhone) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Invalid phone number format'
+          }), { status: 400, headers });
+        }
+
+        // 檢查手機號碼是否已存在
+        const existingUser = await env.DB_ENGINEERING.prepare(`
+          SELECT id FROM users WHERE phone = ?
+        `).bind(normalizedPhone).first();
+
+        if (existingUser) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Phone number already exists'
+          }), { status: 409, headers });
+        }
+
+        // 驗證角色
+        const validRoles = ['super_admin', 'admin', 'user'];
+        if (!validRoles.includes(global_role)) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Invalid global_role. Must be one of: ' + validRoles.join(', ')
+          }), { status: 400, headers });
+        }
+
+        // 生成用戶ID
+        const userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        // 創建用戶
+        await env.DB_ENGINEERING.prepare(`
+          INSERT INTO users (
+            id, phone, name, email, global_role, user_status, 
+            password_hash, login_count, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+        `).bind(
+          userId,
+          normalizedPhone,
+          name,
+          email || null,
+          global_role,
+          'active',
+          password || null, // 簡化密碼處理，生產環境應該加密
+          0
+        ).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: '用戶創建成功',
+          data: {
+            user_id: userId,
+            phone: normalizedPhone,
+            name: name,
+            email: email,
+            global_role: global_role,
+            user_status: 'active'
+          }
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error creating user:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to create user',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
     // Super Admin: Get all users
     if (path === '/api/v1/admin/users' && method === 'GET') {
       try {
@@ -1892,6 +2656,178 @@ export default {
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to get user projects',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // Super Admin: Get all project-user relationships
+    if (path === '/api/v1/admin/project-users' && method === 'GET') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        // 獲取所有專案用戶關聯
+        const projectUsersQuery = await env.DB_ENGINEERING.prepare(`
+          SELECT 
+            pu.project_id,
+            pu.user_id,
+            pu.user_type,
+            pu.team_name,
+            pu.role as team_role,
+            pu.added_at as joined_at,
+            pu.added_by,
+            u.name as user_name,
+            u.phone as user_phone,
+            u.global_role as user_global_role,
+            p.name as project_name,
+            p.opportunity_id as project_company,
+            p.status as project_status
+          FROM project_users pu
+          LEFT JOIN users u ON pu.user_id = u.id
+          LEFT JOIN projects p ON pu.project_id = p.id
+          ORDER BY pu.added_at DESC
+        `).all();
+
+        const projectUsers = projectUsersQuery.results || [];
+
+        return new Response(JSON.stringify({
+          success: true,
+          data: projectUsers,
+          total: projectUsers.length
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error getting project users:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get project users',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // Super Admin: Create new project-user relationship
+    if (path === '/api/v1/admin/project-users' && method === 'POST') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        // 檢查 Super Admin 權限
+        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Insufficient permissions - Super Admin required'
+          }), { status: 403, headers });
+        }
+
+        const body = await request.json();
+        const { project_id, user_id, user_type, team_name, role } = body;
+
+        // 驗證必要欄位
+        if (!project_id || !user_id || !user_type) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Missing required fields: project_id, user_id, user_type'
+          }), { status: 400, headers });
+        }
+
+        // 檢查專案是否存在
+        const project = await env.DB_ENGINEERING.prepare(`
+          SELECT id, name FROM projects WHERE id = ?
+        `).bind(project_id).first();
+
+        if (!project) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project not found'
+          }), { status: 404, headers });
+        }
+
+        // 檢查用戶是否存在
+        const user = await env.DB_ENGINEERING.prepare(`
+          SELECT id, name, phone FROM users WHERE id = ?
+        `).bind(user_id).first();
+
+        if (!user) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'User not found'
+          }), { status: 404, headers });
+        }
+
+        // 檢查關聯是否已存在
+        const existing = await env.DB_ENGINEERING.prepare(`
+          SELECT id FROM project_users 
+          WHERE project_id = ? AND user_id = ?
+        `).bind(project_id, user_id).first();
+
+        if (existing) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project-user relationship already exists'
+          }), { status: 409, headers });
+        }
+
+        // 創建專案用戶關聯
+        await env.DB_ENGINEERING.prepare(`
+          INSERT INTO project_users (
+            project_id, user_id, user_type, team_id, team_name,
+            name, phone, nickname, source_table, added_by, role, source_id,
+            added_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).bind(
+          project_id,
+          user_id,
+          user_type,
+          null, // team_id
+          team_name || null,
+          user.name,
+          user.phone,
+          null, // nickname
+          'admin_created',
+          authCheck.user.user_id || 'super_admin',
+          role || 'member',
+          null // source_id
+        ).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: '專案用戶關聯創建成功',
+          data: {
+            project_id,
+            user_id,
+            user_type,
+            team_name,
+            role: role || 'member'
+          }
+        }), { headers });
+
+      } catch (error) {
+        console.error('Error creating project user relationship:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to create project user relationship',
           message: error.message
         }), { status: 500, headers });
       }

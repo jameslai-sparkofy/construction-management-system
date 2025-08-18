@@ -1094,7 +1094,7 @@
                 if (selectedOpportunity) {
                     console.log('Fetching contacts for opportunity:', selectedOpportunity.id);
                     const contactsResponse = await fetch(
-                        `${API_BASE_URL}/rest/NewOpportunityContactsObj?opportunity_id=${selectedOpportunity.id}&limit=100`,
+                        `${API_BASE_URL}/rest/NewOpportunityContactsObj?new_opportunity_id=${selectedOpportunity.id}&limit=100`,
                         {
                             headers: {
                                 'Authorization': `Bearer ${API_TOKEN}`
