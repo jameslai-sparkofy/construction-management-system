@@ -2293,6 +2293,7 @@
         let currentProject = null;
         let currentSites = [];
         let currentUser = null;
+        let currentUserProjectRole = null; // 當前用戶在專案中的角色
         let currentBuilding = 'A';
         let isDataLoading = true;
         let isTeamsReady = false;
@@ -2416,17 +2417,49 @@
 
         // Load user data
         async function loadUserData() {
-            // Try to get user from localStorage or session
-            const userStr = localStorage.getItem('user');
-            if (userStr) {
-                currentUser = JSON.parse(userStr);
-            } else {
-                // Default user for testing
+            // 從 localStorage 讀取 token（統一使用 localStorage）
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                console.error('No token found in localStorage');
+                window.location.href = 'login-simple.html';
+                return;
+            }
+
+            try {
+                const response = await fetch(`${WORKER_API_URL}/api/v1/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    currentUser = result.user || result;
+                    
+                    // 獲取用戶在專案中的角色
+                    await getCurrentUserProjectRole();
+                    
+                    // 應用角色基礎的視圖控制
+                    applyRoleBasedView();
+                    
+                } else if (response.status === 401) {
+                    // Token 無效，返回登入頁
+                    localStorage.removeItem('token');
+                    window.location.href = 'login-simple.html';
+                }
+            } catch (error) {
+                console.error('Error fetching current user:', error);
+                // 如果發生錯誤，設置默認用戶（為了向後兼容）
                 currentUser = {
                     id: 'user_001',
                     name: '王師傅',
                     phone: '0912345678'
                 };
+                
+                // 仍然嘗試獲取角色
+                await getCurrentUserProjectRole();
+                applyRoleBasedView();
             }
         }
 
@@ -3267,9 +3300,211 @@
         }
         
         // Get current user role (mock for now, should be from session)
+        // 獲取當前用戶在專案中的角色和權限
+        async function getCurrentUserProjectRole() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+            
+            if (!projectId) return null;
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const allUsers = result.data.all || [];
+                    
+                    // 查找當前用戶的專案角色
+                    const currentUserInProject = allUsers.find(user => 
+                        user.user_id === currentUser?.id || 
+                        user.phone === currentUser?.phone
+                    );
+                    
+                    if (currentUserInProject) {
+                        currentUserProjectRole = {
+                            user_type: currentUserInProject.user_type,
+                            role: currentUserInProject.role,
+                            team_id: currentUserInProject.team_id,
+                            team_name: currentUserInProject.team_name,
+                            can_view_other_teams: currentUserInProject.can_view_other_teams || currentUserInProject.user_type === 'admin' || currentUserInProject.user_type === 'owner'
+                        };
+                        
+                        console.log('Current user project role:', currentUserProjectRole);
+                    } else {
+                        // 如果找不到用戶在專案中的記錄，檢查是否為 global admin
+                        if (currentUser?.user_type === 'admin' || currentUser?.role === 'admin') {
+                            currentUserProjectRole = {
+                                user_type: 'admin',
+                                role: 'admin',
+                                team_id: null,
+                                team_name: null,
+                                can_view_other_teams: true
+                            };
+                        } else {
+                            console.warn('Current user not found in project users');
+                            currentUserProjectRole = null;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting current user project role:', error);
+                currentUserProjectRole = null;
+            }
+            
+            return currentUserProjectRole;
+        }
+
         function getCurrentUserRole() {
-            // TODO: Get from actual session/auth
-            return 'admin'; // Default to admin for testing
+            // 兼容現有代碼，返回簡化的角色
+            if (currentUserProjectRole) {
+                if (currentUserProjectRole.user_type === 'admin') return 'admin';
+                if (currentUserProjectRole.user_type === 'owner') return 'owner';
+                if (currentUserProjectRole.user_type === 'worker') {
+                    return currentUserProjectRole.role === 'leader' ? 'team_leader' : 'team_member';
+                }
+            }
+            return 'admin'; // Default fallback for existing code
+        }
+
+        // 應用角色基礎的視圖控制
+        function applyRoleBasedView() {
+            if (!currentUserProjectRole) {
+                console.warn('No project role found for current user');
+                return;
+            }
+
+            console.log('Applying role-based view for:', currentUserProjectRole);
+
+            // 控制用戶管理按鈕的可見性
+            const userManagementBtn = document.getElementById('userManagementBtn');
+            const perspectiveDropdown = document.querySelector('.perspective-dropdown');
+            
+            if (currentUserProjectRole.user_type === 'admin') {
+                // Admin: 可以看到和操作所有內容
+                if (userManagementBtn) userManagementBtn.style.display = 'flex';
+                if (perspectiveDropdown) perspectiveDropdown.style.display = 'block';
+            } else if (currentUserProjectRole.user_type === 'owner') {
+                // Owner: 只能查看，隱藏管理功能
+                if (userManagementBtn) userManagementBtn.style.display = 'none';
+                if (perspectiveDropdown) perspectiveDropdown.style.display = 'none';
+                
+                // 隱藏編輯相關的按鈕和功能
+                hideEditingFeatures();
+            } else if (currentUserProjectRole.user_type === 'worker') {
+                if (currentUserProjectRole.role === 'leader') {
+                    // Team Leader: 可以管理自己的工班，有限的用戶管理權限
+                    if (userManagementBtn) userManagementBtn.style.display = 'flex';
+                    if (perspectiveDropdown) perspectiveDropdown.style.display = 'none';
+                    
+                    // 只能編輯自己工班的內容
+                    restrictToOwnTeam();
+                } else {
+                    // Worker: 只能查看，最少權限
+                    if (userManagementBtn) userManagementBtn.style.display = 'none';
+                    if (perspectiveDropdown) perspectiveDropdown.style.display = 'none';
+                    
+                    // 隱藏所有編輯功能
+                    hideEditingFeatures();
+                    restrictToOwnTeam();
+                }
+            }
+            
+            // 更新頁面標題以反映當前角色
+            updatePageTitleWithRole();
+        }
+
+        // 隱藏編輯功能
+        function hideEditingFeatures() {
+            // 隱藏所有編輯按鈕
+            const editButtons = document.querySelectorAll('.btn-edit, .edit-btn, [onclick*="edit"], [onclick*="Edit"]');
+            editButtons.forEach(btn => {
+                if (btn.textContent.includes('編輯') || btn.textContent.includes('修改') || btn.textContent.includes('更新')) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // 隱藏新增按鈕
+            const addButtons = document.querySelectorAll('.btn-add, .add-btn, [onclick*="add"], [onclick*="Add"], [onclick*="create"]');
+            addButtons.forEach(btn => {
+                if (btn.textContent.includes('新增') || btn.textContent.includes('添加') || btn.textContent.includes('建立')) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // 隱藏刪除按鈕
+            const deleteButtons = document.querySelectorAll('.btn-delete, .delete-btn, [onclick*="delete"], [onclick*="remove"]');
+            deleteButtons.forEach(btn => {
+                if (btn.textContent.includes('刪除') || btn.textContent.includes('移除')) {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        // 限制只能查看自己的工班
+        function restrictToOwnTeam() {
+            if (!currentUserProjectRole.team_id) return;
+            
+            console.log('Restricting view to team:', currentUserProjectRole.team_name);
+            
+            // 修改全局工班過濾器，只顯示用戶所屬的工班
+            window.currentUserTeamFilter = currentUserProjectRole.team_id;
+            
+            // 如果有工班按鈕容器，隱藏其他工班
+            setTimeout(() => {
+                filterTeamDisplay();
+            }, 1000); // 延遲執行，確保工班數據已載入
+        }
+
+        // 過濾工班顯示
+        function filterTeamDisplay() {
+            if (!currentUserProjectRole || !currentUserProjectRole.team_id) return;
+            
+            // 隱藏不屬於當前用戶的工班按鈕
+            const teamButtons = document.querySelectorAll('button[title*="工班"]');
+            teamButtons.forEach(button => {
+                const teamName = button.querySelector('span')?.textContent;
+                if (teamName && teamName !== currentUserProjectRole.team_name) {
+                    button.style.display = 'none';
+                }
+            });
+            
+            // 過濾工班資訊顯示
+            const teamInfoElements = document.querySelectorAll('.team-info, .team-member-item, .team-section');
+            teamInfoElements.forEach(element => {
+                if (element.textContent && element.textContent.includes(currentUserProjectRole.team_name)) {
+                    element.style.display = 'block';
+                } else if (element.textContent && element.textContent.includes('工班')) {
+                    element.style.display = 'none';
+                }
+            });
+        }
+
+        // 更新頁面標題以反映當前角色
+        function updatePageTitleWithRole() {
+            const headerTitle = document.querySelector('.project-info h1');
+            if (!headerTitle || !currentUserProjectRole) return;
+            
+            const originalTitle = headerTitle.textContent.replace(/ \(.*視角.*\)$/, ''); // 移除現有的角色標記
+            
+            let roleText = '';
+            if (currentUserProjectRole.user_type === 'admin') {
+                roleText = ' (管理員視角)';
+            } else if (currentUserProjectRole.user_type === 'owner') {
+                roleText = ' (業主視角)';
+            } else if (currentUserProjectRole.user_type === 'worker') {
+                if (currentUserProjectRole.role === 'leader') {
+                    roleText = ` (工班長視角 - ${currentUserProjectRole.team_name || '工班'})`;
+                } else {
+                    roleText = ` (工班成員視角 - ${currentUserProjectRole.team_name || '工班'})`;
+                }
+            }
+            
+            headerTitle.textContent = originalTitle + roleText;
         }
         
         // Check if current user is team leader of this team
