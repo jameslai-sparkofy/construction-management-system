@@ -595,7 +595,7 @@
     <div class="header">
         <div class="header-content">
             <h1>專案管理系統 <span style="font-size: 0.6em; color: #84C7D0;">v1.2.0</span></h1>
-            <div class="user-info">
+            <div class="user-info" style="display: none;">
                 <span class="user-name" id="userName">載入中...</span>
                 <button class="admin-btn" onclick="window.location.href='user-profile.html'">
                     ⚙️ 個人設定
@@ -713,6 +713,7 @@
     <script src="js/unified-auth.js"></script>
     <script src="js/unified-permissions.js"></script>
     <script src="js/project-status.js"></script>
+    <script src="js/user-profile-component.js"></script>
     
     <script>
         // API configuration from global CONFIG
@@ -730,6 +731,12 @@
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize user profile component (no role display for project list)
+            window.initUserProfile({
+                showRole: false,
+                showProfile: false // 完全隱藏用戶資料組件
+            });
+            
             loadUserInfo();
             loadProjects();
             setupFilters();
@@ -831,11 +838,11 @@
             const tableEl = document.getElementById('tableContainer');
             const emptyEl = document.getElementById('emptyState');
             
-            loadingEl.style.display = 'block';
-            tableEl.style.display = 'none';
-            emptyEl.style.display = 'none';
-
             try {
+                loadingEl.style.display = 'block';
+                tableEl.style.display = 'none';
+                emptyEl.style.display = 'none';
+
                 // 使用 AuthUtils 獲取統一的請求 headers
                 const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {
                     headers: AuthUtils.getRequestHeaders()
@@ -852,7 +859,7 @@
                     return;
                 } else {
                     // 其他 API 失敗，顯示空列表
-                    console.error('Failed to fetch projects from API');
+                    console.error('Failed to fetch projects from API, status:', response.status);
                     allProjects = [];
                 }
                 
@@ -867,17 +874,23 @@
                 console.error('Failed to load projects:', error);
                 // 當 API 失敗時，只顯示空列表
                 allProjects = [];
-            }
-
-            displayProjects(allProjects);
-            await loadProjectStats(); // 載入統計數據
-
-            loadingEl.style.display = 'none';
-            
-            if (allProjects.length === 0) {
-                emptyEl.style.display = 'block';
-            } else {
-                tableEl.style.display = 'block';
+            } finally {
+                // 確保載入狀態總是被隱藏
+                loadingEl.style.display = 'none';
+                
+                try {
+                    displayProjects(allProjects);
+                    await loadProjectStats(); // 載入統計數據
+                } catch (statsError) {
+                    console.error('Failed to load project stats:', statsError);
+                    // 即使統計載入失敗，也要顯示專案列表
+                }
+                
+                if (allProjects.length === 0) {
+                    emptyEl.style.display = 'block';
+                } else {
+                    tableEl.style.display = 'block';
+                }
             }
         }
 
@@ -955,12 +968,20 @@
         // Load project statistics from API
         async function loadProjectStats() {
             try {
-                const stats = await ProjectStatus.getProjectStats();
+                // 添加 5 秒超時機制
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error('Stats loading timeout')), 5000)
+                );
+                
+                const stats = await Promise.race([
+                    ProjectStatus.getProjectStats(),
+                    timeoutPromise
+                ]);
                 
                 // 如果 API 返回的統計是預設值（全為 0），使用本地計算
-                if (stats.total === 0 && allProjects.length > 0) {
+                if (stats && stats.total === 0 && allProjects.length > 0) {
                     updateStatsFromLocal(allProjects);
-                } else {
+                } else if (stats && stats.by_status) {
                     // 更新統計數字
                     document.getElementById('totalProjects').textContent = stats.total;
                     document.getElementById('notStartedProjects').textContent = stats.by_status.not_started;
@@ -968,6 +989,9 @@
                     document.getElementById('maintenanceProjects').textContent = stats.by_status.maintenance;
                     document.getElementById('warrantyProjects').textContent = stats.by_status.warranty;
                     document.getElementById('completedProjects').textContent = stats.by_status.completed;
+                } else {
+                    // 如果統計數據格式不正確，使用本地計算
+                    updateStatsFromLocal(allProjects);
                 }
                 
             } catch (error) {

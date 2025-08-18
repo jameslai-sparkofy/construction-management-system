@@ -500,6 +500,7 @@
     </style>
     <!-- 引入配置檔 -->
     <script src="config.js"></script>
+    <script src="js/user-profile-component.js"></script>
 </head>
 <body>
     <div class="container">
@@ -732,6 +733,12 @@
                 window.location.href = 'project-list.html';
                 return;
             }
+            
+            // Initialize user profile component with role display
+            window.initUserProfile({
+                showRole: true,
+                projectId: projectId
+            });
 
             // 設置回到專案詳情按鈕連結
             const backButton = document.getElementById('backToProject');

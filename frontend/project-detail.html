@@ -1697,6 +1697,7 @@
     <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
     <script src="js/unified-permissions.js"></script>
+    <script src="js/user-profile-component.js"></script>
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         
@@ -2374,6 +2375,13 @@
                 return;
             }
             
+            // Initialize user profile component without role display
+            window.initUserProfile({
+                showRole: true, // 顯示角色資訊
+                showProfile: true, // 顯示用戶資料組件
+                projectId: projectId
+            });
+            
             // IMPORTANT: Load team mappings FIRST before any other data
             console.log('載入工班映射...');
             await loadTeamMappings();
@@ -2570,6 +2578,18 @@
                 return;
             }
             
+            // 過濾工班：如果不是管理員且有特定工班歸屬，只顯示自己的工班
+            let filteredTeams = teams;
+            if (!window.isAdmin && window.userTeams && window.userTeams.size > 0) {
+                filteredTeams = teams.filter(team => window.userTeams.has(team.name));
+                console.log('工班過濾結果:', filteredTeams.map(t => t.name));
+            }
+            
+            if (filteredTeams.length === 0) {
+                legendTeams.innerHTML = '<span style="color: #9ca3af;">無可顯示的工班</span>';
+                return;
+            }
+            
             // Check if mobile
             const isMobile = window.innerWidth <= 768;
             
@@ -2744,7 +2764,7 @@
                 legendTeams.querySelector('div');
             
             // 先添加所有工班按鈕
-            teams.forEach(team => {
+            filteredTeams.forEach(team => {
                 const teamButton = document.createElement('button');
                 const buttonWidth = isMobile ? '160px' : '80px';
                 teamButton.style.cssText = `
@@ -3486,25 +3506,8 @@
 
         // 更新頁面標題以反映當前角色
         function updatePageTitleWithRole() {
-            const headerTitle = document.querySelector('.project-info h1');
-            if (!headerTitle || !currentUserProjectRole) return;
-            
-            const originalTitle = headerTitle.textContent.replace(/ \(.*視角.*\)$/, ''); // 移除現有的角色標記
-            
-            let roleText = '';
-            if (currentUserProjectRole.user_type === 'admin') {
-                roleText = ' (管理員視角)';
-            } else if (currentUserProjectRole.user_type === 'owner') {
-                roleText = ' (業主視角)';
-            } else if (currentUserProjectRole.user_type === 'worker') {
-                if (currentUserProjectRole.role === 'leader') {
-                    roleText = ` (工班長視角 - ${currentUserProjectRole.team_name || '工班'})`;
-                } else {
-                    roleText = ` (工班成員視角 - ${currentUserProjectRole.team_name || '工班'})`;
-                }
-            }
-            
-            headerTitle.textContent = originalTitle + roleText;
+            // 禁用角色顯示 - 不在頁面標題中顯示角色資訊
+            return;
         }
         
         // Check if current user is team leader of this team
@@ -4777,34 +4780,46 @@
             }
             
             // 檢查當前用戶權限 - 使用統一權限系統
-            let isAdmin = false;
-            let userTeams = new Set(); // 用戶負責的工班
+            window.isAdmin = false;
+            window.userTeams = new Set(); // 用戶負責的工班
+            let isAdmin = window.isAdmin;
+            let userTeams = window.userTeams;
             
             try {
                 // 使用統一權限系統檢查管理員權限
                 if (window.permissions) {
                     await window.permissions.init();
-                    isAdmin = await window.permissions.isAdmin();
+                    isAdmin = window.isAdmin = await window.permissions.isAdmin();
                 }
                 
-                // 如果不是管理員，獲取用戶負責的工班
+                // 如果不是管理員，獲取用戶所屬的工班
                 if (!isAdmin && currentProject) {
                     try {
-                        const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${currentProject.id}/permissions`, {
+                        const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${currentProject.id}/users`, {
                             headers: AuthUtils.getRequestHeaders()
                         });
                         
                         if (response.ok) {
-                            const permissions = await response.json();
-                            const currentUserPhone = AuthUtils.getUser()?.phone;
+                            const responseData = await response.json();
+                            const users = responseData.data?.all || responseData; // 支援新舊API格式
+                            const currentUser = AuthUtils.getUser();
                             
-                            // 找到用戶負責的工班
-                            permissions.forEach(perm => {
-                                if (perm.phone === currentUserPhone && perm.role === 'foreman') {
-                                    // 通過工班 API 獲取工班名稱
-                                    userTeams.add(perm.name); // 暫時使用用戶名作為工班標識
+                            if (Array.isArray(users)) {
+                                // 找到當前用戶所屬的工班（支援多種匹配方式）
+                                users.forEach(user => {
+                                if ((user.phone === currentUser?.phone) || 
+                                    (user.user_id === currentUser?.id) ||
+                                    (user.user_id === currentUser?.source_id)) {
+                                    if (user.team_name) {
+                                        userTeams.add(user.team_name);
+                                        window.userTeams.add(user.team_name);
+                                        console.log(`找到用戶所屬工班: ${user.team_name}`);
+                                    }
                                 }
                             });
+                            } else {
+                                console.log('API回應格式不正確，users不是陣列:', typeof users);
+                            }
                         }
                     } catch (error) {
                         console.log('獲取用戶工班失敗:', error);
@@ -4814,8 +4829,18 @@
                 console.log('權限檢查錯誤:', error);
             }
             
+            // 權限檢查完成後，重新渲染棟別按鈕以應用過濾
+            if (typeof renderBuildingTabs === 'function') {
+                renderBuildingTabs();
+            }
+            
             let items = [];
             teams.forEach((abbr, name) => {
+                // 如果不是管理員且有特定工班歸屬，只顯示自己的工班
+                if (!isAdmin && userTeams.size > 0 && !userTeams.has(name)) {
+                    return; // 跳過不屬於自己的工班
+                }
+                
                 // 檢查是否顯示成員管理按鈕 - 考慮模擬用戶權限
                 const currentPermissions = getCurrentUserPermissions();
                 const showManageButton = currentPermissions.isAdmin || 
@@ -4860,8 +4885,8 @@
                     .single();
                 
                 if (team) {
-                    // 導向工班成員管理頁面
-                    window.location.href = `team-member-management.html?teamId=${team.id}&projectId=${currentProject.id}`;
+                    // 導向統一用戶管理頁面
+                    window.location.href = `user-management.html?project_id=${currentProject.id}`;
                 } else {
                     alert('找不到工班資料');
                 }
@@ -4884,10 +4909,23 @@
                 
                 if (teamIds.length > 0) {
                     // 從工班ID獲取工班名稱，然後取簡稱
-                    const teamAbbrs = teamIds.map(teamId => {
-                        // 從 projectTeamsFromSites 獲取工班資訊
-                        const teamInfo = window.projectTeamsFromSites?.get(teamId);
-                        if (teamInfo) {
+                    const teamAbbrs = teamIds
+                        .map(teamId => {
+                            // 從 projectTeamsFromSites 獲取工班資訊
+                            const teamInfo = window.projectTeamsFromSites?.get(teamId);
+                            return teamInfo;
+                        })
+                        .filter(teamInfo => {
+                            if (!teamInfo) return false;
+                            
+                            // 檢查用戶權限：如果不是管理員且不屬於該工班，則過濾掉
+                            if (!window.isAdmin && window.userTeams.size > 0 && !window.userTeams.has(teamInfo.name)) {
+                                console.log(`過濾掉工班: ${teamInfo.name}，用戶工班: ${Array.from(window.userTeams).join(', ')}`);
+                                return false;
+                            }
+                            return true;
+                        })
+                        .map(teamInfo => {
                             // 優先使用 abbreviation__c 欄位
                             if (teamInfo.abbreviation) {
                                 return teamInfo.abbreviation;
@@ -4903,10 +4941,9 @@
                                 // 否則直接取名稱的最後一個字
                                 return name.slice(-1);
                             }
-                        }
-                        // 如果找不到工班資訊，顯示問號
-                        return '?';
-                    }).filter(abbr => abbr !== '?'); // 過濾掉未知的工班
+                            return '';
+                        })
+                        .filter(abbr => abbr !== ''); // 過濾掉空字串
                     
                     if (teamAbbrs.length > 0) {
                         teamDisplay = ' | ' + teamAbbrs.join(' ');
@@ -4982,7 +5019,15 @@
                         const date = site[fieldMapping.date] || '';
                         
                         // Get team abbreviation (first character of team name if no abbreviation field exists)
-                        const teamAbbr = site.team_abbreviation || (team && team !== '-' ? team.charAt(0) : team);
+                        // 檢查用戶權限：如果不是管理員且不屬於該工班，則不顯示工班簡稱
+                        let teamAbbr = '';
+                        if (team && team !== '-') {
+                            if (window.isAdmin || window.userTeams.size === 0 || window.userTeams.has(team)) {
+                                teamAbbr = site.team_abbreviation || team.charAt(0);
+                            }
+                        } else {
+                            teamAbbr = team;
+                        }
                         
                         // Get worker abbreviation (last character of name if abbreviation field is empty)
                         const workerAbbr = site.worker_abbreviation || (worker ? worker.charAt(worker.length - 1) : worker);
@@ -5013,8 +5058,8 @@
                                 <div class="cell-content">
                                     ${isCompleted ? 
                                         `<div class="cell-line1">${formattedDate}${workerAbbr ? ' | ' + workerAbbr : ''}</div>
-                                         <div class="cell-line2">${area}坪<span class="cell-team">${teamAbbr}</span></div>` :
-                                        `<div class="cell-line1">${area}坪<span class="cell-team">${teamAbbr}</span></div>`
+                                         <div class="cell-line2">${area}坪<span class="cell-team">${teamAbbr ? ' ' + teamAbbr : ''}</span></div>` :
+                                        `<div class="cell-line1">${area}坪<span class="cell-team">${teamAbbr ? ' ' + teamAbbr : ''}</span></div>`
                                     }
                                 </div>
                             </td>
@@ -5063,8 +5108,67 @@
             };
         }
 
+        // 檢查案場存取權限
+        async function checkSiteAccessPermission(siteId) {
+            try {
+                // 如果是管理員或業主，允許存取所有案場
+                if (window.permissions) {
+                    await window.permissions.init();
+                    const isAdmin = await window.permissions.isAdmin();
+                    if (isAdmin) return true;
+                    
+                    // 檢查是否為業主
+                    const projectPermissions = await window.permissions.getProjectPermissions(currentProject?.id);
+                    if (projectPermissions?.user_type === 'owner') return true;
+                }
+                
+                // 對於工班成員，檢查案場是否屬於他們的工班
+                const site = currentSites.find(s => s._id === siteId);
+                if (!site) return false;
+                
+                // 獲取當前用戶的工班
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${currentProject?.id}/users`, {
+                    headers: AuthUtils.getRequestHeaders()
+                });
+                
+                if (response.ok) {
+                    const responseData = await response.json();
+                    const users = responseData.data?.all || responseData; // 支援新舊API格式
+                    const currentUser = AuthUtils.getUser();
+                    
+                    if (Array.isArray(users)) {
+                        const userInfo = users.find(user => 
+                        user.phone === currentUser?.phone ||
+                        user.user_id === currentUser?.id ||
+                        user.user_id === currentUser?.source_id
+                    );
+                    
+                        if (userInfo?.team_name) {
+                            // 檢查案場是否分配給用戶的工班
+                            const siteTeamName = site[fieldMapping.team] || site.shift_time__c; // 使用正確的欄位
+                            return siteTeamName === userInfo.team_name;
+                        }
+                    } else {
+                        console.log('檢查案場權限: API回應格式不正確');
+                    }
+                }
+                
+                return false; // 預設不允許存取
+            } catch (error) {
+                console.error('檢查案場權限失敗:', error);
+                return false;
+            }
+        }
+
         // Open site modal
         async function openSiteModal(siteId) {
+            // 檢查用戶權限
+            const hasPermission = await checkSiteAccessPermission(siteId);
+            if (!hasPermission) {
+                alert('您沒有權限查看此案場');
+                return;
+            }
+            
             currentSiteId = siteId;
             
             // Find site data
@@ -6428,19 +6532,22 @@
 
         // 修改權限檢查函數，考慮模擬用戶
         function getCurrentUserPermissions() {
-            if (currentSimulatedUser) {
-                // 返回模擬用戶的權限
-                return {
-                    isAdmin: false,
-                    role: currentSimulatedUser.role,
-                    can_view: currentSimulatedUser.can_view,
-                    can_edit: currentSimulatedUser.can_edit,
-                    can_manage_members: currentSimulatedUser.can_manage_members,
-                    can_view_other_teams: currentSimulatedUser.can_view_other_teams,
-                    user_id: currentSimulatedUser.user_id,
-                    phone: currentSimulatedUser.phone,
-                    name: currentSimulatedUser.name
-                };
+            // 檢查是否有統一權限系統的模擬用戶
+            if (window.permissions && window.permissions.isSimulating()) {
+                const contextUser = window.permissions.getCurrentContextUser();
+                if (contextUser) {
+                    return {
+                        isAdmin: false,
+                        role: contextUser.role || contextUser.user_type,
+                        can_view: true,
+                        can_edit: true,
+                        can_manage_members: contextUser.role === 'leader',
+                        can_view_other_teams: false,
+                        user_id: contextUser.id,
+                        phone: contextUser.phone,
+                        name: contextUser.name
+                    };
+                }
             } else {
                 // 返回原始管理員權限
                 return {

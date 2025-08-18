@@ -113,18 +113,25 @@ class UnifiedPermissions {
             );
             
             if (response.ok) {
-                const users = await response.json();
+                const responseData = await response.json();
+                const users = responseData.data?.all || responseData; // 支援新舊API格式
                 
-                // 查找 context 用戶的權限
-                const userPermission = users.find(u => 
+                if (Array.isArray(users)) {
+                    // 查找 context 用戶的權限
+                    const userPermission = users.find(u => 
                     u.user_id === contextUser.id || 
-                    u.phone === contextUser.phone
+                    u.phone === contextUser.phone ||
+                    u.user_id === contextUser.source_id ||
+                    (contextUser.d1_user_id && u.user_id === contextUser.d1_user_id)
                 );
                 
-                if (userPermission) {
-                    // 快取權限
-                    this.userPermissions.set(cacheKey, userPermission);
-                    return userPermission;
+                    if (userPermission) {
+                        // 快取權限
+                        this.userPermissions.set(cacheKey, userPermission);
+                        return userPermission;
+                    }
+                } else {
+                    console.log('API回應格式不正確，users不是陣列:', typeof users);
                 }
             }
         } catch (error) {
@@ -319,8 +326,11 @@ class UnifiedPermissions {
             );
             
             if (response.ok) {
-                const users = await response.json();
-                const targetUser = users.find(u => u.user_id === targetUserId);
+                const responseData = await response.json();
+                const users = responseData.data?.all || responseData; // 支援新舊API格式
+                
+                if (Array.isArray(users)) {
+                    const targetUser = users.find(u => u.user_id === targetUserId);
                 
                 if (targetUser) {
                     // 設定模擬用戶
@@ -336,6 +346,9 @@ class UnifiedPermissions {
                     // 清除權限快取以強制重新載入
                     this.clearCache();
                     return true;
+                }
+                } else {
+                    console.log('switchPerspective: API回應格式不正確');
                 }
             }
         } catch (error) {
