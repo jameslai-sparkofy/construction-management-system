@@ -6550,6 +6550,7 @@
                 }
             } else {
                 // 返回原始管理員權限
+                const currentUser = window.permissions?.currentUser || JSON.parse(localStorage.getItem('user') || '{}');
                 return {
                     isAdmin: true,
                     role: 'admin',
@@ -6557,9 +6558,9 @@
                     can_edit: true,
                     can_manage_members: true,
                     can_view_other_teams: true,
-                    user_id: originalUser?.id || 'admin',
-                    phone: originalUser?.phone || '0900000001',
-                    name: originalUser?.name || '系統管理員'
+                    user_id: currentUser?.id || 'admin',
+                    phone: currentUser?.phone || '0900000001',
+                    name: currentUser?.name || '系統管理員'
                 };
             }
         }

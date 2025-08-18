@@ -47,6 +47,16 @@ class UserProfileComponent {
         const profileContainer = document.createElement('div');
         profileContainer.id = 'user-profile-component';
         profileContainer.className = 'fixed top-4 right-4 z-50 flex items-center gap-3';
+        // 強制確保位置正確，使用 !important 覆蓋任何 CSS
+        profileContainer.style.setProperty('position', 'fixed', 'important');
+        profileContainer.style.setProperty('top', '1rem', 'important');
+        profileContainer.style.setProperty('right', '1rem', 'important');
+        profileContainer.style.setProperty('bottom', 'auto', 'important');
+        profileContainer.style.setProperty('left', 'auto', 'important');
+        profileContainer.style.setProperty('z-index', '9999', 'important');
+        profileContainer.style.setProperty('display', 'flex', 'important');
+        profileContainer.style.setProperty('align-items', 'center', 'important');
+        profileContainer.style.setProperty('gap', '0.75rem', 'important');
         
         profileContainer.innerHTML = `
             <!-- 角色顯示（只在特定頁面顯示） -->
@@ -149,7 +159,7 @@ class UserProfileComponent {
             const authUser = window.AuthUtils.getUser();
             if (authUser && authUser.id) {
                 this.currentUser = authUser;
-                this.isAdmin = authUser.role === 'admin' || authUser.user_type === 'admin';
+                this.isAdmin = authUser.role === 'admin' || authUser.user_type === 'admin' || authUser.role === 'super_admin' || authUser.user_type === 'super_admin';
                 return;
             }
         }
@@ -165,7 +175,7 @@ class UserProfileComponent {
             
             if (response.ok) {
                 this.currentUser = await response.json();
-                this.isAdmin = this.currentUser.role === 'admin' || this.currentUser.user_type === 'admin';
+                this.isAdmin = this.currentUser.role === 'admin' || this.currentUser.user_type === 'admin' || this.currentUser.role === 'super_admin' || this.currentUser.user_type === 'super_admin';
                 
                 // 確保包含 source_id 用於用戶匹配
                 if (this.currentUser.source_id) {
@@ -181,7 +191,7 @@ class UserProfileComponent {
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
         if (userData.id) {
             this.currentUser = userData;
-            this.isAdmin = userData.role === 'admin' || userData.user_type === 'admin';
+            this.isAdmin = userData.role === 'admin' || userData.user_type === 'admin' || userData.role === 'super_admin' || userData.user_type === 'super_admin';
         }
     }
 
@@ -211,12 +221,17 @@ class UserProfileComponent {
                     this.currentUserRole = roleText;
                 }
             } else {
-                // 備用邏輯：使用統一權限系統
-                if (window.permissions) {
-                    const displayRole = await window.permissions.getUserDisplayRole(this.projectId);
-                    this.currentUserRole = this.getRoleDisplayName(displayRole);
+                // 備用邏輯：如果是管理員，直接顯示管理員角色
+                if (this.isAdmin) {
+                    this.currentUserRole = this.getRoleDisplayName(this.currentUser.role || this.currentUser.user_type || 'admin');
                 } else {
-                    this.currentUserRole = this.getRoleDisplayName(this.currentUser.role || this.currentUser.user_type);
+                    // 使用統一權限系統
+                    if (window.permissions) {
+                        const displayRole = await window.permissions.getUserDisplayRole(this.projectId);
+                        this.currentUserRole = this.getRoleDisplayName(displayRole);
+                    } else {
+                        this.currentUserRole = this.getRoleDisplayName(this.currentUser.role || this.currentUser.user_type);
+                    }
                 }
             }
             
@@ -262,6 +277,7 @@ class UserProfileComponent {
 
     getRoleDisplayName(role) {
         const roleNames = {
+            'super_admin': '超級管理員',
             'admin': '系統管理員',
             'owner': '業主',
             'foreman': '工班長',

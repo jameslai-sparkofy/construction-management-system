@@ -168,7 +168,7 @@ class UnifiedPermissions {
         }
         
         // 預設權限邏輯
-        if (contextUser.user_type === 'admin') {
+        if (contextUser.user_type === 'admin' || contextUser.user_type === 'super_admin') {
             return { can_view: true, can_edit: true, can_manage_members: true, can_view_other_teams: true };
         }
         if (contextUser.user_type === 'owner') {
@@ -210,7 +210,7 @@ class UnifiedPermissions {
             
             if (response.ok) {
                 const userData = await response.json();
-                return userData.role === 'admin' || userData.user_type === 'admin';
+                return userData.role === 'admin' || userData.user_type === 'admin' || userData.role === 'super_admin' || userData.user_type === 'super_admin';
             }
         } catch (error) {
             console.error('檢查 admin 權限失敗:', error);
@@ -235,7 +235,7 @@ class UnifiedPermissions {
         if (!contextUser) return false;
         
         // 如果 context user 是 admin（不是正在模擬），擁有所有權限
-        if (!this.isSimulating() && contextUser.user_type === 'admin') {
+        if (!this.isSimulating() && (contextUser.user_type === 'admin' || contextUser.user_type === 'super_admin')) {
             return true;
         }
         
@@ -264,7 +264,7 @@ class UnifiedPermissions {
         const permissions = await this.getProjectPermissions(projectId);
         
         // Admin 和 Owner 不屬於工班
-        if (permissions?.user_type === 'admin') return 'admin';
+        if (permissions?.user_type === 'admin' || permissions?.user_type === 'super_admin') return 'admin';
         if (permissions?.user_type === 'owner') return 'owner';
         
         // 工人在不同工班有不同角色
@@ -284,7 +284,7 @@ class UnifiedPermissions {
     async getUserDisplayRole(projectId) {
         const permissions = await this.getProjectPermissions(projectId);
         
-        if (permissions?.user_type === 'admin') return 'admin';
+        if (permissions?.user_type === 'admin' || permissions?.user_type === 'super_admin') return 'admin';
         if (permissions?.user_type === 'owner') return 'owner';
         
         // 如果在任何工班是工班長，顯示為工班長
