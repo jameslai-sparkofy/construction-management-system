@@ -734,10 +734,13 @@
                 return;
             }
             
-            // Initialize user profile component with role display
+            // Initialize user profile component with role display in header
+            const header = document.querySelector('.header');
             window.initUserProfile({
                 showRole: true,
-                projectId: projectId
+                projectId: projectId,
+                container: header,
+                displayMode: 'name-project-role'
             });
 
             // 設置回到專案詳情按鈕連結
@@ -841,8 +844,9 @@
                         
                         console.log('Current user project role:', currentUserProjectRole);
                     } else {
-                        // 如果找不到用戶在專案中的記錄，檢查是否為 global admin
-                        if (currentUserData.user_type === 'admin' || currentUserData.role === 'admin') {
+                        // 如果找不到用戶在專案中的記錄，檢查是否為 global admin 或 super_admin
+                        if (currentUserData.user_type === 'admin' || currentUserData.role === 'admin' ||
+                            currentUserData.user_type === 'super_admin' || currentUserData.role === 'super_admin') {
                             currentUserProjectRole = {
                                 user_type: 'admin',
                                 role: 'admin',
@@ -850,6 +854,7 @@
                                 team_name: null,
                                 can_view_other_teams: true
                             };
+                            console.log('Setting global admin/super_admin role for user:', currentUserData);
                         } else {
                             console.warn('Current user not found in project users');
                             currentUserProjectRole = null;
@@ -944,7 +949,12 @@
             
             let roleText = '';
             if (currentUserProjectRole.user_type === 'admin') {
-                roleText = ' (管理員視角)';
+                // 檢查是否為 super_admin
+                if (currentUserData && (currentUserData.user_type === 'super_admin' || currentUserData.role === 'super_admin')) {
+                    roleText = ' (系統管理員視角)';
+                } else {
+                    roleText = ' (管理員視角)';
+                }
             } else if (currentUserProjectRole.user_type === 'owner') {
                 roleText = ' (業主視角)';
             } else if (currentUserProjectRole.user_type === 'worker') {
