@@ -664,6 +664,7 @@
         const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
         let projectId = null;
         let currentUserData = null;
+        let currentUserProjectRole = null; // 當前用戶在專案中的角色
         let selectedUser = null;
         let selectedTeam = null;
         let currentSource = 'admins';
@@ -756,6 +757,9 @@
             // 載入專案用戶
             await loadProjectUsers();
             
+            // 應用角色基礎的視圖控制
+            applyRoleBasedView();
+            
             // 綁定事件
             bindEvents();
         }
@@ -784,6 +788,9 @@
                     document.getElementById('currentUser').textContent = 
                         `當前用戶：${currentUserData.name} (${currentUserData.user_type || currentUserData.role})`;
                     
+                    // 獲取用戶在專案中的角色
+                    await getCurrentUserProjectRole();
+                    
                     // Token 有效，繼續使用
                 } else if (response.status === 401) {
                     // Token 無效，返回登入頁
@@ -794,6 +801,154 @@
                 console.error('Error fetching current user:', error);
                 // 不要在這裡跳轉，讓用戶看到錯誤
             }
+        }
+
+        // 獲取當前用戶在專案中的角色和權限
+        async function getCurrentUserProjectRole() {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    const allUsers = result.data.all || [];
+                    
+                    // 查找當前用戶的專案角色
+                    const currentUserInProject = allUsers.find(user => 
+                        user.user_id === currentUserData.id || 
+                        user.phone === currentUserData.phone
+                    );
+                    
+                    if (currentUserInProject) {
+                        currentUserProjectRole = {
+                            user_type: currentUserInProject.user_type,
+                            role: currentUserInProject.role,
+                            team_id: currentUserInProject.team_id,
+                            team_name: currentUserInProject.team_name,
+                            can_view_other_teams: currentUserInProject.can_view_other_teams || currentUserInProject.user_type === 'admin' || currentUserInProject.user_type === 'owner'
+                        };
+                        
+                        console.log('Current user project role:', currentUserProjectRole);
+                    } else {
+                        // 如果找不到用戶在專案中的記錄，檢查是否為 global admin
+                        if (currentUserData.user_type === 'admin' || currentUserData.role === 'admin') {
+                            currentUserProjectRole = {
+                                user_type: 'admin',
+                                role: 'admin',
+                                team_id: null,
+                                team_name: null,
+                                can_view_other_teams: true
+                            };
+                        } else {
+                            console.warn('Current user not found in project users');
+                            currentUserProjectRole = null;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error getting current user project role:', error);
+                currentUserProjectRole = null;
+            }
+        }
+
+        // 應用角色基礎的視圖控制
+        function applyRoleBasedView() {
+            if (!currentUserProjectRole) {
+                console.warn('No project role found for current user');
+                return;
+            }
+
+            console.log('Applying role-based view for:', currentUserProjectRole);
+
+            // 控制添加用戶面板的可見性
+            const addUserPanel = document.querySelector('.panel');
+            const userSourceTabs = document.querySelector('.user-source-tabs');
+            
+            if (currentUserProjectRole.user_type === 'admin') {
+                // Admin: 可以看到和操作所有內容
+                // 保持默認行為，不做限制
+            } else if (currentUserProjectRole.user_type === 'owner') {
+                // Owner: 只能查看，不能編輯
+                if (addUserPanel) {
+                    addUserPanel.style.display = 'none';
+                }
+                // 隱藏所有操作按鈕將在 displayProjectUsers 中處理
+            } else if (currentUserProjectRole.user_type === 'worker') {
+                if (currentUserProjectRole.role === 'leader') {
+                    // Team Leader: 只能看到和管理自己的工班
+                    // 限制可見的標籤
+                    if (userSourceTabs) {
+                        const tabs = userSourceTabs.querySelectorAll('.tab-button');
+                        tabs.forEach(tab => {
+                            if (tab.dataset.source !== 'workers') {
+                                tab.style.display = 'none';
+                            }
+                        });
+                        // 自動選擇師父標籤
+                        const workerTab = userSourceTabs.querySelector('[data-source="workers"]');
+                        if (workerTab) {
+                            workerTab.click();
+                        }
+                    }
+                    
+                    // 過濾工班資料
+                    filterTeamsForCurrentUser();
+                } else {
+                    // Worker: 只能查看自己的工班，不能編輯
+                    if (addUserPanel) {
+                        addUserPanel.style.display = 'none';
+                    }
+                    // 過濾工班資料
+                    filterTeamsForCurrentUser();
+                }
+            }
+            
+            // 更新頁面標題以反映當前角色
+            updatePageTitleWithRole();
+        }
+
+        // 為當前用戶過濾工班資料
+        function filterTeamsForCurrentUser() {
+            if (!currentUserProjectRole || !currentUserProjectRole.team_id) {
+                return;
+            }
+            
+            // 只保留當前用戶所屬的工班
+            teamsList = teamsList.filter(team => team.id === currentUserProjectRole.team_id);
+            
+            // 更新工班選擇器和分頁
+            updateTeamSelector();
+            updateTeamTabs();
+            
+            // 如果在師父分頁，重新載入
+            if (currentSource === 'workers') {
+                loadTeamTabsForWorkers();
+            }
+        }
+
+        // 更新頁面標題以反映當前角色
+        function updatePageTitleWithRole() {
+            const headerTitle = document.querySelector('.header h1');
+            if (!headerTitle || !currentUserProjectRole) return;
+            
+            let roleText = '';
+            if (currentUserProjectRole.user_type === 'admin') {
+                roleText = ' (管理員視角)';
+            } else if (currentUserProjectRole.user_type === 'owner') {
+                roleText = ' (業主視角)';
+            } else if (currentUserProjectRole.user_type === 'worker') {
+                if (currentUserProjectRole.role === 'leader') {
+                    roleText = ` (工班長視角 - ${currentUserProjectRole.team_name || '工班'})`;
+                } else {
+                    roleText = ` (工班成員視角 - ${currentUserProjectRole.team_name || '工班'})`;
+                }
+            }
+            
+            headerTitle.textContent = '專案用戶管理' + roleText;
         }
 
         // 載入專案資訊
@@ -1409,14 +1564,20 @@
 
         // 顯示專案用戶
         function displayProjectUsers(grouped) {
-            // 更新計數
-            document.getElementById('adminCount').textContent = grouped.admins.length;
-            document.getElementById('ownerCount').textContent = grouped.owners.length;
-            
-            // 處理工班資料 - 確保顯示所有三個工班（與左側面板相同）
+            // 根據角色過濾資料
+            let filteredAdmins = grouped.admins || [];
+            let filteredOwners = grouped.owners || [];
             let allTeams = grouped.teams || [];
             
-            // 使用與 teamsList 相同的工班資料
+            // 如果不是 admin 或 owner，則隱藏管理員和業主資料
+            if (currentUserProjectRole && 
+                currentUserProjectRole.user_type !== 'admin' && 
+                currentUserProjectRole.user_type !== 'owner') {
+                filteredAdmins = [];
+                filteredOwners = [];
+            }
+            
+            // 處理工班資料 - 使用與 teamsList 相同的工班資料
             const teamMap = new Map();
             
             // 使用 teamsList 作為基礎（從案場動態獲取）
@@ -1427,8 +1588,6 @@
                     members: []
                 });
             });
-            
-            // 如果 teamsList 為空，不添加任何預設工班
             
             // 更新現有工班的成員資料
             allTeams.forEach(team => {
@@ -1445,17 +1604,41 @@
             // 轉換為陣列
             allTeams = Array.from(teamMap.values());
             
+            // 如果當前用戶是工班成員且不能查看其他工班，過濾工班資料
+            if (currentUserProjectRole && 
+                currentUserProjectRole.user_type === 'worker' && 
+                !currentUserProjectRole.can_view_other_teams &&
+                currentUserProjectRole.team_id) {
+                allTeams = allTeams.filter(team => team.team_id === currentUserProjectRole.team_id);
+            }
+            
+            // 更新計數
+            document.getElementById('adminCount').textContent = filteredAdmins.length;
+            document.getElementById('ownerCount').textContent = filteredOwners.length;
+            
             // 計算工班成員總數
             const totalWorkers = allTeams.reduce((total, team) => total + (team.members ? team.members.length : 0), 0);
             document.getElementById('workerCount').textContent = totalWorkers;
 
-            // 顯示管理員
-            displayUserGroup('adminUsers', grouped.admins, 'admin');
+            // 控制用戶組的可見性
+            const adminGroup = document.querySelector('#adminUsers').closest('.user-group');
+            const ownerGroup = document.querySelector('#ownerUsers').closest('.user-group');
             
-            // 顯示業主
-            displayUserGroup('ownerUsers', grouped.owners, 'owner');
+            if (filteredAdmins.length === 0 && currentUserProjectRole && currentUserProjectRole.user_type !== 'admin') {
+                if (adminGroup) adminGroup.style.display = 'none';
+            } else {
+                if (adminGroup) adminGroup.style.display = 'block';
+                displayUserGroup('adminUsers', filteredAdmins, 'admin');
+            }
             
-            // 顯示工班成員（顯示所有三個工班的分頁）
+            if (filteredOwners.length === 0 && currentUserProjectRole && currentUserProjectRole.user_type !== 'admin' && currentUserProjectRole.user_type !== 'owner') {
+                if (ownerGroup) ownerGroup.style.display = 'none';
+            } else {
+                if (ownerGroup) ownerGroup.style.display = 'block';
+                displayUserGroup('ownerUsers', filteredOwners, 'owner');
+            }
+            
+            // 顯示工班成員
             displayTeamUsers(allTeams);
         }
 
@@ -1527,9 +1710,29 @@
         
         // 建立用戶卡片
         function createUserCard(user, role) {
-            // 只顯示移除按鈕
-            const actions = currentUserData && currentUserData.user_type === 'admin' ? 
-                `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>` : '';
+            let actions = '';
+            
+            // 根據當前用戶的角色決定可進行的操作
+            if (currentUserProjectRole) {
+                if (currentUserProjectRole.user_type === 'admin') {
+                    // Admin: 可以進行所有操作
+                    if (role === 'member') {
+                        actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為負責人</button>`;
+                    } else if (role === 'leader') {
+                        actions += `<button class="action-button demote-button" onclick="demoteUser('${user.user_id}')">降為成員</button>`;
+                    }
+                    actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
+                } else if (currentUserProjectRole.user_type === 'worker' && currentUserProjectRole.role === 'leader') {
+                    // Team Leader: 只能管理自己工班的成員
+                    if (user.team_id === currentUserProjectRole.team_id) {
+                        if (role === 'member') {
+                            actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為負責人</button>`;
+                        }
+                        actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
+                    }
+                }
+                // Owner 和 Worker 沒有操作權限，所以 actions 保持為空字符串
+            }
             
             // 決定角色顯示文字
             const roleText = role === 'leader' ? '負責人' : '成員';
@@ -1574,17 +1777,13 @@
             element.innerHTML = users.map(user => {
                 let actions = '';
                 
-                // 根據當前用戶權限顯示操作按鈕
-                if (currentUserData) {
-                    if (type === 'member' && (currentUserData.user_type === 'admin' || currentUserData.user_role === 'leader')) {
-                        // 可以提升成員為領班
-                        actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為領班</button>`;
-                    }
-                    
-                    if (currentUserData.user_type === 'admin') {
-                        // 管理員可以移除用戶
+                // 根據當前用戶的專案角色顯示操作按鈕
+                if (currentUserProjectRole) {
+                    if (currentUserProjectRole.user_type === 'admin') {
+                        // Admin: 可以移除任何用戶
                         actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                     }
+                    // 其他角色 (Owner, Team Leader, Worker) 對 Admin 和 Owner 用戶沒有操作權限
                 }
 
                 // 權限標籤
