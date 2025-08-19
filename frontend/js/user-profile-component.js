@@ -24,14 +24,6 @@ class UserProfileComponent {
         // 創建 HTML 結構
         this.createProfileElement();
         
-        // 如果不需要顯示角色，立即隱藏角色顯示元素
-        if (!this.showRole) {
-            const roleDisplay = document.getElementById('user-role-display');
-            if (roleDisplay) {
-                roleDisplay.classList.add('hidden');
-            }
-        }
-        
         // 載入用戶資料
         await this.loadUserData();
         
@@ -59,16 +51,10 @@ class UserProfileComponent {
         profileContainer.style.setProperty('gap', '0.75rem', 'important');
         
         profileContainer.innerHTML = `
-            <!-- 角色顯示（只在特定頁面顯示） -->
-            <div id="user-role-display" class="hidden bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                <span class="mr-1">🏷️</span>
-                <span id="user-role-text"></span>
-            </div>
-            
-            <!-- 個人設定下拉選單 -->
+            <!-- 個人設定下拉選單 - 統一圖標顯示 -->
             <div class="relative">
-                <button id="profile-menu-button" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-full p-2 shadow-sm transition-colors">
-                    <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button id="profile-menu-button" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-full p-3 shadow-lg transition-all duration-200 hover:shadow-xl">
+                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                 </button>
@@ -212,7 +198,7 @@ class UserProfileComponent {
             // 獲取用戶在專案中的詳細資訊
             const userInfo = await this.getUserProjectInfo();
             if (userInfo) {
-                // 顯示角色和工班資訊
+                // 顯示角色和工班資訊，優先使用具體的 role
                 const roleText = this.getRoleDisplayName(userInfo.role || userInfo.user_type);
                 if (userInfo.team_name) {
                     this.currentUserRole = `${roleText} - ${userInfo.team_name}`;
@@ -304,17 +290,8 @@ class UserProfileComponent {
             }
         }
         
-        // 顯示或隱藏角色標籤
-        const roleDisplay = document.getElementById('user-role-display');
-        const roleText = document.getElementById('user-role-text');
-        
-        if (this.showRole && this.currentUserRole && roleDisplay && roleText) {
-            roleText.textContent = this.currentUserRole;
-            roleDisplay.classList.remove('hidden');
-        } else if (roleDisplay) {
-            // 確保當不需要顯示角色時，隱藏角色顯示元素
-            roleDisplay.classList.add('hidden');
-        }
+        // 統一圖標顯示 - 不顯示額外的角色標籤
+        // 角色資訊只在下拉選單中顯示，保持頂部圖標簡潔
     }
 
     async logout() {

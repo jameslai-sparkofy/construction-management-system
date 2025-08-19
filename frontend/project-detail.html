@@ -1783,7 +1783,7 @@
                         <span>📥</span>
                         <span>匯出</span>
                     </button>
-                    <button class="btn-delete" style="background: #fee2e2; color: #dc2626;">
+                    <button class="btn-delete" style="background: #fee2e2; color: #dc2626; display: none;">
                         <span>🗑️</span>
                         <span>刪除</span>
                     </button>
@@ -3408,6 +3408,9 @@
                 // Admin: 可以看到和操作所有內容
                 if (userManagementBtn) userManagementBtn.style.display = 'flex';
                 if (perspectiveDropdown) perspectiveDropdown.style.display = 'block';
+                
+                // 顯示刪除按鈕（只有 admin 可以看到）
+                showAdminFeatures();
             } else if (currentUserProjectRole.user_type === 'owner') {
                 // Owner: 只能查看，隱藏管理功能
                 if (userManagementBtn) userManagementBtn.style.display = 'none';
@@ -3420,6 +3423,9 @@
                     // Team Leader: 可以管理自己的工班，有限的用戶管理權限
                     if (userManagementBtn) userManagementBtn.style.display = 'flex';
                     if (perspectiveDropdown) perspectiveDropdown.style.display = 'none';
+                    
+                    // 隱藏專案級別的編輯功能（如刪除專案按鈕）
+                    hideProjectLevelEditingFeatures();
                     
                     // 只能編輯自己工班的內容
                     restrictToOwnTeam();
@@ -3461,6 +3467,44 @@
             deleteButtons.forEach(btn => {
                 if (btn.textContent.includes('刪除') || btn.textContent.includes('移除')) {
                     btn.style.display = 'none';
+                }
+            });
+        }
+
+        // 隱藏專案級別的編輯功能（工班負責人不能刪除/編輯專案）
+        function hideProjectLevelEditingFeatures() {
+            // 隱藏專案刪除按鈕
+            const projectDeleteButtons = document.querySelectorAll('.btn-delete');
+            projectDeleteButtons.forEach(btn => {
+                if (btn.textContent.includes('刪除')) {
+                    btn.style.display = 'none';
+                }
+            });
+            
+            // 隱藏專案編輯按鈕
+            const projectEditButtons = document.querySelectorAll('.btn-edit');
+            projectEditButtons.forEach(btn => {
+                if (btn.textContent.includes('編輯')) {
+                    btn.style.display = 'none';
+                }
+            });
+        }
+
+        // 顯示管理員功能（只有 admin 可以看到刪除/編輯按鈕）
+        function showAdminFeatures() {
+            // 顯示專案刪除按鈕
+            const projectDeleteButtons = document.querySelectorAll('.btn-delete');
+            projectDeleteButtons.forEach(btn => {
+                if (btn.textContent.includes('刪除')) {
+                    btn.style.display = 'flex';
+                }
+            });
+            
+            // 顯示專案編輯按鈕
+            const projectEditButtons = document.querySelectorAll('.btn-edit');
+            projectEditButtons.forEach(btn => {
+                if (btn.textContent.includes('編輯')) {
+                    btn.style.display = 'flex';
                 }
             });
         }

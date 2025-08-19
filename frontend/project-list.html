@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>專案列表 - 元心建材工程管理系統 v1.2.0</title>
     <!-- 更新時間: 2025-08-14 | 版本: v1.2.0 -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         * {
             margin: 0;
@@ -776,11 +777,13 @@
         .btn-edit {
             background: #fff3e0;
             color: #f57c00;
+            display: none; /* 預設隱藏，由權限檢查後顯示 */
         }
 
         .btn-delete {
             background: #ffebee;
             color: #c62828;
+            display: none; /* 預設隱藏，由權限檢查後顯示 */
         }
 
         .modal {
@@ -931,13 +934,8 @@
                     🔧 管理功能
                 </button>
                 <div class="admin-dropdown" id="adminDropdown">
-                    <a href="#" class="admin-dropdown-item" id="systemAdminLink" style="display: none;" onclick="showAdminPanel()">🛠️ 系統管理</a>
-                    <a href="super-admin-users.html" class="admin-dropdown-item" id="superAdminUsersLink" style="display: none;">🔑 全站用戶管理</a>
-                    <a href="user-management.html" class="admin-dropdown-item">👤 用戶管理</a>
-                    <a href="member-management.html" class="admin-dropdown-item">👥 成員管理</a>
-                    <a href="owner-management.html" class="admin-dropdown-item">🏢 業主管理</a>
-                    <a href="team-member-management.html" class="admin-dropdown-item">👷 工班管理</a>
-                    <a href="test-permissions.html" class="admin-dropdown-item">🧪 權限測試</a>
+                    <a href="global-user-management.html" class="admin-dropdown-item">👤 用戶管理</a>
+                    <a href="global-project-user-management.html" class="admin-dropdown-item">🏗️ 專案用戶管理</a>
                 </div>
             </div>
         </div>
