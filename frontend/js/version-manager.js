@@ -9,7 +9,7 @@ class VersionManager {
         this.environment = this.detectEnvironment();
         
         // 基礎版本號
-        this.baseVersion = '1.2.1';
+        this.baseVersion = '1.0';
         
         // 根據環境生成完整版本號
         this.currentVersion = this.generateVersionString();
@@ -26,10 +26,12 @@ class VersionManager {
             hostname.includes('dev.') || 
             hostname.includes('develop.') ||
             hostname.includes('localhost') ||
-            hostname.includes('127.0.0.1')) {
+            hostname.includes('127.0.0.1') ||
+            hostname.includes('cm-test')) {
             return 'development';
         } else if (hostname.includes('construction-management-frontend-prod') || 
-                   hostname.includes('manage.yes-ceramics.com')) {
+                   hostname.includes('manage.yes-ceramics.com') ||
+                   hostname.includes('cm-prod.pages.dev')) {
             return 'production';
         } else {
             return 'development'; // 預設為開發環境

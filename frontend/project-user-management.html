@@ -411,6 +411,82 @@
             background: #757575;
         }
         
+        /* 角色切換開關樣式 */
+        .role-switch-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-right: 10px;
+        }
+
+        .role-label {
+            font-size: 12px;
+            color: #999;
+            transition: color 0.3s;
+        }
+
+        .role-label.active {
+            color: #2196f3;
+            font-weight: 500;
+        }
+
+        .role-label.member.active {
+            color: #4caf50;
+        }
+
+        .role-label.leader.active {
+            color: #ff9800;
+        }
+
+        .role-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .role-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .role-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4caf50;
+            transition: .3s;
+            border-radius: 24px;
+        }
+
+        .role-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        .role-switch input:checked + .role-slider {
+            background-color: #ff9800;
+        }
+
+        .role-switch input:checked + .role-slider:before {
+            transform: translateX(20px);
+        }
+
+        .role-switch:hover .role-slider {
+            box-shadow: 0 0 8px rgba(0,0,0,0.2);
+        }
+        
         .team-count {
             font-size: 12px;
             opacity: 0.7;
@@ -1767,47 +1843,137 @@
         // 建立用戶卡片
         function createUserCard(user, role) {
             let actions = '';
+            let roleSwitch = '';
             
             // 根據當前用戶的角色決定可進行的操作
             if (currentUserProjectRole) {
                 if (currentUserProjectRole.user_type === 'admin') {
                     // Admin: 可以進行所有操作
-                    if (role === 'member') {
-                        actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為負責人</button>`;
-                    } else if (role === 'leader') {
-                        actions += `<button class="action-button demote-button" onclick="demoteUser('${user.user_id}')">降為成員</button>`;
-                    }
+                    roleSwitch = createRoleSwitch(user.user_id, role);
                     actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                 } else if (currentUserProjectRole.user_type === 'worker' && currentUserProjectRole.role === 'leader') {
                     // Team Leader: 只能管理自己工班的成員
                     if (user.team_id === currentUserProjectRole.team_id) {
-                        if (role === 'member') {
-                            actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為負責人</button>`;
-                        } else if (role === 'leader') {
-                            actions += `<button class="action-button demote-button" onclick="demoteUser('${user.user_id}')">降為成員</button>`;
-                        }
+                        roleSwitch = createRoleSwitch(user.user_id, role);
                         actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                     }
                 }
                 // Owner 和 Worker 沒有操作權限，所以 actions 保持為空字符串
             }
             
-            // 決定角色顯示文字
-            const roleText = role === 'leader' ? '負責人' : '成員';
-            
             return `
                 <div class="project-user-item ${role === 'leader' ? 'leader-item' : ''}">
                     <div>
                         <div class="user-name">
-                            ${user.name} (${roleText})
+                            ${user.name}
                         </div>
                         <div class="user-detail">${user.phone || ''}</div>
                     </div>
                     <div class="user-actions">
+                        ${roleSwitch}
                         ${actions}
                     </div>
                 </div>
             `;
+        }
+        
+        // 創建角色切換開關
+        function createRoleSwitch(userId, currentRole) {
+            const isLeader = currentRole === 'leader';
+            return `
+                <div class="role-switch-container">
+                    <span class="role-label member ${!isLeader ? 'active' : ''}">成員</span>
+                    <label class="role-switch">
+                        <input type="checkbox" ${isLeader ? 'checked' : ''} onchange="handleRoleToggle(event, '${userId}')">
+                        <span class="role-slider"></span>
+                    </label>
+                    <span class="role-label leader ${isLeader ? 'active' : ''}">負責人</span>
+                </div>
+            `;
+        }
+        
+        // 處理角色切換開關
+        async function handleRoleToggle(event, userId) {
+            const switchElement = event.target;
+            const isLeader = switchElement.checked;
+            const originalState = !isLeader; // 保存原始狀態
+            
+            // 顯示確認對話框
+            const confirmMessage = isLeader ? '確定要提升此成員為負責人嗎？' : '確定要將此負責人降為成員嗎？';
+            if (!confirm(confirmMessage)) {
+                // 用戶取消，恢復原始狀態
+                switchElement.checked = originalState;
+                return;
+            }
+            
+            try {
+                await toggleUserRole(userId, isLeader);
+                // 成功後更新標籤狀態
+                updateRoleLabelColors(switchElement.parentNode.parentNode, isLeader);
+            } catch (error) {
+                // 失敗時恢復開關狀態
+                switchElement.checked = originalState;
+                alert(isLeader ? '提升失敗：' + error.message : '降級失敗：' + error.message);
+            }
+        }
+        
+        // 更新角色標籤顏色
+        function updateRoleLabelColors(container, isLeader) {
+            const memberLabel = container.querySelector('.role-label.member');
+            const leaderLabel = container.querySelector('.role-label.leader');
+            
+            if (isLeader) {
+                memberLabel.classList.remove('active');
+                leaderLabel.classList.add('active');
+            } else {
+                leaderLabel.classList.remove('active');
+                memberLabel.classList.add('active');
+            }
+        }
+        
+        // 切換用戶角色
+        async function toggleUserRole(userId, isLeader) {
+            if (isLeader) {
+                return await promoteUserAPI(userId);
+            } else {
+                return await demoteUserAPI(userId);
+            }
+        }
+        
+        // 純API調用 - 提升用戶
+        async function promoteUserAPI(userId) {
+            const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users/${userId}/role`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role: 'leader' })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || '提升失敗');
+            }
+            return result;
+        }
+        
+        // 純API調用 - 降級用戶
+        async function demoteUserAPI(userId) {
+            const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users/${userId}/role`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ role: 'member' })
+            });
+
+            const result = await response.json();
+            if (!result.success) {
+                throw new Error(result.error || '降級失敗');
+            }
+            return result;
         }
         
         // 切換工班分頁
@@ -1919,6 +2085,16 @@
                 
                 if (result.success) {
                     alert('用戶添加成功！');
+                    
+                    // 清除所有相關緩存
+                    projectUsersList = [];
+                    
+                    // 清除 localStorage 中的師父緩存
+                    if (currentSource === 'workers' && selectedTeam) {
+                        const cacheKey = `workers_${selectedTeam}`;
+                        localStorage.removeItem(cacheKey);
+                    }
+                    
                     // 重新載入用戶列表
                     await loadProjectUsers();
                     // 清除選擇
@@ -1927,6 +2103,11 @@
                         item.classList.remove('selected');
                     });
                     document.getElementById('addUserButton').disabled = true;
+                    
+                    // 如果在師父分頁，重新載入可用師父列表
+                    if (currentSource === 'workers') {
+                        await loadAvailableUsers('workers');
+                    }
                 } else {
                     alert('添加失敗：' + result.error);
                 }
@@ -1956,7 +2137,23 @@
                 
                 if (result.success) {
                     alert('提升成功！');
+                    // 清除所有相關緩存
+                    projectUsersList = [];
+                    
+                    // 清除 localStorage 中的師父緩存
+                    if (selectedTeam) {
+                        const cacheKey = `workers_${selectedTeam}`;
+                        localStorage.removeItem(cacheKey);
+                    }
+                    
                     await loadProjectUsers();
+                    // 如果在師父分頁，重新選擇當前工班以刷新顯示
+                    if (currentSource === 'workers' && selectedTeam) {
+                        const tabElement = document.querySelector(`#workerTeamTabs .team-tab-button[data-team-id="${selectedTeam}"]`);
+                        if (tabElement) {
+                            await selectTeamForWorkers(tabElement);
+                        }
+                    }
                 } else {
                     alert('操作失敗：' + result.error);
                 }
@@ -1986,7 +2183,23 @@
                 
                 if (result.success) {
                     alert('降級成功！');
+                    // 清除所有相關緩存
+                    projectUsersList = [];
+                    
+                    // 清除 localStorage 中的師父緩存
+                    if (selectedTeam) {
+                        const cacheKey = `workers_${selectedTeam}`;
+                        localStorage.removeItem(cacheKey);
+                    }
+                    
                     await loadProjectUsers();
+                    // 如果在師父分頁，重新選擇當前工班以刷新顯示
+                    if (currentSource === 'workers' && selectedTeam) {
+                        const tabElement = document.querySelector(`#workerTeamTabs .team-tab-button[data-team-id="${selectedTeam}"]`);
+                        if (tabElement) {
+                            await selectTeamForWorkers(tabElement);
+                        }
+                    }
                 } else {
                     alert('操作失敗：' + result.error);
                 }
@@ -2014,7 +2227,27 @@
                 
                 if (result.success) {
                     alert('移除成功！');
+                    
+                    // 清除所有相關緩存
+                    projectUsersList = [];
+                    
+                    // 清除 localStorage 中的師父緩存（該用戶可能是從某個工班移除的）
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(key => {
+                        if (key.startsWith('workers_')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                    
                     await loadProjectUsers();
+                    
+                    // 如果在師父分頁，重新載入當前選中工班的師父
+                    if (currentSource === 'workers' && selectedTeam) {
+                        const tabElement = document.querySelector(`#workerTeamTabs .team-tab-button[data-team-id="${selectedTeam}"]`);
+                        if (tabElement) {
+                            await selectTeamForWorkers(tabElement);
+                        }
+                    }
                 } else {
                     alert('操作失敗：' + result.error);
                 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>專案詳情 - 元心建材工程管理系統 v1.2.1</title>
+    <title>專案詳情 - 元心建材工程管理系統 v1.0</title>
     <script src="js/version-manager.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -1753,26 +1753,6 @@
                         <span>用戶管理</span>
                     </button>
                     
-                    <!-- 視角切換器 (僅管理員可見) -->
-                    <div class="perspective-switcher" id="perspectiveSwitcher">
-                        <button class="perspective-btn" onclick="togglePerspectiveDropdown()">
-                            <span>👤</span>
-                            <span>切換視角</span>
-                        </button>
-                        <div class="perspective-dropdown" id="perspectiveDropdown">
-                            <div class="perspective-group">
-                                <div class="perspective-group-title">管理員</div>
-                                <div class="perspective-item active" onclick="switchPerspective(null)">
-                                    <span>🔧</span>
-                                    <span>管理員視角 (當前)</span>
-                                </div>
-                            </div>
-                            <div id="perspectiveUsersList">
-                                <!-- 動態載入用戶列表 -->
-                            </div>
-                        </div>
-                    </div>
-
                     <button class="btn-report">
                         <span>📊</span>
                         <span>報表</span>
@@ -6464,120 +6444,10 @@
             });
         }
 
-        // 切換視角
-        async function switchPerspective(userId) {
-            const projectId = window.currentProject?.id;
-            if (!projectId) return;
-            
-            if (userId === null) {
-                // 返回管理員視角
-                await exitSimulation();
-            } else {
-                // 使用 UnifiedPermissions 切換視角
-                const success = await window.permissions.switchPerspective(userId, projectId);
-                if (success) {
-                    const targetUser = allProjectUsers.find(u => u.user_id === userId);
-                    if (targetUser) {
-                        showSimulationBanner(targetUser);
-                    }
-                }
-            }
-            
-            // 關閉下拉選單
-            document.getElementById('perspectiveDropdown').classList.remove('show');
-            
-            // 重新載入頁面內容
-            await refreshPageContent();
-        }
 
-        // 顯示模擬模式提示
-        function showSimulationBanner(user) {
-            const banner = document.getElementById('simulationBanner');
-            const userName = document.getElementById('simulatedUserName');
-            
-            // 顯示用戶在各工班的角色
-            let roleText = '';
-            if (user.team_contexts && user.team_contexts.length > 0) {
-                roleText = user.team_contexts.map(tc => {
-                    const role = tc.role === 'leader' ? '工班長' : '成員';
-                    return `${tc.team_name}(${role})`;
-                }).join(', ');
-            } else if (user.global_permissions) {
-                roleText = user.user_type === 'owner' ? '業主' : '管理員';
-            } else {
-                roleText = getRoleName(user.role);
-            }
-            
-            userName.textContent = `${user.name} - ${roleText}`;
-            banner.classList.add('show');
-            
-            // 更新視角切換器狀態
-            updatePerspectiveDropdownState();
-            
-            console.log('已切換到用戶視角:', user.name, roleText);
-        }
 
-        // 退出模擬模式
-        async function exitSimulation() {
-            // 使用 UnifiedPermissions 返回真實視角
-            await window.permissions.switchPerspective(null);
-            
-            // 隱藏模擬模式提示條
-            document.getElementById('simulationBanner').classList.remove('show');
-            
-            // 更新視角切換器狀態
-            updatePerspectiveDropdownState();
-            
-            console.log('已返回管理員視角');
-        }
 
-        // 更新視角切換器下拉選單狀態
-        function updatePerspectiveDropdownState() {
-            const items = document.querySelectorAll('.perspective-item');
-            const isSimulating = window.permissions?.isSimulating();
-            const simulatedUser = window.permissions?.simulatedUser;
-            
-            items.forEach(item => {
-                item.classList.remove('active');
-                
-                if (!isSimulating) {
-                    // 管理員視角
-                    if (item.onclick && item.onclick.toString().includes('switchPerspective(null)')) {
-                        item.classList.add('active');
-                    }
-                } else if (simulatedUser) {
-                    // 模擬用戶視角
-                    if (item.onclick && item.onclick.toString().includes(`'${simulatedUser.id}'`)) {
-                        item.classList.add('active');
-                    }
-                }
-            });
-        }
 
-        // 重新整理頁面內容（根據當前視角）
-        async function refreshPageContent() {
-            // 重新載入工班圖表和相關內容
-            if (window.currentProject) {
-                await loadProject(window.currentProject.id);
-                console.log('頁面內容已根據新視角更新');
-            }
-        }
-
-        // 切換視角下拉選單顯示/隱藏
-        function togglePerspectiveDropdown() {
-            const dropdown = document.getElementById('perspectiveDropdown');
-            dropdown.classList.toggle('show');
-        }
-
-        // 點擊其他地方關閉下拉選單
-        document.addEventListener('click', function(event) {
-            const perspectiveSwitcher = document.getElementById('perspectiveSwitcher');
-            const dropdown = document.getElementById('perspectiveDropdown');
-            
-            if (!perspectiveSwitcher.contains(event.target)) {
-                dropdown.classList.remove('show');
-            }
-        });
 
         // 取得角色中文名稱
         function getRoleName(role) {

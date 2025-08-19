@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登入 - 元心建材工程管理系統 v1.2.1</title>
+    <title>登入 - 元心建材工程管理系統 v1.0</title>
     <script src="js/version-manager.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -60,14 +60,6 @@
             </button>
         </form>
 
-        <!-- 測試帳號提示 -->
-        <div class="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p class="text-sm text-blue-800">
-                <strong>測試帳號：</strong><br>
-                手機：0912345678<br>
-                密碼：678
-            </p>
-        </div>
 
         <!-- 錯誤訊息 -->
         <div id="error-message" class="hidden mt-4 p-4 bg-red-50 text-red-700 rounded-lg"></div>
@@ -127,12 +119,11 @@
                 badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800';
                 environmentBadge.style.display = 'block';
             } else if (hostname.includes('construction-management-frontend-prod') || 
-                       hostname.includes('manage.yes-ceramics.com')) {
-                // 生產環境
-                systemTitle.textContent = '工程管理系統 正式版';
-                badge.textContent = '🚀 正式環境';
-                badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
-                environmentBadge.style.display = 'block';
+                       hostname.includes('manage.yes-ceramics.com') ||
+                       hostname.includes('cm-prod.pages.dev')) {
+                // 生產環境 - 簡潔顯示，不顯示環境標識
+                systemTitle.textContent = '工程管理系統';
+                environmentBadge.style.display = 'none';
                 isProduction = true;
             } else {
                 // 預設為開發環境

@@ -1950,8 +1950,8 @@ export default {
             const existingUserIds = new Set(existingUsers.map(u => u.user_id));
             
             filteredResults = results.filter(worker => {
-              const workerId = `crm_worker_${worker.id}`;
-              return !existingUserIds.has(workerId);
+              // Use the worker's actual _id from object_50hj8__c (e.g., "worker_1755585874709_sa5tp5vfi")
+              return !existingUserIds.has(worker.id);
             });
             
             console.log(`[DEBUG] Filtered out existing users. ${results.length} -> ${filteredResults.length} available`);
@@ -1962,7 +1962,7 @@ export default {
         }
         
         const workers = filteredResults.map(worker => ({
-          user_id: `crm_worker_${worker.id}`,
+          user_id: worker.id, // Use the actual _id from object_50hj8__c directly
           name: worker.name || '未命名',
           phone: worker.phone_number__c || '',
           nickname: worker.abbreviation__c || (worker.name ? worker.name.slice(-1) : ''),
@@ -2070,8 +2070,10 @@ export default {
         const opportunityId = url.searchParams.get('opportunity_id');
         
         console.log('[DEBUG] Getting owners for opportunity:', opportunityId);
+        console.log('[DEBUG] Request URL:', request.url);
         
         if (!opportunityId) {
+          console.log('[DEBUG] No opportunity_id provided');
           return new Response(JSON.stringify({
             success: false,
             error: 'opportunity_id is required'
@@ -2079,17 +2081,18 @@ export default {
         }
         
         // Query owners from CRM database
+        console.log('[DEBUG] Querying fx-crm-database for owners');
         const { results } = await env.DB_CRM.prepare(`
           SELECT 
-            id,
-            contact_name,
-            contact_phone,
-            contact_email,
-            opportunity_id
+            _id as id,
+            name,
+            new_opportunity_id,
+            contact_id,
+            contact_id__r as contact_name
           FROM newopportunitycontactsobj
-          WHERE opportunity_id = ?
-          AND (contact_name IS NOT NULL AND contact_name != '')
-          ORDER BY contact_name
+          WHERE new_opportunity_id = ?
+          AND (contact_id__r IS NOT NULL AND contact_id__r != '')
+          ORDER BY contact_id__r
         `).bind(opportunityId).all();
         
         console.log(`[DEBUG] Found ${results?.length || 0} owners for opportunity ${opportunityId}`);
@@ -2097,14 +2100,15 @@ export default {
         const owners = (results || []).map(owner => ({
           user_id: `crm_owner_${owner.id}`,
           name: owner.contact_name,
-          phone: owner.contact_phone || '',
-          email: owner.contact_email || '',
+          phone: '', // 電話號碼需要從聯繫人表中獲取
+          email: '', // 郵箱需要從聯繫人表中獲取
           contact_name: owner.contact_name,
-          contact_phone: owner.contact_phone,
-          contact_email: owner.contact_email,
-          opportunity_id: owner.opportunity_id,
+          contact_phone: '',
+          contact_email: '',
+          opportunity_id: owner.new_opportunity_id,
           source_type: 'crm_owner',
-          source_id: owner.id
+          source_id: owner.id,
+          contact_id: owner.contact_id
         }));
         
         return new Response(JSON.stringify({
