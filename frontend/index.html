@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>元心建材工程管理系統 v1.4.0</title>
+    <title>元心建材工程管理系統 v1.2.1</title>
+    <script src="js/version-manager.js"></script>
     <style>
         * {
             margin: 0;
@@ -171,7 +172,7 @@
 
     <div class="container">
         <div class="logo">🏗️</div>
-        <h1>元心建材工程管理系統 <span style="font-size: 0.6em; color: #764ba2;">v1.4.0</span></h1>
+        <h1 id="main-title">元心建材工程管理系統 <span style="font-size: 0.6em; color: #764ba2;">v1.2.1</span></h1>
         <p class="subtitle">專業的建築施工管理平台</p>
         
         <div class="btn-container">
@@ -206,13 +207,41 @@
             </div>
         </div>
 
-        <div class="version">Version 1.4.0 | Supabase 認證整合版 | Powered by Cloudflare Workers</div>
+        <div class="version" id="version-info">Version 1.2.1 | Powered by Cloudflare Workers</div>
     </div>
 
     <script src="config.js"></script>
     <script>
+        // 初始化環境標示
+        function initEnvironmentDisplay() {
+            const hostname = window.location.hostname;
+            const mainTitle = document.getElementById('main-title');
+            const versionInfo = document.getElementById('version-info');
+
+            if (hostname.includes('construction-management-frontend-dev') || 
+                hostname.includes('dev.') || 
+                hostname.includes('develop.') ||
+                hostname.includes('localhost') ||
+                hostname.includes('127.0.0.1')) {
+                // 開發環境
+                mainTitle.innerHTML = '元心建材工程管理系統 開發版 <span style="font-size: 0.6em; color: #ff9800;">v1.2.1-dev</span>';
+                versionInfo.innerHTML = 'Version 1.2.1-dev | 開發環境 | Powered by Cloudflare Workers';
+            } else if (hostname.includes('construction-management-frontend-prod') || 
+                       hostname.includes('manage.yes-ceramics.com')) {
+                // 生產環境
+                mainTitle.innerHTML = '元心建材工程管理系統 正式版 <span style="font-size: 0.6em; color: #764ba2;">v1.2.1</span>';
+                versionInfo.innerHTML = 'Version 1.2.1 | 正式環境 | Powered by Cloudflare Workers';
+            } else {
+                // 預設為開發環境
+                mainTitle.innerHTML = '元心建材工程管理系統 開發版 <span style="font-size: 0.6em; color: #ff9800;">v1.2.1-dev</span>';
+                versionInfo.innerHTML = 'Version 1.2.1-dev | 開發環境 | Powered by Cloudflare Workers';
+            }
+        }
+
         // 檢查是否已登入
         window.onload = async function() {
+            // 初始化環境顯示
+            initEnvironmentDisplay();
             const token = localStorage.getItem('auth_token');
             if (token) {
                 // 驗證 token
