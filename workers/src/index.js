@@ -2063,12 +2063,63 @@ export default {
       }
     }
     
-    // Get owners - for now just return empty array  
+    // Get owners from CRM newopportunitycontactsobj table
     if (path === '/api/v1/users/available/owners' && method === 'GET') {
-      return new Response(JSON.stringify({
-        success: true,
-        data: []
-      }), { headers });
+      try {
+        const url = new URL(request.url);
+        const opportunityId = url.searchParams.get('opportunity_id');
+        
+        console.log('[DEBUG] Getting owners for opportunity:', opportunityId);
+        
+        if (!opportunityId) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'opportunity_id is required'
+          }), { status: 400, headers });
+        }
+        
+        // Query owners from CRM database
+        const { results } = await env.DB_CRM.prepare(`
+          SELECT 
+            id,
+            contact_name,
+            contact_phone,
+            contact_email,
+            opportunity_id
+          FROM newopportunitycontactsobj
+          WHERE opportunity_id = ?
+          AND (contact_name IS NOT NULL AND contact_name != '')
+          ORDER BY contact_name
+        `).bind(opportunityId).all();
+        
+        console.log(`[DEBUG] Found ${results?.length || 0} owners for opportunity ${opportunityId}`);
+        
+        const owners = (results || []).map(owner => ({
+          user_id: `crm_owner_${owner.id}`,
+          name: owner.contact_name,
+          phone: owner.contact_phone || '',
+          email: owner.contact_email || '',
+          contact_name: owner.contact_name,
+          contact_phone: owner.contact_phone,
+          contact_email: owner.contact_email,
+          opportunity_id: owner.opportunity_id,
+          source_type: 'crm_owner',
+          source_id: owner.id
+        }));
+        
+        return new Response(JSON.stringify({
+          success: true,
+          data: owners
+        }), { headers });
+        
+      } catch (error) {
+        console.error('Error loading owners:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to load owners',
+          message: error.message
+        }), { status: 500, headers });
+      }
     }
     
     // Get workers - for now just return empty array

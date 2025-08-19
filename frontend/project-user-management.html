@@ -679,6 +679,7 @@
         let projectUsersList = [];
         let teamsList = [];
         let currentTeamTab = null;
+        let projectOpportunityId = null; // 專案的 opportunity_id，用於載入業主數據
         
         // Team name to ID mapping cache (copied from project-detail)
         let teamNameToIdMap = {};
@@ -1015,6 +1016,7 @@
                 
                 const project = await projectResponse.json();
                 const opportunityId = project.opportunity_id;
+                projectOpportunityId = opportunityId; // 保存到全局變量
                 
                 if (!opportunityId) {
                     console.warn('No opportunity_id found for project');
@@ -1251,6 +1253,12 @@
                 listElement.style.display = 'block'; // 顯示用戶列表
                 createWorkerToggle.style.display = 'none';
                 
+                // 顯示角色選擇器（師父需要選擇角色）
+                const roleSelector = document.getElementById('roleSelector');
+                if (roleSelector) {
+                    roleSelector.style.display = 'block';
+                }
+                
                 // 載入工班選項
                 await loadTeamTabsForWorkers();
                 
@@ -1264,6 +1272,19 @@
                 // 隱藏工班選擇器和標籤
                 document.getElementById('teamSelectorLabel').style.display = 'none';
                 teamSelectorDiv.style.display = 'none';
+                
+                // 隱藏角色選擇器（管理員和業主不需要角色選擇）
+                const roleSelector = document.getElementById('roleSelector');
+                if (roleSelector) {
+                    roleSelector.style.display = 'none';
+                }
+                
+                // 隱藏創建師父表單（管理員和業主不需要）
+                const newWorkerForm = document.getElementById('newWorkerForm');
+                if (newWorkerForm) {
+                    newWorkerForm.classList.remove('show');
+                }
+                
                 selectTeamHint.style.display = 'none';
                 listElement.style.display = 'block';
                 createWorkerToggle.style.display = 'none';
@@ -1274,8 +1295,14 @@
             try {
                 let url = `${API_BASE}/api/v1/users/available/${source}`;
                 if (source === 'owners') {
-                    // 如果是業主，可以傳遞 opportunity_id
-                    url += `?opportunity_id=${projectId}`;
+                    // 如果是業主，傳遞正確的 opportunity_id
+                    if (projectOpportunityId) {
+                        url += `?opportunity_id=${projectOpportunityId}`;
+                    } else {
+                        // 如果還沒有載入 opportunity_id，先載入
+                        console.warn('opportunity_id not loaded, trying to load it first...');
+                        url += `?opportunity_id=${projectId}`;
+                    }
                 }
 
                 const token = localStorage.getItem('token');
@@ -1390,6 +1417,12 @@
             
             // 顯示創建新師父按鈕
             document.getElementById('createWorkerToggle').style.display = 'block';
+            
+            // 顯示角色選擇器（師父需要角色選擇）
+            const roleSelector = document.getElementById('roleSelector');
+            if (roleSelector) {
+                roleSelector.style.display = 'none'; // 先隱藏，等用戶選擇後再顯示
+            }
             
             try {
                 // 首先嘗試從 localStorage 緩存讀取
@@ -1724,7 +1757,7 @@
             
             // 統一顯示所有成員，根據 role 字段決定顯示的角色
             const html = team.members.map(user => {
-                const role = (user.is_leader || user.role === 'leader') ? 'leader' : 'member';
+                const role = user.role === 'leader' ? 'leader' : 'member';
                 return createUserCard(user, role);
             }).join('');
             
@@ -1750,6 +1783,8 @@
                     if (user.team_id === currentUserProjectRole.team_id) {
                         if (role === 'member') {
                             actions += `<button class="action-button promote-button" onclick="promoteUser('${user.user_id}')">提升為負責人</button>`;
+                        } else if (role === 'leader') {
+                            actions += `<button class="action-button demote-button" onclick="demoteUser('${user.user_id}')">降為成員</button>`;
                         }
                         actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                     }
@@ -2056,7 +2091,7 @@
                         phone, 
                         password,
                         email,
-                        team_id: teamId 
+                        team_id: teamId
                     })
                 });
 
