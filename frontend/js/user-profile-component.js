@@ -145,7 +145,9 @@ class UserProfileComponent {
             const authUser = window.AuthUtils.getUser();
             if (authUser && authUser.id) {
                 this.currentUser = authUser;
-                this.isAdmin = authUser.role === 'admin' || authUser.user_type === 'admin' || authUser.role === 'super_admin' || authUser.user_type === 'super_admin';
+                this.isAdmin = authUser.role === 'admin' || authUser.user_type === 'admin' || 
+                              authUser.role === 'super_admin' || authUser.user_type === 'super_admin' ||
+                              authUser.global_role === 'admin' || authUser.global_role === 'super_admin';
                 return;
             }
         }
@@ -161,7 +163,9 @@ class UserProfileComponent {
             
             if (response.ok) {
                 this.currentUser = await response.json();
-                this.isAdmin = this.currentUser.role === 'admin' || this.currentUser.user_type === 'admin' || this.currentUser.role === 'super_admin' || this.currentUser.user_type === 'super_admin';
+                this.isAdmin = this.currentUser.role === 'admin' || this.currentUser.user_type === 'admin' || 
+                              this.currentUser.role === 'super_admin' || this.currentUser.user_type === 'super_admin' ||
+                              this.currentUser.global_role === 'admin' || this.currentUser.global_role === 'super_admin';
                 
                 // 確保包含 source_id 用於用戶匹配
                 if (this.currentUser.source_id) {
@@ -177,7 +181,9 @@ class UserProfileComponent {
         const userData = JSON.parse(localStorage.getItem('user') || '{}');
         if (userData.id) {
             this.currentUser = userData;
-            this.isAdmin = userData.role === 'admin' || userData.user_type === 'admin' || userData.role === 'super_admin' || userData.user_type === 'super_admin';
+            this.isAdmin = userData.role === 'admin' || userData.user_type === 'admin' || 
+                          userData.role === 'super_admin' || userData.user_type === 'super_admin' ||
+                          userData.global_role === 'admin' || userData.global_role === 'super_admin';
         }
     }
 
@@ -195,6 +201,12 @@ class UserProfileComponent {
                 }
             }
             
+            // 如果是 super_admin，直接顯示超級管理員角色，不需要查詢專案資料
+            if (this.currentUser.global_role === 'super_admin' || this.currentUser.role === 'super_admin') {
+                this.currentUserRole = this.getRoleDisplayName('super_admin');
+                return;
+            }
+            
             // 獲取用戶在專案中的詳細資訊
             const userInfo = await this.getUserProjectInfo();
             if (userInfo) {
@@ -209,14 +221,14 @@ class UserProfileComponent {
             } else {
                 // 備用邏輯：如果是管理員，直接顯示管理員角色
                 if (this.isAdmin) {
-                    this.currentUserRole = this.getRoleDisplayName(this.currentUser.role || this.currentUser.user_type || 'admin');
+                    this.currentUserRole = this.getRoleDisplayName(this.currentUser.global_role || this.currentUser.role || this.currentUser.user_type || 'admin');
                 } else {
                     // 使用統一權限系統
                     if (window.permissions) {
                         const displayRole = await window.permissions.getUserDisplayRole(this.projectId);
                         this.currentUserRole = this.getRoleDisplayName(displayRole);
                     } else {
-                        this.currentUserRole = this.getRoleDisplayName(this.currentUser.role || this.currentUser.user_type);
+                        this.currentUserRole = this.getRoleDisplayName(this.currentUser.global_role || this.currentUser.role || this.currentUser.user_type);
                     }
                 }
             }
@@ -282,11 +294,22 @@ class UserProfileComponent {
         const userRoleDetailEl = document.getElementById('user-role-detail');
         
         if (this.currentUser) {
-            if (userNameEl) userNameEl.textContent = this.currentUser.name || '未設定姓名';
-            if (userPhoneEl) userPhoneEl.textContent = this.currentUser.phone || '未設定電話';
+            // 確保姓名顯示正確，優先使用 currentUser 的資料
+            const displayName = this.currentUser.name || this.currentUser.username || '未設定姓名';
+            if (userNameEl) userNameEl.textContent = displayName;
+            
+            const displayPhone = this.currentUser.phone || this.currentUser.mobile || '未設定電話';
+            if (userPhoneEl) userPhoneEl.textContent = displayPhone;
             
             if (userRoleDetailEl && this.showRole) {
                 userRoleDetailEl.textContent = `角色: ${this.currentUserRole || '載入中...'}`;
+            }
+        } else {
+            // 如果 currentUser 不存在，顯示載入中
+            if (userNameEl) userNameEl.textContent = '載入中...';
+            if (userPhoneEl) userPhoneEl.textContent = '載入中...';
+            if (userRoleDetailEl && this.showRole) {
+                userRoleDetailEl.textContent = '角色: 載入中...';
             }
         }
         
