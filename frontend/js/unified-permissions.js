@@ -200,6 +200,7 @@ class UnifiedPermissions {
         // 因為只有真實的 admin 才能進行視角切換
         if (!this.currentUser) return false;
         
+        
         try {
             const token = localStorage.getItem('auth_token');
             const response = await fetch(`${this.workerApiUrl}/api/v1/users/me`, {
@@ -210,12 +211,30 @@ class UnifiedPermissions {
             
             if (response.ok) {
                 const userData = await response.json();
-                return userData.role === 'admin' || userData.user_type === 'admin' || userData.role === 'super_admin' || userData.user_type === 'super_admin';
+                console.log('isAdmin API response:', userData);
+                
+                // Check if response has nested user object
+                const user = userData.user || userData;
+                return user.role === 'admin' || user.user_type === 'admin' || user.role === 'super_admin' || user.user_type === 'super_admin' || user.global_role === 'super_admin';
             }
         } catch (error) {
             console.error('檢查 admin 權限失敗:', error);
         }
         
+        // 本地檢查備用 - 擴展檢查更多欄位
+        const user = this.currentUser;
+        if (user.role === 'super_admin' || 
+            user.global_role === 'super_admin' || 
+            user.user_type === 'super_admin' ||
+            user.role === 'admin' || 
+            user.global_role === 'admin' || 
+            user.user_type === 'admin' ||
+            (user.d1_user_id && user.d1_user_id.includes('super_admin'))) {
+            console.log('本地檢查確認為管理員:', user);
+            return true;
+        }
+        
+        console.log('權限檢查失敗，用戶數據:', user);
         return false;
     }
 

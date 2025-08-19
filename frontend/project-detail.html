@@ -1746,7 +1746,7 @@
                     <h1 id="projectName">載入中...</h1>
                     <p id="projectDescription">正在載入專案資料...</p>
                 </div>
-                <div class="header-actions">
+                <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
                     <!-- 用戶管理按鈕 (管理員和領班可見) -->
                     <button id="userManagementBtn" onclick="goToUserManagement()" style="display: none;">
                         <span>👥</span>
@@ -2377,11 +2377,13 @@
                 return;
             }
             
-            // Initialize user profile component without role display
+            // Initialize user profile component in header-actions
+            const headerActions = document.querySelector('.header-actions');
             window.initUserProfile({
                 showRole: true, // 顯示角色資訊
                 showProfile: true, // 顯示用戶資料組件
-                projectId: projectId
+                projectId: projectId,
+                container: headerActions
             });
             
             // IMPORTANT: Load team mappings FIRST before any other data
@@ -6623,21 +6625,6 @@
             }
         }
 
-        // 初始化用戶資料組件
-        document.addEventListener('DOMContentLoaded', function() {
-            // 獲取專案ID
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectId = urlParams.get('id');
-            
-            // 初始化用戶資料組件，顯示角色資訊
-            if (typeof window.initUserProfile === 'function') {
-                window.initUserProfile({
-                    showRole: true,
-                    showProfile: true,
-                    projectId: projectId
-                });
-            }
-        });
     </script>
 </body>
 </html>

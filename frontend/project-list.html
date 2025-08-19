@@ -929,15 +929,19 @@
                 </button>
                 <button class="logout-btn" onclick="logout()">登出</button>
             </div>
-            <!-- 管理功能選單 - 獨立於 user-info 外 -->
-            <div class="admin-menu" id="adminMenu" style="display: none;">
-                <button class="admin-btn" onclick="toggleAdminDropdown()" id="adminBtn">
-                    🔧 管理功能
-                </button>
-                <div class="admin-dropdown" id="adminDropdown">
-                    <a href="global-user-management.html" class="admin-dropdown-item">👤 用戶管理</a>
-                    <a href="global-project-user-management.html" class="admin-dropdown-item">🏗️ 專案用戶管理</a>
+            <!-- 右側功能按鈕組 -->
+            <div class="header-right-section" style="display: flex; align-items: center; gap: 0.75rem;">
+                <!-- 管理功能選單 -->
+                <div class="admin-menu" id="adminMenu" style="display: none;">
+                    <button class="admin-btn" onclick="toggleAdminDropdown()" id="adminBtn">
+                        🔧 管理功能
+                    </button>
+                    <div class="admin-dropdown" id="adminDropdown">
+                        <a href="global-user-management.html" class="admin-dropdown-item">👤 用戶管理</a>
+                        <a href="global-project-user-management.html" class="admin-dropdown-item">🏗️ 專案用戶管理</a>
+                    </div>
                 </div>
+                <!-- 用戶資料組件將會插入到這裡 -->
             </div>
         </div>
     </div>
@@ -1103,19 +1107,19 @@
             await checkAdminPermissions();
             
             // 初始化 UserProfile 組件（只顯示姓名，放在 header 右側）
-            const headerContent = document.querySelector('.header-content');
-            const userInfo = headerContent.querySelector('.user-info');
+            const headerRightSection = document.querySelector('.header-right-section');
+            const userInfo = document.querySelector('.user-info');
             
             // 隱藏原有的用戶資料顯示區域
             if (userInfo) {
                 userInfo.style.display = 'none';
             }
             
-            // 初始化 UserProfile 組件
+            // 初始化 UserProfile 組件 - 放在右側功能按鈕組中
             window.initUserProfile({
-                showRole: false,
+                showRole: true, // 改為 true，確保下拉選單中顯示角色
                 showProfile: true,
-                container: headerContent,
+                container: headerRightSection,
                 displayMode: 'name-only'
             });
         }
@@ -1136,12 +1140,29 @@
                     }
                 }
 
-                // 檢查 Super Admin 權限
-                if (currentUser && (currentUser.role === 'super_admin' || currentUser.global_role === 'super_admin' || currentUser.user_type === 'super_admin')) {
+                // 檢查 Super Admin 權限 - 加強檢查
+                const isSuperAdmin = currentUser && (
+                    currentUser.role === 'super_admin' || 
+                    currentUser.global_role === 'super_admin' || 
+                    currentUser.user_type === 'super_admin' ||
+                    (currentUser.d1_user_id && currentUser.d1_user_id.includes('super_admin'))
+                );
+                
+                console.log('Super Admin 檢查:', {
+                    isSuperAdmin,
+                    currentUser,
+                    role: currentUser?.role,
+                    global_role: currentUser?.global_role,
+                    user_type: currentUser?.user_type,
+                    phone: currentUser?.phone
+                });
+                
+                if (isSuperAdmin) {
                     // 確保管理功能選單顯示
                     const adminMenu = document.getElementById('adminMenu');
                     if (adminMenu) {
                         adminMenu.style.display = 'block';
+                        console.log('管理功能選單已顯示 (Super Admin)');
                     }
                     
                     const superAdminLink = document.getElementById('superAdminUsersLink');

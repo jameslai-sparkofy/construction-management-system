@@ -507,12 +507,17 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>專案用戶管理</h1>
-            <div class="project-info">
-                <div id="projectName">載入中...</div>
-                <div id="currentUser" style="margin-top: 5px; font-size: 12px;"></div>
+            <div class="header-left">
+                <h1>專案用戶管理</h1>
+                <div class="project-info">
+                    <div id="projectName">載入中...</div>
+                    <div id="currentUser" style="margin-top: 5px; font-size: 12px;"></div>
+                </div>
             </div>
-            <a href="#" class="back-button" id="backToProject">回到專案詳情</a>
+            <div class="header-right" style="display: flex; align-items: center; gap: 0.75rem;">
+                <a href="#" class="back-button" id="backToProject">回到專案詳情</a>
+                <!-- 用戶資料組件將會插入到這裡 -->
+            </div>
         </div>
 
         <div class="main-content">
@@ -735,12 +740,12 @@
                 return;
             }
             
-            // Initialize user profile component with role display in header
-            const header = document.querySelector('.header');
+            // Initialize user profile component with role display in header-right
+            const headerRight = document.querySelector('.header-right');
             window.initUserProfile({
                 showRole: true,
                 projectId: projectId,
-                container: header,
+                container: headerRight,
                 displayMode: 'name-project-role'
             });
 

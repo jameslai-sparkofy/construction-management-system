@@ -8,6 +8,7 @@ class UserProfileComponent {
         this.showRole = options.showRole || false;
         this.showProfile = options.showProfile !== false; // 預設顯示，除非明確設為 false
         this.projectId = options.projectId || null;
+        this.container = options.container || null; // 指定容器
         this.currentUser = null;
         this.currentUserRole = null;
         this.isAdmin = false;
@@ -38,33 +39,25 @@ class UserProfileComponent {
         // 創建容器
         const profileContainer = document.createElement('div');
         profileContainer.id = 'user-profile-component';
-        profileContainer.className = 'fixed top-4 right-4 z-50 flex items-center gap-3';
-        // 強制確保位置正確，使用 !important 覆蓋任何 CSS
-        profileContainer.style.setProperty('position', 'fixed', 'important');
-        profileContainer.style.setProperty('top', '1rem', 'important');
-        profileContainer.style.setProperty('right', '1rem', 'important');
-        profileContainer.style.setProperty('bottom', 'auto', 'important');
-        profileContainer.style.setProperty('left', 'auto', 'important');
-        profileContainer.style.setProperty('z-index', '9999', 'important');
-        profileContainer.style.setProperty('display', 'flex', 'important');
-        profileContainer.style.setProperty('align-items', 'center', 'important');
-        profileContainer.style.setProperty('gap', '0.75rem', 'important');
+        profileContainer.className = 'user-profile-container';
+        profileContainer.style.display = 'flex';
+        profileContainer.style.alignItems = 'center';
+        profileContainer.style.gap = '0.75rem';
         
         profileContainer.innerHTML = `
-            <!-- 個人設定下拉選單 - 統一圖標顯示 -->
+            <!-- 個人設定下拉選單 - 按鈕樣式 -->
             <div class="relative">
-                <button id="profile-menu-button" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-full p-3 shadow-lg transition-all duration-200 hover:shadow-xl">
-                    <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
+                <button id="profile-menu-button" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 shadow-lg transition-all duration-200 hover:shadow-xl flex items-center gap-2">
+                    <span class="text-lg">👤</span>
+                    <span class="text-sm font-medium text-gray-700" id="profile-button-name">載入中...</span>
                 </button>
                 
                 <!-- 下拉選單 -->
                 <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                     <div class="px-4 py-3 border-b border-gray-200">
                         <p class="text-sm font-medium text-gray-900" id="user-name">載入中...</p>
+                        <p class="text-xs text-blue-600 mt-1" id="user-role-detail">載入中...</p>
                         <p class="text-sm text-gray-500" id="user-phone">載入中...</p>
-                        ${this.showRole ? '<p class="text-xs text-blue-600 mt-1" id="user-role-detail">載入中...</p>' : ''}
                     </div>
                     <div class="py-1">
                         <a href="#" id="personal-settings-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
@@ -82,8 +75,12 @@ class UserProfileComponent {
             </div>
         `;
         
-        // 插入到 body
-        document.body.appendChild(profileContainer);
+        // 插入到指定容器或 body
+        if (this.container) {
+            this.container.appendChild(profileContainer);
+        } else {
+            document.body.appendChild(profileContainer);
+        }
         
         // 綁定事件
         this.bindEvents();
@@ -129,10 +126,8 @@ class UserProfileComponent {
             // 載入當前用戶資料
             await this.loadCurrentUser();
             
-            // 如果需要顯示角色且有專案ID，載入角色資料
-            if (this.showRole && this.projectId) {
-                await this.loadUserRole();
-            }
+            // 總是載入角色資料（用於下拉選單顯示）
+            await this.loadUserRole();
             
         } catch (error) {
             console.error('載入用戶資料失敗:', error);
@@ -311,24 +306,28 @@ class UserProfileComponent {
         const userNameEl = document.getElementById('user-name');
         const userPhoneEl = document.getElementById('user-phone');
         const userRoleDetailEl = document.getElementById('user-role-detail');
+        const profileButtonNameEl = document.getElementById('profile-button-name');
         
         if (this.currentUser) {
             // 確保姓名顯示正確，優先使用 currentUser 的資料
             const displayName = this.currentUser.name || this.currentUser.username || '未設定姓名';
             if (userNameEl) userNameEl.textContent = displayName;
+            if (profileButtonNameEl) profileButtonNameEl.textContent = displayName;
             
             const displayPhone = this.currentUser.phone || this.currentUser.mobile || '未設定電話';
             if (userPhoneEl) userPhoneEl.textContent = displayPhone;
             
-            if (userRoleDetailEl && this.showRole) {
-                userRoleDetailEl.textContent = `角色: ${this.currentUserRole || '載入中...'}`;
+            if (userRoleDetailEl) {
+                // 總是在下拉選單中顯示角色資訊
+                userRoleDetailEl.textContent = this.currentUserRole || '載入中...';
             }
         } else {
             // 如果 currentUser 不存在，顯示載入中
             if (userNameEl) userNameEl.textContent = '載入中...';
             if (userPhoneEl) userPhoneEl.textContent = '載入中...';
-            if (userRoleDetailEl && this.showRole) {
-                userRoleDetailEl.textContent = '角色: 載入中...';
+            if (profileButtonNameEl) profileButtonNameEl.textContent = '載入中...';
+            if (userRoleDetailEl) {
+                userRoleDetailEl.textContent = '載入中...';
             }
         }
         
