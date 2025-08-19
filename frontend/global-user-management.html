@@ -185,7 +185,9 @@
                 
                 if (response.ok) {
                     const user = await response.json();
-                    if (user.global_role !== 'super_admin') {
+                    // 檢查多個可能的角色字段
+                    const userRole = user.global_role || user.role || user.user_type;
+                    if (userRole !== 'super_admin') {
                         alert('只有超級管理員可以訪問此頁面');
                         window.location.href = 'project-list.html';
                         return;
