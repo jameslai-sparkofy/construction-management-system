@@ -1136,7 +1136,7 @@
                 }
 
                 // 檢查 Super Admin 權限
-                if (currentUser && (currentUser.role === 'super_admin' || currentUser.global_role === 'super_admin')) {
+                if (currentUser && (currentUser.role === 'super_admin' || currentUser.global_role === 'super_admin' || currentUser.user_type === 'super_admin')) {
                     // 確保管理功能選單顯示
                     const adminMenu = document.getElementById('adminMenu');
                     if (adminMenu) {

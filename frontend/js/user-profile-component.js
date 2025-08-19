@@ -162,7 +162,11 @@ class UserProfileComponent {
             });
             
             if (response.ok) {
-                this.currentUser = await response.json();
+                const responseData = await response.json();
+                
+                // 處理API響應格式，支援直接用戶對象或包裝在user屬性中
+                this.currentUser = responseData.user || responseData;
+                
                 this.isAdmin = this.currentUser.role === 'admin' || this.currentUser.user_type === 'admin' || 
                               this.currentUser.role === 'super_admin' || this.currentUser.user_type === 'super_admin' ||
                               this.currentUser.global_role === 'admin' || this.currentUser.global_role === 'super_admin';
@@ -171,6 +175,8 @@ class UserProfileComponent {
                 if (this.currentUser.source_id) {
                     this.currentUser.source_id = this.currentUser.source_id;
                 }
+                
+                console.log('用戶資料載入成功:', this.currentUser);
                 return;
             }
         } catch (error) {
@@ -202,8 +208,12 @@ class UserProfileComponent {
             }
             
             // 如果是 super_admin，直接顯示超級管理員角色，不需要查詢專案資料
-            if (this.currentUser.global_role === 'super_admin' || this.currentUser.role === 'super_admin') {
+            if (this.currentUser.global_role === 'super_admin' || 
+                this.currentUser.role === 'super_admin' || 
+                this.currentUser.user_type === 'super_admin' ||
+                (this.currentUser.id && this.currentUser.id.includes('super_admin'))) {
                 this.currentUserRole = this.getRoleDisplayName('super_admin');
+                console.log('檢測到Super Admin，直接設定角色:', this.currentUserRole);
                 return;
             }
             
@@ -254,7 +264,16 @@ class UserProfileComponent {
             );
             
             if (response.ok) {
-                const users = await response.json();
+                const responseData = await response.json();
+                
+                // 處理API響應格式，支援直接數組或包裝在data屬性中
+                const users = Array.isArray(responseData) ? responseData : (responseData.data || []);
+                
+                // 確保users是數組
+                if (!Array.isArray(users)) {
+                    console.warn('API返回的users不是數組:', users);
+                    return null;
+                }
                 
                 // 查找當前用戶資訊（支援多種匹配方式）
                 const userInfo = users.find(user => 

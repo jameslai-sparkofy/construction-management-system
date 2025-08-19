@@ -3394,6 +3394,18 @@
 
         // 應用角色基礎的視圖控制
         function applyRoleBasedView() {
+            // 檢查全局 Super Admin 權限
+            if (currentUser && (currentUser.global_role === 'super_admin' || currentUser.role === 'super_admin' || currentUser.user_type === 'super_admin')) {
+                console.log('Global Super Admin detected, granting full permissions');
+                const userManagementBtn = document.getElementById('userManagementBtn');
+                const perspectiveDropdown = document.querySelector('.perspective-dropdown');
+                
+                if (userManagementBtn) userManagementBtn.style.display = 'flex';
+                if (perspectiveDropdown) perspectiveDropdown.style.display = 'block';
+                showAdminFeatures();
+                return; // Skip project-specific role checks
+            }
+            
             if (!currentUserProjectRole) {
                 console.warn('No project role found for current user');
                 return;
@@ -3405,12 +3417,12 @@
             const userManagementBtn = document.getElementById('userManagementBtn');
             const perspectiveDropdown = document.querySelector('.perspective-dropdown');
             
-            if (currentUserProjectRole.user_type === 'admin') {
-                // Admin: 可以看到和操作所有內容
+            if (currentUserProjectRole.user_type === 'admin' || currentUserProjectRole.user_type === 'super_admin') {
+                // Admin/Super Admin: 可以看到和操作所有內容
                 if (userManagementBtn) userManagementBtn.style.display = 'flex';
                 if (perspectiveDropdown) perspectiveDropdown.style.display = 'block';
                 
-                // 顯示刪除按鈕（只有 admin 可以看到）
+                // 顯示刪除按鈕（只有 admin/super_admin 可以看到）
                 showAdminFeatures();
             } else if (currentUserProjectRole.user_type === 'owner') {
                 // Owner: 只能查看，隱藏管理功能
@@ -6609,6 +6621,22 @@
                 };
             }
         }
+
+        // 初始化用戶資料組件
+        document.addEventListener('DOMContentLoaded', function() {
+            // 獲取專案ID
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('id');
+            
+            // 初始化用戶資料組件，顯示角色資訊
+            if (typeof window.initUserProfile === 'function') {
+                window.initUserProfile({
+                    showRole: true,
+                    showProfile: true,
+                    projectId: projectId
+                });
+            }
+        });
     </script>
 </body>
 </html>

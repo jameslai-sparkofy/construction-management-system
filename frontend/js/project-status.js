@@ -211,6 +211,29 @@ const ProjectStatus = {
         const end = new Date(endDate);
         
         return start <= end;
+    },
+
+    /**
+     * 計算專案狀態統計
+     */
+    async calculateProjectsStatus(projects) {
+        if (!Array.isArray(projects)) {
+            return projects;
+        }
+
+        return projects.map(project => {
+            // 確保專案有狀態，如果沒有則設為未開始
+            if (!project.status) {
+                project.status = 'not_started';
+            }
+            
+            // 添加狀態顯示信息
+            project.statusInfo = this.getStatusInfo(project.status);
+            project.statusLabel = this.getStatusLabel(project.status);
+            project.statusColor = this.getStatusColor(project.status);
+            
+            return project;
+        });
     }
 };
 
