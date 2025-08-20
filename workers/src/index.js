@@ -885,8 +885,9 @@ export default {
 
         const user = authCheck.user;
         
-        // 檢查管理員權限
-        if (user.role !== 'admin' && user.role !== 'super_admin') {
+        // 檢查管理員權限 (支持多個角色字段)
+        const userRole = user.role || user.global_role || user.user_type;
+        if (!['admin', 'super_admin'].includes(userRole)) {
           return new Response(JSON.stringify({
             success: false,
             error: 'Access denied - admin privileges required'
@@ -2374,8 +2375,9 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查 Super Admin 權限 (支持多個角色字段)
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!userRole || userRole !== 'super_admin') {
           return new Response(JSON.stringify({
             success: false,
             error: 'Insufficient permissions - Super Admin required'
@@ -2478,8 +2480,9 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查 Super Admin 權限 (支持多個角色字段)
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!userRole || userRole !== 'super_admin') {
           return new Response(JSON.stringify({
             success: false,
             error: 'Insufficient permissions - Super Admin required'
@@ -2532,11 +2535,8 @@ export default {
           }
         }
 
-        return new Response(JSON.stringify({
-          success: true,
-          users: users,
-          total: users.length
-        }), { headers });
+        // 前端期望直接的數組格式，而不是包裝在users字段中
+        return new Response(JSON.stringify(users), { headers });
 
       } catch (error) {
         console.error('Error getting all users:', error);
@@ -2560,8 +2560,9 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查 Super Admin 權限 (支持多個角色字段)
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!userRole || userRole !== 'super_admin') {
           return new Response(JSON.stringify({
             success: false,
             error: 'Insufficient permissions - Super Admin required'
@@ -2618,8 +2619,9 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查 Super Admin 權限 (支持多個角色字段)
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!userRole || userRole !== 'super_admin') {
           return new Response(JSON.stringify({
             success: false,
             error: 'Insufficient permissions - Super Admin required'
@@ -2673,11 +2675,12 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查管理員權限 (支持多個角色字段) - 允許管理員和超級管理員
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!['admin', 'super_admin'].includes(userRole)) {
           return new Response(JSON.stringify({
             success: false,
-            error: 'Insufficient permissions - Super Admin required'
+            error: 'Insufficient permissions - Admin required'
           }), { status: 403, headers });
         }
 
@@ -2705,11 +2708,8 @@ export default {
 
         const projectUsers = projectUsersQuery.results || [];
 
-        return new Response(JSON.stringify({
-          success: true,
-          data: projectUsers,
-          total: projectUsers.length
-        }), { headers });
+        // 前端期望直接的數組格式，而不是包裝在data字段中
+        return new Response(JSON.stringify(projectUsers), { headers });
 
       } catch (error) {
         console.error('Error getting project users:', error);
@@ -2733,8 +2733,9 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查 Super Admin 權限 (支持多個角色字段)
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!userRole || userRole !== 'super_admin') {
           return new Response(JSON.stringify({
             success: false,
             error: 'Insufficient permissions - Super Admin required'
@@ -2849,8 +2850,9 @@ export default {
           }), { status: 401, headers });
         }
 
-        // 檢查 Super Admin 權限
-        if (!authCheck.user.role || authCheck.user.role !== 'super_admin') {
+        // 檢查 Super Admin 權限 (支持多個角色字段)
+        const userRole = authCheck.user.role || authCheck.user.global_role || authCheck.user.user_type;
+        if (!userRole || userRole !== 'super_admin') {
           return new Response(JSON.stringify({
             success: false,
             error: 'Insufficient permissions - Super Admin required'
