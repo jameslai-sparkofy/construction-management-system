@@ -1,11 +1,62 @@
-# Headers for all HTML files
+# Cloudflare Pages 快取和安全標頭設定
+
+# HTML 檔案 - 短期快取 (5分鐘)
 /*.html
   Content-Type: text/html; charset=utf-8
+  Cache-Control: public, max-age=300, s-maxage=300
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
 
-# Headers for CSS files
+# CSS 檔案 - 長期快取 (1年)
 /*.css
   Content-Type: text/css; charset=utf-8
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+  X-Content-Type-Options: nosniff
 
-# Headers for JavaScript files  
+# JavaScript 檔案 - 長期快取 (1年)
 /*.js
   Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+  X-Content-Type-Options: nosniff
+
+# 圖片檔案 - 長期快取
+/*.png
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+
+/*.jpeg
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+
+/*.gif
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+
+/*.svg
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+
+# 字體檔案 - 長期快取
+/*.woff
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+  Access-Control-Allow-Origin: *
+
+/*.woff2
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+  Access-Control-Allow-Origin: *
+
+# 圖示檔案 - 中期快取 (1天)
+/favicon.ico
+  Cache-Control: public, max-age=86400, s-maxage=86400
+
+# 根目錄 - 短期快取
+/
+  Cache-Control: public, max-age=300, s-maxage=300
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+
+# JS 目錄下的檔案 - 長期快取
+/js/*
+  Cache-Control: public, max-age=31536000, s-maxage=31536000
+  X-Content-Type-Options: nosniff

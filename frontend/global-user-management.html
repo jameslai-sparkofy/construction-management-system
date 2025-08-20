@@ -81,6 +81,8 @@
                         <thead class="bg-gray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用戶資訊</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">電話號碼</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">密碼</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">狀態</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">建立時間</th>
@@ -184,8 +186,12 @@
                 });
                 
                 if (response.ok) {
-                    const user = await response.json();
-                    if (user.global_role !== 'super_admin') {
+                    const userData = await response.json();
+                    // API響應可能是雙層嵌套，需要處理不同格式
+                    const user = userData.user || userData;
+                    // 檢查多個可能的角色字段
+                    const userRole = user.global_role || user.role || user.user_type;
+                    if (userRole !== 'super_admin') {
                         alert('只有超級管理員可以訪問此頁面');
                         window.location.href = 'project-list.html';
                         return;
@@ -230,23 +236,44 @@
 
             document.getElementById('emptyState').style.display = 'none';
             
-            tbody.innerHTML = users.map(user => `
+            tbody.innerHTML = users.map(user => {
+                // 角色字段映射：API返回 role，但前端期望 global_role
+                const userRole = user.role || user.global_role;
+                // 狀態字段映射：API返回 user_status，但前端期望 is_active
+                const isActive = user.user_status === 'active' || user.is_active === true;
+                // 用戶ID字段映射：API返回 user_id，但前端期望 id
+                const userId = user.id || user.user_id;
+                
+                return `
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">
                         <div>
                             <div class="font-medium text-gray-900">${user.name || '未設定'}</div>
-                            <div class="text-sm text-gray-500">${user.phone}</div>
+                            <div class="text-sm text-gray-500">用戶ID: ${userId}</div>
                             ${user.email ? `<div class="text-sm text-gray-500">${user.email}</div>` : ''}
                         </div>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white role-${user.global_role}">
-                            ${getRoleDisplayName(user.global_role)}
+                        <div class="font-mono text-sm text-gray-900">${user.phone}</div>
+                        <div class="text-xs text-gray-500">不可編輯</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-sm" id="password-${userId}">${user.password_suffix || '***'}</span>
+                            <button onclick="editPassword('${userId}', '${user.name}')" 
+                                    class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                修改
+                            </button>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white role-${userRole}">
+                            ${getRoleDisplayName(userRole)}
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white ${user.is_active ? 'status-active' : 'status-inactive'}">
-                            ${user.is_active ? '啟用' : '停用'}
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white ${isActive ? 'status-active' : 'status-inactive'}">
+                            ${isActive ? '啟用' : '停用'}
                         </span>
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">
@@ -254,12 +281,12 @@
                     </td>
                     <td class="px-6 py-4">
                         <div class="flex gap-2">
-                            <button onclick="toggleUserStatus(${user.id}, ${user.is_active})" 
-                                    class="text-sm px-3 py-1 rounded ${user.is_active ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} transition-colors">
-                                ${user.is_active ? '停用' : '啟用'}
+                            <button onclick="toggleUserStatus('${userId}', ${isActive})" 
+                                    class="text-sm px-3 py-1 rounded ${isActive ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'} transition-colors">
+                                ${isActive ? '停用' : '啟用'}
                             </button>
-                            ${user.global_role !== 'super_admin' ? `
-                                <button onclick="deleteUser(${user.id}, '${user.name}')" 
+                            ${userRole !== 'super_admin' ? `
+                                <button onclick="deleteUser('${userId}', '${user.name}')" 
                                         class="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors">
                                     刪除
                                 </button>
@@ -267,7 +294,8 @@
                         </div>
                     </td>
                 </tr>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function getRoleDisplayName(role) {
@@ -302,8 +330,13 @@
                     user.phone?.includes(searchTerm) ||
                     user.email?.toLowerCase().includes(searchTerm);
                 
-                const matchesRole = !roleFilter || user.global_role === roleFilter;
-                const matchesStatus = statusFilter === '' || user.is_active === (statusFilter === '1');
+                // 角色篩選：使用正確的角色字段
+                const userRole = user.role || user.global_role;
+                const matchesRole = !roleFilter || userRole === roleFilter;
+                
+                // 狀態篩選：使用正確的狀態字段
+                const isActive = user.user_status === 'active' || user.is_active === true;
+                const matchesStatus = statusFilter === '' || isActive === (statusFilter === '1');
 
                 return matchesSearch && matchesRole && matchesStatus;
             });
@@ -364,13 +397,15 @@
 
             try {
                 const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+                // 使用正確的狀態字段名稱
+                const newStatus = currentStatus ? 'pending' : 'active';
                 const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/users/${userId}`, {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ is_active: currentStatus ? 0 : 1 })
+                    body: JSON.stringify({ user_status: newStatus })
                 });
 
                 if (response.ok) {
@@ -383,6 +418,39 @@
             } catch (error) {
                 console.error('Error toggling user status:', error);
                 alert('操作失敗，請重試');
+            }
+        }
+
+        async function editPassword(userId, userName) {
+            const newPassword = prompt(`請輸入用戶「${userName}」的新密碼（手機末3碼）:`);
+            if (!newPassword) return;
+            
+            if (newPassword.length !== 3 || !/^\d{3}$/.test(newPassword)) {
+                alert('密碼必須是3位數字');
+                return;
+            }
+
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/users/${userId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ password_suffix: newPassword })
+                });
+
+                if (response.ok) {
+                    alert('密碼已更新');
+                    document.getElementById(`password-${userId}`).textContent = newPassword;
+                } else {
+                    const error = await response.json();
+                    alert(`更新失敗: ${error.error || '未知錯誤'}`);
+                }
+            } catch (error) {
+                console.error('Error updating password:', error);
+                alert('更新失敗，請重試');
             }
         }
 
@@ -410,4 +478,4 @@
         }
     </script>
 </body>
-</html>
+</html>/* Updated Wed Aug 20 08:50:20 CST 2025 */
