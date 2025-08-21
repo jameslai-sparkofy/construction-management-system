@@ -62,12 +62,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           # Get the latest deployment URL
-          DEPLOYMENT_URL=$(npx wrangler pages deployment list \
-            --project-name construction-management-frontend-prod \
-            --limit 1 \
-            --format json | jq -r '.[0].url')
-          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
-          echo "📍 Deployment URL: $DEPLOYMENT_URL"
+          echo "📍 Deployment URL: https://construction-management-frontend-prod.pages.dev"
+          echo "deployment_url=https://construction-management-frontend-prod.pages.dev" >> $GITHUB_OUTPUT
 
       - name: Test Frontend
         run: |
