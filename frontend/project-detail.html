@@ -5436,9 +5436,161 @@
             if (site[fieldMapping.workShiftCompletionNote]) {
                 document.getElementById('workShiftCompletionNoteInput').value = site[fieldMapping.workShiftCompletionNote];
             }
+            
+            // Load R2 photos for this site
+            loadR2Photos(site._id);
         }
 
-        // Add photo to container
+        // Load R2 photos for the current site
+        async function loadR2Photos(siteId) {
+            try {
+                const projectId = getProjectIdFromUrl();
+                if (!projectId || !siteId) {
+                    console.log('Skip R2 photos: missing projectId or siteId');
+                    return;
+                }
+
+                const response = await fetch(`${WORKER_API_URL}/api/v1/files/site/${siteId}?projectId=${projectId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('R2 photos loaded:', data);
+                    
+                    if (data.success && data.files) {
+                        data.files.forEach(file => {
+                            // Map file type to container
+                            let containerId;
+                            switch (file.type) {
+                                case 'before':
+                                    containerId = 'beforePhotos';
+                                    break;
+                                case 'after':
+                                    containerId = 'afterPhotos';
+                                    break;
+                                case 'difficulty':
+                                    containerId = 'difficultyPhotos';
+                                    break;
+                                case 'floorPlan':
+                                    containerId = 'floorPlanPhotos';
+                                    break;
+                                default:
+                                    console.warn('Unknown photo type:', file.type);
+                                    return;
+                            }
+                            
+                            // Add photo with delete capability
+                            addR2PhotoToContainer(containerId, file);
+                        });
+                    }
+                } else {
+                    console.log('No R2 photos found or error:', response.status);
+                }
+            } catch (error) {
+                console.error('Error loading R2 photos:', error);
+            }
+        }
+
+        // Add R2 photo to container with delete functionality
+        function addR2PhotoToContainer(containerId, fileInfo) {
+            const container = document.getElementById(containerId);
+            if (!container) {
+                console.error('[ERROR] Container not found:', containerId);
+                return;
+            }
+
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'photo-box';
+            photoDiv.style.position = 'relative';
+            
+            const img = document.createElement('img');
+            img.src = `${WORKER_API_URL}${fileInfo.url}`;
+            img.alt = fileInfo.fileName;
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '0.375rem';
+            
+            // Add delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '×';
+            deleteBtn.className = 'photo-delete-btn';
+            deleteBtn.style.cssText = `
+                position: absolute;
+                top: 5px;
+                right: 5px;
+                background: rgba(239, 68, 68, 0.9);
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 24px;
+                height: 24px;
+                font-size: 16px;
+                font-weight: bold;
+                cursor: pointer;
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 10;
+            `;
+            
+            deleteBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (confirm('確定要刪除這張照片嗎？')) {
+                    await deleteR2Photo(fileInfo.key, photoDiv);
+                }
+            };
+            
+            // Show delete button on hover
+            photoDiv.onmouseenter = () => {
+                deleteBtn.style.display = 'flex';
+            };
+            photoDiv.onmouseleave = () => {
+                deleteBtn.style.display = 'none';
+            };
+            
+            photoDiv.appendChild(img);
+            photoDiv.appendChild(deleteBtn);
+            
+            // Insert before the add button
+            const addButton = container.querySelector('.add-photo');
+            if (addButton) {
+                container.insertBefore(photoDiv, addButton);
+            } else {
+                container.appendChild(photoDiv);
+            }
+        }
+
+        // Delete R2 photo
+        async function deleteR2Photo(fileKey, photoElement) {
+            try {
+                const response = await fetch(`${WORKER_API_URL}/api/v1/files/delete/${encodeURIComponent(fileKey)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${JWT_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    // Remove from UI
+                    photoElement.remove();
+                    console.log('Photo deleted successfully');
+                } else {
+                    const errorData = await response.json();
+                    alert('刪除照片失敗: ' + (errorData.error || '未知錯誤'));
+                }
+            } catch (error) {
+                console.error('Error deleting photo:', error);
+                alert('刪除照片時發生錯誤');
+            }
+        }
+
+        // Add photo to container (legacy function for non-R2 photos)
         function addPhotoToContainer(containerId, photoUrl) {
             const container = document.getElementById(containerId);
             if (!container) {
@@ -5692,6 +5844,42 @@
                 }
                 
                 const result = await response.json();
+                
+                // 立即顯示上傳的照片
+                if (result.success) {
+                    const fileInfo = {
+                        key: result.path,
+                        fileName: result.filename,
+                        type: type,
+                        size: result.size,
+                        url: result.url
+                    };
+                    
+                    // Map type to container
+                    let containerId;
+                    switch (type) {
+                        case 'before':
+                            containerId = 'beforePhotos';
+                            break;
+                        case 'after':
+                            containerId = 'afterPhotos';
+                            break;
+                        case 'difficulty':
+                            containerId = 'difficultyPhotos';
+                            break;
+                        case 'floorPlan':
+                            containerId = 'floorPlanPhotos';
+                            break;
+                        default:
+                            console.warn('Unknown photo type:', type);
+                            break;
+                    }
+                    
+                    if (containerId) {
+                        addR2PhotoToContainer(containerId, fileInfo);
+                    }
+                }
+                
                 return result.url;
             } catch (error) {
                 console.error('Upload error:', error);

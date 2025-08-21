@@ -126,12 +126,22 @@ export class FileService {
       const prefix = `${projectId}/${siteId}/`;
       const listed = await this.r2.list({ prefix, limit: 1000 });
       
-      return listed.objects.map(obj => ({
-        key: obj.key,
-        size: obj.size,
-        uploaded: obj.uploaded,
-        metadata: obj.customMetadata,
-      }));
+      return listed.objects.map(obj => {
+        const pathParts = obj.key.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        const type = pathParts[2]; // before/after/difficulty/floorPlan
+        
+        return {
+          key: obj.key,
+          fileName,
+          type,
+          size: obj.size,
+          uploaded: obj.uploaded,
+          url: `/api/v1/files/raw/${encodeURIComponent(obj.key)}`,
+          downloadUrl: `/api/v1/files/download/${encodeURIComponent(obj.key)}`,
+          metadata: obj.customMetadata || {},
+        };
+      });
     } catch (error) {
       console.error('File listing error:', error);
       throw error;

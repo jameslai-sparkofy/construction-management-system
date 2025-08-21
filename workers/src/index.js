@@ -3054,7 +3054,134 @@ export default {
       }
     }
 
-    // 檔案獲取 API
+    // 檔案列表 API
+    if (path.startsWith('/api/v1/files/site/') && method === 'GET') {
+      try {
+        // 檢查認證
+        const authResult = await authUtils.authenticateRequest(request, env);
+        if (!authResult.success) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: authResult.error || 'Authentication required'
+          }), { status: 401, headers });
+        }
+
+        const pathParts = path.split('/');
+        const siteId = pathParts[pathParts.length - 1];
+        const url = new URL(request.url);
+        const projectId = url.searchParams.get('projectId');
+
+        if (!projectId || !siteId) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Missing required parameters: projectId, siteId'
+          }), { status: 400, headers });
+        }
+
+        const fileService = new FileService(env);
+        const files = await fileService.listSiteFiles(projectId, siteId);
+
+        return new Response(JSON.stringify({
+          success: true,
+          files,
+          count: files.length
+        }), { status: 200, headers });
+      } catch (error) {
+        console.error('[File List Error]:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message || 'File listing failed'
+        }), { status: 500, headers });
+      }
+    }
+
+    // 檔案刪除 API
+    if (path.startsWith('/api/v1/files/delete/') && method === 'DELETE') {
+      try {
+        // 檢查認證
+        const authResult = await authUtils.authenticateRequest(request, env);
+        if (!authResult.success) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: authResult.error || 'Authentication required'
+          }), { status: 401, headers });
+        }
+
+        const pathParts = path.split('/');
+        const fileKey = pathParts[pathParts.length - 1];
+
+        if (!fileKey) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'File key is required'
+          }), { status: 400, headers });
+        }
+
+        const fileService = new FileService(env);
+        await fileService.deleteFile(fileKey);
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'File deleted successfully'
+        }), { status: 200, headers });
+      } catch (error) {
+        console.error('[File Delete Error]:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message || 'File deletion failed'
+        }), { status: 500, headers });
+      }
+    }
+
+    // 檔案原始存取 API (直接返回檔案內容)
+    if (path.startsWith('/api/v1/files/raw/') && method === 'GET') {
+      try {
+        const pathParts = path.split('/');
+        const encodedKey = pathParts[pathParts.length - 1];
+        const fileKey = decodeURIComponent(encodedKey);
+
+        if (!fileKey) {
+          return new Response('File key is required', { status: 400 });
+        }
+
+        const fileService = new FileService(env);
+        return await fileService.getFile(fileKey);
+      } catch (error) {
+        console.error('[File Raw Access Error]:', error);
+        return new Response('File not found', { status: 404 });
+      }
+    }
+
+    // 檔案下載 API (附帶下載標頭)
+    if (path.startsWith('/api/v1/files/download/') && method === 'GET') {
+      try {
+        const pathParts = path.split('/');
+        const encodedKey = pathParts[pathParts.length - 1];
+        const fileKey = decodeURIComponent(encodedKey);
+
+        if (!fileKey) {
+          return new Response('File key is required', { status: 400 });
+        }
+
+        const fileService = new FileService(env);
+        const fileResponse = await fileService.getFile(fileKey);
+        
+        // 添加下載標頭
+        const downloadHeaders = new Headers(fileResponse.headers);
+        const fileName = fileKey.split('/').pop();
+        downloadHeaders.set('Content-Disposition', `attachment; filename="${fileName}"`);
+        
+        return new Response(fileResponse.body, {
+          status: fileResponse.status,
+          headers: downloadHeaders
+        });
+      } catch (error) {
+        console.error('[File Download Error]:', error);
+        return new Response('File not found', { status: 404 });
+      }
+    }
+
+    // 檔案獲取 API (舊版本，保持相容性)
     if (path.startsWith('/api/v1/files/') && method === 'GET') {
       try {
         const fileService = new FileService(env);
