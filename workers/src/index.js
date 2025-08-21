@@ -3029,7 +3029,7 @@ export default {
       }
     }
 
-    // 案場更新 PATCH 路由
+    // 案場更新 PATCH 路由 - 混合方案：讀取用外部API，寫入只用D1
     if (path.match(/^\/rest\/object_8W9cb__c\/[^\/]+$/) && method === 'PATCH') {
       try {
         const siteId = path.split('/').pop();
@@ -3044,96 +3044,50 @@ export default {
         }
 
         const body = await request.json();
+        console.log('[PATCH Site] Mixed mode: External read + D1 write only');
         console.log('[PATCH Site] Received data:', body);
         console.log('[PATCH Site] Site ID:', siteId);
-
-        // 先更新 D1 資料庫 - 調用外部 D1 REST API
-        const d1Response = await fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c/${siteId}`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': 'Bearer fx-crm-api-secret-2025',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(body)
+        
+        // 直接更新本地 D1 資料庫（不同步到外部CRM）
+        const updateFields = [];
+        const updateValues = [];
+        
+        // 建構更新 SQL，使用正確的欄位名稱
+        Object.keys(body).forEach(key => {
+          if (body[key] !== undefined) {
+            updateFields.push(`${key} = ?`);
+            updateValues.push(body[key]);
+          }
         });
-
-        if (!d1Response.ok) {
-          const d1Error = await d1Response.text();
-          console.error('[PATCH Site] D1 update failed:', d1Error);
+        
+        // 添加 last_modified_time
+        updateFields.push('last_modified_time = ?');
+        updateValues.push(Date.now());
+        updateValues.push(siteId);
+        
+        const updateSQL = `UPDATE object_8W9cb__c SET ${updateFields.join(', ')} WHERE _id = ?`;
+        console.log('[PATCH Site] SQL:', updateSQL);
+        console.log('[PATCH Site] Values:', updateValues);
+        
+        const updateResult = await env.DB_CRM.prepare(updateSQL).bind(...updateValues).run();
+        console.log('[PATCH Site] D1 update result:', updateResult);
+        
+        if (updateResult.changes === 0) {
           return new Response(JSON.stringify({
             success: false,
-            error: 'Failed to update site in database'
-          }), { status: 500, headers });
+            error: 'Site not found or no changes made'
+          }), { status: 404, headers });
         }
 
-        const d1Result = await d1Response.json();
-        console.log('[PATCH Site] D1 update successful:', d1Result);
-
-        // 異步同步到 CRM (不阻塞主流程)
-        try {
-          const fxCrmSync = new FxCrmSyncService(env);
-          
-          // 準備 CRM 更新資料，根據 CSV 檔案的欄位映射
-          const crmUpdateData = {};
-          
-          // 基本欄位映射
-          if (body.construction_completed__c !== undefined) {
-            crmUpdateData.construction_completed__c = body.construction_completed__c;
-          }
-          if (body.field_23pFq__c !== undefined) {
-            crmUpdateData.field_23pFq__c = body.field_23pFq__c; // 施工日期
-          }
-          if (body.field_u1wpv__c !== undefined) {
-            crmUpdateData.field_u1wpv__c = body.field_u1wpv__c; // 工班師父
-          }
-          if (body.field_B2gh1__c !== undefined) {
-            crmUpdateData.field_B2gh1__c = body.field_B2gh1__c; // 舖設坪數
-          }
-          if (body.work_shift_completion_note__c !== undefined) {
-            crmUpdateData.work_shift_completion_note__c = body.work_shift_completion_note__c; // 工班施工完備註
-          }
-          if (body.field_3Fqof__c !== undefined) {
-            crmUpdateData.field_3Fqof__c = body.field_3Fqof__c; // 完工照片
-          }
-          if (body.construction_difficulty_ph__c !== undefined) {
-            crmUpdateData.construction_difficulty_ph__c = body.construction_difficulty_ph__c; // 工地狀況照片(施工後)
-          }
-          if (body.field_V3d91__c !== undefined) {
-            crmUpdateData.field_V3d91__c = body.field_V3d91__c; // 施工前照片
-          }
-          if (body.field_z9H6O__c !== undefined) {
-            crmUpdateData.field_z9H6O__c = body.field_z9H6O__c; // 階段
-          }
-          if (body.field_23Z5i__c !== undefined) {
-            crmUpdateData.field_23Z5i__c = body.field_23Z5i__c; // 標籤
-          }
-          if (body.field_sF6fn__c !== undefined) {
-            crmUpdateData.field_sF6fn__c = body.field_sF6fn__c; // 施工前備註
-          }
-
-          console.log('[PATCH Site] Syncing to CRM with data:', crmUpdateData);
-          
-          // 異步執行 CRM 同步（不等待結果）
-          ctx.waitUntil(
-            fxCrmSync.updateSite(siteId, crmUpdateData)
-              .then(result => {
-                console.log('[PATCH Site] CRM sync successful:', result);
-              })
-              .catch(error => {
-                console.error('[PATCH Site] CRM sync failed:', error);
-              })
-          );
-          
-        } catch (crmError) {
-          console.error('[PATCH Site] CRM sync setup failed:', crmError);
-          // CRM 同步失敗不影響主流程
-        }
-
-        // 立即回應 D1 更新成功
         return new Response(JSON.stringify({
           success: true,
-          data: d1Result.data || d1Result,
-          message: 'Site updated successfully'
+          data: { 
+            _id: siteId,
+            updated_fields: Object.keys(body),
+            changes: updateResult.changes,
+            mode: 'D1-only (no CRM sync)'
+          },
+          message: 'Site updated successfully in D1 database only'
         }), { headers });
 
       } catch (error) {

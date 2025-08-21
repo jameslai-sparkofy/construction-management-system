@@ -733,7 +733,7 @@
         async function checkAdminRole() {
             try {
                 // 從本地或 API 獲取用戶角色
-                const response = await fetch(`${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-dev.lai-jameslai.workers.dev'}/api/v1/users/me`, {
+                const response = await fetch(`${CONFIG?.API?.WORKER_API_URL}/api/v1/users/me`, {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                     }

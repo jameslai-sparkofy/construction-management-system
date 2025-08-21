@@ -1047,9 +1047,12 @@
         // API configuration from global CONFIG
         const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
         const API_TOKEN = 'fx-crm-api-secret-2025';
-        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || (window.location.hostname === 'localhost' 
-            ? 'http://localhost:8787' 
-            : 'https://construction-management-api-dev.lai-jameslai.workers.dev');
+        // 使用統一配置的 API URL，保留 localhost 支援
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || (
+            window.location.hostname === 'localhost' 
+                ? 'http://localhost:8787' 
+                : 'ERROR_NO_CONFIG'
+        );
         const USE_V2_API = false; // 使用 V1 API (V2 尚未實作)
 
         // User context

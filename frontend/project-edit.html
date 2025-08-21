@@ -185,9 +185,12 @@
     <script src="js/unified-permissions.js"></script>
     <script>
         // API configuration
-        const WORKER_API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:8787' 
-            : 'https://construction-management-api.lai-jameslai.workers.dev';
+        // 使用統一配置的 API URL
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || (
+            window.location.hostname === 'localhost' 
+                ? 'http://localhost:8787'
+                : 'ERROR_NO_CONFIG'
+        );
 
         let currentProject = null;
 

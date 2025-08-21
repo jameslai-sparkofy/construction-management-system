@@ -175,7 +175,8 @@
 
     <script>
         // API 配置
-        const WORKER_API_URL = 'https://construction-management-api.lai-jameslai.workers.dev';
+        // 使用統一配置的 API URL
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'ERROR_NO_CONFIG';
         
         // 檢查系統狀態
         async function checkSystemStatus() {

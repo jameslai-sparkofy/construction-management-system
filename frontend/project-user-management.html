@@ -668,7 +668,8 @@
     <script>
         // 配置
         // 使用與其他頁面相同的 API URL - 確保使用正確的 development API
-        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
+        // 使用統一配置，移除 hardcode fallback
+        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'ERROR_NO_CONFIG';
         let projectId = null;
         let currentUserData = null;
         let currentUserProjectRole = null; // 當前用戶在專案中的角色
