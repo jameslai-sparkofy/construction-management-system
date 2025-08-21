@@ -7,6 +7,10 @@
     "mcp-memory-keeper": {
       "command": "npx",
       "args": ["-y", "mcp-memory-keeper"]
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp"]
     }
   }
 }

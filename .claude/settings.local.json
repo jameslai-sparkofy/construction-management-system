@@ -276,7 +276,20 @@
       "WebFetch(domain:39dd25bf.construction-management-frontend-dev.pages.dev)",
       "Bash(CLOUDFLARE_API_TOKEN=\"gF1zTU1MSg5JVfkuXOcVbR44MrC3Hx563iMTygW8\" npx wrangler pages deployment list --project-name construction-management-frontend-prod)",
       "WebFetch(domain:bb4f790a.construction-management-frontend-prod.pages.dev)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"gF1zTU1MSg5JVfkuXOcVbR44MrC3Hx563iMTygW8\" npx wrangler pages project --help)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"gF1zTU1MSg5JVfkuXOcVbR44MrC3Hx563iMTygW8\" npx wrangler pages project --help)",
+      "Bash(npx @executeautomation/playwright-mcp-server:*)",
+      "Bash(pkill:*)",
+      "Bash(kill:*)",
+      "Bash(npx mcp-server-playwright:*)",
+      "Bash(mcp-server-playwright:*)",
+      "Bash(npx:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(uvx:*)",
+      "Bash(pip install:*)",
+      "Bash(source ~/.bashrc)",
+      "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
+      "Bash($HOME/.local/bin/uvx:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
