@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人資料 - 元心建材工程管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .tab-inactive {
+            background: #f8fafc;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 導航欄 -->
+    <nav class="gradient-bg text-white p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="text-2xl font-bold">🏗️</div>
+                <h1 class="text-xl font-bold">個人資料管理</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="font-medium">載入中...</span>
+                <a href="project-list.html" class="bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
+                    回到專案列表
+                </a>
+                <button id="logoutBtn" class="bg-red-500 bg-opacity-80 px-4 py-2 rounded-lg hover:bg-opacity-100 transition">
+                    登出
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto p-6">
+        <!-- 分頁標籤 -->
+        <div class="bg-white rounded-lg card-shadow mb-6">
+            <div class="flex border-b">
+                <button id="profileTab" class="flex-1 py-4 px-6 text-center font-medium tab-active transition" onclick="showTab('profile')">
+                    📝 基本資料
+                </button>
+                <button id="passwordTab" class="flex-1 py-4 px-6 text-center font-medium tab-inactive transition" onclick="showTab('password')">
+                    🔒 修改密碼
+                </button>
+                <button id="projectsTab" class="flex-1 py-4 px-6 text-center font-medium tab-inactive transition" onclick="showTab('projects')">
+                    📋 專案角色
+                </button>
+            </div>
+        </div>
+
+        <!-- 基本資料頁面 -->
+        <div id="profileContent" class="tab-content">
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">基本資料</h2>
+                
+                <form id="profileForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">手機號碼</label>
+                            <input 
+                                type="tel" 
+                                id="userPhone"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100"
+                                disabled
+                            >
+                            <p class="text-sm text-gray-500 mt-1">手機號碼無法修改</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">用戶角色</label>
+                            <input 
+                                type="text" 
+                                id="userRole"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100"
+                                disabled
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">姓名</label>
+                            <input 
+                                type="text" 
+                                id="userName"
+                                placeholder="請輸入姓名"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                required
+                            >
+                        </div>
+
+                        <div>
+                            <label class="block text-gray-700 font-medium mb-2">電子郵件</label>
+                            <input 
+                                type="email" 
+                                id="userEmail"
+                                placeholder="請輸入電子郵件"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            >
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-medium text-blue-800 mb-2">帳號狀態</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <span class="text-gray-600">帳號狀態：</span>
+                                <span id="userStatus" class="font-medium"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">最後登入：</span>
+                                <span id="lastLogin" class="font-medium"></span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">登入次數：</span>
+                                <span id="loginCount" class="font-medium"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button 
+                            type="submit" 
+                            class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition font-medium"
+                        >
+                            儲存變更
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 修改密碼頁面 -->
+        <div id="passwordContent" class="tab-content hidden">
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">修改密碼</h2>
+                
+                <div class="bg-yellow-50 border border-yellow-200 p-4 rounded-lg mb-6">
+                    <p class="text-yellow-800">
+                        <strong>注意：</strong>密碼為3位數字，通常是手機號碼的末3碼。
+                    </p>
+                </div>
+
+                <form id="passwordForm" class="space-y-6 max-w-md">
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">目前密碼</label>
+                        <input 
+                            type="password" 
+                            id="currentPassword"
+                            placeholder="請輸入目前的3位數密碼"
+                            maxlength="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">新密碼</label>
+                        <input 
+                            type="password" 
+                            id="newPassword"
+                            placeholder="請輸入新的3位數密碼"
+                            maxlength="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            required
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-gray-700 font-medium mb-2">確認新密碼</label>
+                        <input 
+                            type="password" 
+                            id="confirmPassword"
+                            placeholder="請再次輸入新密碼"
+                            maxlength="3"
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            required
+                        >
+                    </div>
+
+                    <div class="flex justify-end">
+                        <button 
+                            type="submit" 
+                            class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-medium"
+                        >
+                            修改密碼
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 專案角色頁面 -->
+        <div id="projectsContent" class="tab-content hidden">
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">我的專案角色</h2>
+                
+                <div id="projectsList" class="space-y-4">
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">📋</div>
+                        <p class="text-gray-500">載入中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成功/錯誤訊息 -->
+        <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/unified-auth.js"></script>
+    <script>
+        let currentUser = null;
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 檢查認證
+            if (!window.UnifiedAuth.requireAuth()) {
+                return;
+            }
+
+            currentUser = window.UnifiedAuth.getUser();
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name || '未設定';
+            }
+
+            // 載入用戶資料
+            await loadUserProfile();
+            
+            // 綁定事件
+            bindEvents();
+        });
+
+        // 顯示分頁
+        function showTab(tabName) {
+            // 隱藏所有內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 移除所有活動標籤樣式
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+                tab.className = 'flex-1 py-4 px-6 text-center font-medium tab-inactive transition';
+            });
+            
+            // 顯示選中的內容
+            document.getElementById(tabName + 'Content').classList.remove('hidden');
+            document.getElementById(tabName + 'Tab').className = 'flex-1 py-4 px-6 text-center font-medium tab-active transition';
+            
+            // 如果是專案分頁，載入專案資料
+            if (tabName === 'projects') {
+                loadUserProjects();
+            }
+        }
+
+        // 載入用戶資料
+        async function loadUserProfile() {
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/users/me`, {
+                    headers: window.UnifiedAuth.getRequestHeaders()
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const user = data.user;
+                    
+                    // 填入表單
+                    document.getElementById('userPhone').value = user.phone || '';
+                    document.getElementById('userRole').value = getRoleDisplayName(user.role);
+                    document.getElementById('userName').value = user.name || '';
+                    document.getElementById('userEmail').value = user.email || '';
+                    document.getElementById('userStatus').textContent = getStatusDisplayName(user.user_status);
+                    document.getElementById('lastLogin').textContent = formatDateTime(user.last_login);
+                    document.getElementById('loginCount').textContent = user.login_count || 0;
+                } else {
+                    showMessage('載入用戶資料失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('載入用戶資料錯誤:', error);
+                showMessage('載入用戶資料發生錯誤', 'error');
+            }
+        }
+
+        // 載入用戶專案
+        async function loadUserProjects() {
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/users/me/projects`, {
+                    headers: window.UnifiedAuth.getRequestHeaders()
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    renderProjects(data.projects);
+                } else {
+                    showMessage('載入專案資料失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('載入專案資料錯誤:', error);
+                showMessage('載入專案資料發生錯誤', 'error');
+            }
+        }
+
+        // 渲染專案列表
+        function renderProjects(projects) {
+            const container = document.getElementById('projectsList');
+            
+            if (projects.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">📭</div>
+                        <p class="text-gray-500">目前沒有參與任何專案</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = projects.map(project => `
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-semibold text-lg text-gray-800">${project.project_name}</h3>
+                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded">${project.project_status}</span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+                        <div>
+                            <span class="font-medium">用戶類型：</span>
+                            <span class="text-gray-800">${getUserTypeDisplayName(project.user_role)}</span>
+                        </div>
+                        ${project.team_name ? `
+                        <div>
+                            <span class="font-medium">工班：</span>
+                            <span class="text-gray-800">${project.team_name}</span>
+                        </div>
+                        <div>
+                            <span class="font-medium">工班角色：</span>
+                            <span class="text-gray-800">${getRoleDisplayName(project.team_role)}</span>
+                        </div>
+                        ` : '<div></div><div></div>'}
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                        加入時間：${formatDateTime(project.joined_at)}
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        // 綁定事件
+        function bindEvents() {
+            // 個人資料表單
+            document.getElementById('profileForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await updateProfile();
+            });
+
+            // 修改密碼表單
+            document.getElementById('passwordForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await changePassword();
+            });
+
+            // 登出按鈕
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('確定要登出嗎？')) {
+                    window.UnifiedAuth.logout();
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+
+        // 更新個人資料
+        async function updateProfile() {
+            try {
+                const name = document.getElementById('userName').value.trim();
+                const email = document.getElementById('userEmail').value.trim();
+
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/users/me`, {
+                    method: 'PUT',
+                    headers: window.UnifiedAuth.getRequestHeaders(),
+                    body: JSON.stringify({ name, email })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('個人資料更新成功', 'success');
+                    
+                    // 更新導航欄的用戶名稱
+                    document.querySelector('nav #userName').textContent = name;
+                    
+                    // 更新本地存儲的用戶資訊
+                    const updatedUser = { ...currentUser, name, email };
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                    currentUser = updatedUser;
+                } else {
+                    showMessage('更新失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('更新個人資料錯誤:', error);
+                showMessage('更新個人資料發生錯誤', 'error');
+            }
+        }
+
+        // 修改密碼
+        async function changePassword() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 驗證密碼格式
+            if (!/^\d{3}$/.test(newPassword)) {
+                showMessage('新密碼必須為3位數字', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showMessage('新密碼與確認密碼不一致', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/users/change-password`, {
+                    method: 'POST',
+                    headers: window.UnifiedAuth.getRequestHeaders(),
+                    body: JSON.stringify({
+                        current_password: currentPassword,
+                        new_password: newPassword
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage('密碼修改成功', 'success');
+                    
+                    // 清空表單
+                    document.getElementById('passwordForm').reset();
+                } else {
+                    showMessage('密碼修改失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('修改密碼錯誤:', error);
+                showMessage('修改密碼發生錯誤', 'error');
+            }
+        }
+
+        // 顯示訊息
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+
+            const messageEl = document.createElement('div');
+            messageEl.className = `${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg mb-4 max-w-sm`;
+            messageEl.textContent = message;
+
+            container.appendChild(messageEl);
+
+            setTimeout(() => {
+                messageEl.remove();
+            }, 5000);
+        }
+
+        // 輔助函數
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'super_admin': 'Super Admin',
+                'admin': '管理員',
+                'user': '一般用戶',
+                'owner': '業主',
+                'team_leader': '工班長',
+                'member': '工班成員'
+            };
+            return roleNames[role] || role;
+        }
+
+        function getUserTypeDisplayName(userType) {
+            const typeNames = {
+                'admin': '管理員',
+                'owner': '業主',
+                'worker': '工班'
+            };
+            return typeNames[userType] || userType;
+        }
+
+        function getStatusDisplayName(status) {
+            const statusNames = {
+                'active': '已啟用',
+                'pending': '待啟用',
+                'suspended': '已暫停'
+            };
+            return statusNames[status] || status;
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '無';
+            return new Date(dateStr).toLocaleString('zh-TW');
+        }
+    </script>
+</body>
+</html>

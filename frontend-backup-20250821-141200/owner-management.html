@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>業主管理 - 元心建材工程管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: #f9fafb;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            color: #111827;
+        }
+
+        .project-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-badge {
+            padding: 0.5rem 1rem;
+            background: #3b82f6;
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+
+        /* 權限警告 */
+        .permission-warning {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: none;
+        }
+
+        .permission-warning.show {
+            display: block;
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 統計卡片 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        /* 業主列表 */
+        .owners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .owner-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .owner-card.primary {
+            border: 2px solid #3b82f6;
+        }
+
+        .owner-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .owner-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .owner-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: #fce7f3;
+            color: #9f1239;
+        }
+
+        .owner-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .owner-details span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .owner-actions {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* 新增業主表單 */
+        .add-owner-form {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            display: none;
+        }
+
+        .add-owner-form.active {
+            display: block;
+        }
+
+        .form-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-section h3 {
+            margin-bottom: 1rem;
+            color: #111827;
+        }
+
+        .contacts-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+
+        .contact-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            border-radius: 6px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .contact-item:hover {
+            background: #f9fafb;
+        }
+
+        .contact-item input[type="checkbox"] {
+            margin-right: 1rem;
+        }
+
+        .contact-info {
+            flex: 1;
+        }
+
+        .contact-name {
+            font-weight: 500;
+            color: #111827;
+        }
+
+        .contact-details {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 1px solid #93c5fd;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box h4 {
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-box p {
+            font-size: 0.875rem;
+            color: #1e40af;
+        }
+
+        /* 無權限提示 */
+        .no-permission {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .no-permission-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .no-permission h2 {
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .no-permission p {
+            color: #6b7280;
+        }
+
+        /* 搜尋欄 */
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        /* 響應式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .owners-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        window.supabase = supabase;
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="header">
+            <h1>🏢 業主管理</h1>
+            <button class="btn btn-secondary" onclick="window.location.href='project-list.html'">← 返回專案列表</button>
+        </div>
+
+        <!-- 權限檢查提示 -->
+        <div id="noPermission" class="no-permission" style="display: none;">
+            <div class="no-permission-icon">🔒</div>
+            <h2>無權限存取</h2>
+            <p>只有管理員可以管理業主</p>
+            <button class="btn btn-primary" onclick="history.back()" style="margin-top: 1rem;">返回</button>
+        </div>
+
+        <!-- 主要內容區 -->
+        <div id="mainContent" style="display: none;">
+            <!-- 專案資訊 -->
+            <div class="project-info">
+                <div class="info-badge" id="projectName">載入中...</div>
+                <div>
+                    <strong>商機：</strong>
+                    <span id="opportunityName">載入中...</span>
+                </div>
+                <div>
+                    <strong>商機 ID：</strong>
+                    <span id="opportunityId">-</span>
+                </div>
+            </div>
+
+            <!-- 統計資訊 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalOwners">0</div>
+                    <div class="stat-label">業主總數</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalContacts">0</div>
+                    <div class="stat-label">商機連絡人</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeOwners">0</div>
+                    <div class="stat-label">已啟用帳號</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="pendingOwners">0</div>
+                    <div class="stat-label">待啟用帳號</div>
+                </div>
+            </div>
+
+            <!-- 新增業主按鈕 -->
+            <div style="margin-bottom: 1.5rem;">
+                <button class="btn btn-primary" id="addOwnerBtn" onclick="toggleAddOwnerForm()">
+                    ➕ 新增業主
+                </button>
+            </div>
+
+            <!-- 新增業主表單 -->
+            <div class="add-owner-form" id="addOwnerForm">
+                <div class="form-section">
+                    <h3>選擇商機連絡人</h3>
+                    <p style="color: #6b7280; margin-bottom: 1rem;">
+                        請從此商機的連絡人中選擇要設為業主的人員（可多選）
+                    </p>
+                    
+                    <div class="search-bar">
+                        <input type="text" class="search-input" id="contactSearch" 
+                               placeholder="搜尋連絡人姓名或電話..." 
+                               onkeyup="filterContacts()">
+                    </div>
+                    
+                    <div class="contacts-list" id="contactsList">
+                        <!-- 動態載入連絡人列表 -->
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <h4>📌 注意事項</h4>
+                    <p>
+                        • 只能選擇與此專案商機關聯的連絡人<br>
+                        • 電話號碼將作為登入帳號<br>
+                        • 預設密碼為電話號碼末3碼<br>
+                        • 業主擁有查看專案進度的權限，但不能編輯
+                    </p>
+                </div>
+
+                <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                    <button class="btn btn-secondary" onclick="toggleAddOwnerForm()">取消</button>
+                    <button class="btn btn-primary" onclick="addOwners()">新增選中的業主</button>
+                </div>
+            </div>
+
+            <!-- 業主列表 -->
+            <h3 style="margin-bottom: 1rem;">現有業主</h3>
+            <div class="owners-grid" id="ownersList">
+                <!-- 動態生成業主卡片 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration
+        const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-dev.lai-jameslai.workers.dev';
+        const API_TOKEN = localStorage.getItem('api_token') || 'demo_token';
+
+        // 全域變數
+        let currentUser = null;
+        let currentProject = null;
+        let opportunityId = null;
+        let projectId = null;
+        let availableContacts = [];
+        let existingOwners = [];
+
+        // 初始化
+        async function init() {
+            // 取得 URL 參數
+            const urlParams = new URLSearchParams(window.location.search);
+            projectId = urlParams.get('projectId');
+            opportunityId = urlParams.get('opportunityId');
+            
+            if (!projectId) {
+                alert('缺少專案參數');
+                history.back();
+                return;
+            }
+            
+            // 檢查用戶權限
+            await checkPermissions();
+        }
+
+        // 檢查權限
+        async function checkPermissions() {
+            try {
+                // 取得當前用戶
+                const { data: { user } } = await window.supabase.auth.getUser();
+                if (!user) {
+                    // 如果沒有 Supabase 用戶，檢查本地 session
+                    const localUser = JSON.parse(localStorage.getItem('user') || '{}');
+                    if (!localUser.id) {
+                        alert('請先登入');
+                        window.location.href = 'login-simple.html';
+                        return;
+                    }
+                    currentUser = localUser;
+                } else {
+                    currentUser = user;
+                }
+                
+                // 從 D1 獲取用戶角色
+                const token = localStorage.getItem('auth_token');
+                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    currentProject = await response.json();
+                    
+                    // 檢查是否為 admin
+                    const userRole = await getUserRole();
+                    if (userRole === 'admin') {
+                        showContent();
+                    } else {
+                        document.getElementById('noPermission').style.display = 'block';
+                    }
+                } else {
+                    throw new Error('無法獲取專案資料');
+                }
+                
+            } catch (error) {
+                console.error('權限檢查失敗:', error);
+                document.getElementById('noPermission').style.display = 'block';
+            }
+        }
+
+        // 獲取用戶角色
+        async function getUserRole() {
+            // 從 D1 獲取用戶角色
+            try {
+                const response = await fetch(`${WORKER_API_URL}/api/v1/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    return userData.role;
+                }
+            } catch (error) {
+                console.error('獲取用戶角色失敗:', error);
+            }
+            
+            // 預設為非 admin
+            return 'member';
+        }
+
+        // 顯示內容
+        async function showContent() {
+            document.getElementById('mainContent').style.display = 'block';
+            
+            // 顯示專案資訊
+            document.getElementById('projectName').textContent = currentProject?.name || '未知專案';
+            document.getElementById('opportunityId').textContent = opportunityId || currentProject?.opportunity_id || '-';
+            
+            // 載入商機名稱
+            await loadOpportunityInfo();
+            
+            // 載入連絡人和業主資料
+            await loadContacts();
+            await loadOwners();
+        }
+
+        // 載入商機資訊
+        async function loadOpportunityInfo() {
+            if (!opportunityId && currentProject?.opportunity_id) {
+                opportunityId = currentProject.opportunity_id;
+            }
+            
+            if (!opportunityId) return;
+            
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/newopportunityobj/${opportunityId}`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const opportunity = await response.json();
+                    document.getElementById('opportunityName').textContent = 
+                        opportunity.name || opportunity.opportunity_name || '未知商機';
+                }
+            } catch (error) {
+                console.error('載入商機資訊失敗:', error);
+            }
+        }
+
+        // 載入商機連絡人
+        async function loadContacts() {
+            if (!opportunityId) return;
+            
+            try {
+                const response = await fetch(
+                    `${API_BASE_URL}/rest/NewOpportunityContactsObj?opportunity_id=${opportunityId}&limit=100`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${API_TOKEN}`
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    availableContacts = data.results || [];
+                    
+                    document.getElementById('totalContacts').textContent = availableContacts.length;
+                    renderContactsList();
+                }
+            } catch (error) {
+                console.error('載入連絡人失敗:', error);
+            }
+        }
+
+        // 渲染連絡人列表
+        function renderContactsList() {
+            const contactsList = document.getElementById('contactsList');
+            
+            if (availableContacts.length === 0) {
+                contactsList.innerHTML = '<p style="padding: 1rem; color: #6b7280;">暫無商機連絡人</p>';
+                return;
+            }
+            
+            contactsList.innerHTML = availableContacts.map(contact => {
+                const isExistingOwner = existingOwners.some(o => o.phone === contact.phone);
+                
+                return `
+                    <div class="contact-item ${isExistingOwner ? 'disabled' : ''}">
+                        <input type="checkbox" 
+                               id="contact_${contact._id}" 
+                               value="${contact._id}"
+                               ${isExistingOwner ? 'disabled' : ''}>
+                        <div class="contact-info">
+                            <div class="contact-name">
+                                ${contact.name || contact.contact_name || '未命名'}
+                                ${isExistingOwner ? '<span style="color: #10b981;">(已是業主)</span>' : ''}
+                            </div>
+                            <div class="contact-details">
+                                ${contact.phone ? `📱 ${contact.phone}` : ''}
+                                ${contact.email ? ` | ✉️ ${contact.email}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 載入現有業主
+        async function loadOwners() {
+            try {
+                // 從 D1 獲取專案權限中的業主
+                const response = await fetch(
+                    `${WORKER_API_URL}/api/v1/projects/${projectId}/permissions`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    const permissions = await response.json();
+                    existingOwners = permissions.filter(p => p.role === 'owner');
+                    
+                    document.getElementById('totalOwners').textContent = existingOwners.length;
+                    renderOwnersList();
+                }
+            } catch (error) {
+                console.error('載入業主失敗:', error);
+            }
+        }
+
+        // 渲染業主列表
+        function renderOwnersList() {
+            const ownersList = document.getElementById('ownersList');
+            
+            if (existingOwners.length === 0) {
+                ownersList.innerHTML = '<p style="color: #6b7280;">尚未設定業主</p>';
+                return;
+            }
+            
+            ownersList.innerHTML = existingOwners.map((owner, index) => `
+                <div class="owner-card ${index === 0 ? 'primary' : ''}">
+                    <div class="owner-header">
+                        <div>
+                            <div class="owner-name">${owner.name || '未知'}</div>
+                            <span class="owner-badge">業主</span>
+                        </div>
+                    </div>
+                    <div class="owner-details">
+                        <span>📱 ${owner.phone || '無電話'}</span>
+                        ${owner.email ? `<span>✉️ ${owner.email}</span>` : ''}
+                        <span>🔑 登入帳號: ${owner.phone || '-'}</span>
+                        <span>🔐 預設密碼: ${owner.phone ? owner.phone.slice(-3) : '-'}</span>
+                    </div>
+                    <div class="owner-actions">
+                        <button class="btn btn-danger" onclick="removeOwner('${owner.user_id}')">移除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 切換新增業主表單
+        window.toggleAddOwnerForm = function() {
+            const form = document.getElementById('addOwnerForm');
+            form.classList.toggle('active');
+            
+            if (form.classList.contains('active')) {
+                renderContactsList();
+            }
+        }
+
+        // 搜尋連絡人
+        window.filterContacts = function() {
+            const searchTerm = document.getElementById('contactSearch').value.toLowerCase();
+            const contactItems = document.querySelectorAll('.contact-item');
+            
+            contactItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+
+        // 新增業主
+        window.addOwners = async function() {
+            const selectedContacts = [];
+            const checkboxes = document.querySelectorAll('#contactsList input[type="checkbox"]:checked');
+            
+            checkboxes.forEach(checkbox => {
+                const contactId = checkbox.value;
+                const contact = availableContacts.find(c => c._id === contactId);
+                if (contact) {
+                    selectedContacts.push(contact);
+                }
+            });
+            
+            if (selectedContacts.length === 0) {
+                alert('請選擇至少一位連絡人');
+                return;
+            }
+            
+            try {
+                // 為每個選中的連絡人建立帳號和權限
+                for (const contact of selectedContacts) {
+                    await addOwnerToProject(contact);
+                }
+                
+                alert(`成功新增 ${selectedContacts.length} 位業主`);
+                toggleAddOwnerForm();
+                await loadOwners();
+                
+            } catch (error) {
+                console.error('新增業主失敗:', error);
+                alert('新增業主失敗: ' + error.message);
+            }
+        }
+
+        // 將連絡人加入專案作為業主
+        async function addOwnerToProject(contact) {
+            // 1. 如果有 Supabase，建立認證帳號
+            if (window.supabase && contact.phone) {
+                const password = contact.phone.slice(-3);
+                
+                try {
+                    const { data, error } = await window.supabase.auth.signUp({
+                        email: contact.email || `${contact.phone}@construction.local`,
+                        password: password,
+                        options: {
+                            data: {
+                                phone: contact.phone,
+                                full_name: contact.name || contact.contact_name,
+                                role: 'owner',
+                                d1_user_id: contact._id
+                            }
+                        }
+                    });
+                    
+                    if (error && !error.message.includes('already registered')) {
+                        console.error('Supabase 帳號建立失敗:', error);
+                    }
+                } catch (error) {
+                    console.error('Supabase 錯誤:', error);
+                }
+            }
+            
+            // 2. 在 D1 建立權限記錄
+            const response = await fetch(
+                `${WORKER_API_URL}/api/v1/projects/${projectId}/permissions`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    },
+                    body: JSON.stringify({
+                        user_id: contact._id,
+                        name: contact.name || contact.contact_name,
+                        phone: contact.phone,
+                        email: contact.email,
+                        role: 'owner',
+                        can_view: true,
+                        can_edit: false,
+                        can_manage_members: false,
+                        can_view_other_teams: true
+                    })
+                }
+            );
+            
+            if (!response.ok) {
+                throw new Error('權限設定失敗');
+            }
+        }
+
+        // 移除業主
+        window.removeOwner = async function(userId) {
+            if (!confirm('確定要移除此業主嗎？')) return;
+            
+            try {
+                const response = await fetch(
+                    `${WORKER_API_URL}/api/v1/projects/${projectId}/permissions/${userId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                        }
+                    }
+                );
+                
+                if (response.ok) {
+                    alert('業主已移除');
+                    await loadOwners();
+                } else {
+                    throw new Error('移除失敗');
+                }
+                
+            } catch (error) {
+                console.error('移除業主失敗:', error);
+                alert('移除業主失敗: ' + error.message);
+            }
+        }
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>統一 API 測試頁面</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #007acc;
+        }
+        .header h1 {
+            color: #007acc;
+            margin: 0;
+        }
+        .status-card {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        .status-success { border-left: 4px solid #28a745; }
+        .status-error { border-left: 4px solid #dc3545; }
+        .status-info { border-left: 4px solid #17a2b8; }
+        .endpoint-test {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        .endpoint-url {
+            font-family: monospace;
+            font-size: 14px;
+            color: #495057;
+        }
+        .test-button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result-area {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .info { color: #17a2b8; }
+        .migration-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007acc;
+        }
+        .stat-label {
+            color: #6c757d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ 統一 API Gateway 測試</h1>
+            <p>工程管理系統 API 整併驗證</p>
+        </div>
+
+        <div class="migration-info">
+            <h3>🚀 API 架構升級</h3>
+            <p><strong>從:</strong> 8個微服務 → <strong>到:</strong> 1個統一 API Gateway</p>
+            <p><strong>效益:</strong> 簡化維護、統一認證、提升效能、降低複雜度</p>
+        </div>
+
+        <!-- API 狀態檢查 -->
+        <div class="status-card status-info">
+            <h3>📊 API 系統狀態</h3>
+            <div id="apiStatus">檢查中...</div>
+        </div>
+
+        <!-- 端點測試 -->
+        <div class="status-card">
+            <h3>🔗 API 端點測試</h3>
+            <div class="endpoint-test">
+                <span class="endpoint-url">GET /health</span>
+                <button class="test-button" onclick="testEndpoint('/health')">測試</button>
+            </div>
+            <div class="endpoint-test">
+                <span class="endpoint-url">GET /api/v1/auth/status</span>
+                <button class="test-button" onclick="testEndpoint('/api/v1/auth/status')">測試</button>
+            </div>
+            <div class="endpoint-test">
+                <span class="endpoint-url">GET /api/v1/projects</span>
+                <button class="test-button" onclick="testEndpoint('/api/v1/projects')">測試</button>
+            </div>
+            <div class="endpoint-test">
+                <span class="endpoint-url">GET /api/v1/sites</span>
+                <button class="test-button" onclick="testEndpoint('/api/v1/sites')">測試</button>
+            </div>
+            <div class="result-area" id="testResults">測試結果將顯示在這裡...</div>
+        </div>
+
+        <!-- 統計資訊 -->
+        <div class="status-card">
+            <h3>📈 系統統計</h3>
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-number" id="projectCount">-</div>
+                    <div class="stat-label">專案數量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="siteCount">-</div>
+                    <div class="stat-label">案場數量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="apiVersion">-</div>
+                    <div class="stat-label">API 版本</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="responseTime">-</div>
+                    <div class="stat-label">回應時間 (ms)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 載入配置 -->
+    <script src="config.unified-test.js"></script>
+
+    <script>
+        let testResults = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkApiStatus();
+            await loadStats();
+        });
+
+        // 檢查 API 狀態
+        async function checkApiStatus() {
+            const statusDiv = document.getElementById('apiStatus');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/health`);
+                const responseTime = Date.now() - startTime;
+                const data = await response.json();
+
+                if (data.success && data.status === 'healthy') {
+                    statusDiv.innerHTML = `
+                        <div class="success">✅ API 正常運行</div>
+                        <div>環境: ${data.environment}</div>
+                        <div>版本: ${data.version}</div>
+                        <div>資料庫: CRM ${data.databases.crm} | 工程 ${data.databases.engineering}</div>
+                        <div>回應時間: ${responseTime}ms</div>
+                    `;
+                    
+                    document.getElementById('apiVersion').textContent = data.version;
+                    document.getElementById('responseTime').textContent = responseTime;
+                } else {
+                    throw new Error('API 狀態異常');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="error">❌ API 連線失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 載入統計資料
+        async function loadStats() {
+            try {
+                // 載入專案數量
+                const projectsResponse = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/projects`);
+                const projectsData = await projectsResponse.json();
+                if (projectsData.success) {
+                    document.getElementById('projectCount').textContent = projectsData.count;
+                }
+
+                // 載入案場數量
+                const sitesResponse = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/sites`);
+                const sitesData = await sitesResponse.json();
+                if (sitesData.success) {
+                    document.getElementById('siteCount').textContent = sitesData.count;
+                }
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        // 測試端點
+        async function testEndpoint(endpoint) {
+            const resultsDiv = document.getElementById('testResults');
+            const url = `${CONFIG.API.WORKER_API_URL}${endpoint}`;
+            
+            // 添加測試開始訊息
+            appendResult(`🚀 測試端點: ${endpoint}`, 'info');
+            
+            try {
+                const startTime = Date.now();
+                const response = await fetch(url);
+                const responseTime = Date.now() - startTime;
+                const data = await response.json();
+                
+                if (response.ok) {
+                    appendResult(`✅ ${endpoint} - ${response.status} (${responseTime}ms)`, 'success');
+                    
+                    // 顯示回應資料摘要
+                    if (data.projects) {
+                        appendResult(`   📊 專案數量: ${data.count}`, 'info');
+                    } else if (data.sites) {
+                        appendResult(`   📊 案場數量: ${data.count}`, 'info');
+                    } else if (data.databases) {
+                        appendResult(`   📊 資料庫狀態: ${Object.entries(data.databases).map(([k,v]) => `${k}=${v}`).join(', ')}`, 'info');
+                    }
+                } else {
+                    appendResult(`❌ ${endpoint} - ${response.status} ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                appendResult(`❌ ${endpoint} - 連線錯誤: ${error.message}`, 'error');
+            }
+        }
+
+        // 添加測試結果
+        function appendResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${timestamp}] ${message}`;
+            resultsDiv.appendChild(div);
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // 清除結果
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+    </script>
+</body>
+</html>

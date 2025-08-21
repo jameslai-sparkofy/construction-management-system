@@ -150,7 +150,7 @@ class UserProfileComponent {
         try {
             // 嘗試從 API 載入
             const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-            const response = await fetch(`${window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev'}/api/v1/users/me`, {
+            const response = await fetch(`${window.CONFIG?.API?.WORKER_API_URL}/api/v1/users/me`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -250,7 +250,7 @@ class UserProfileComponent {
         try {
             const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
             const response = await fetch(
-                `${window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev'}/api/v1/projects/${this.projectId}/users`,
+                `${window.CONFIG?.API?.WORKER_API_URL}/api/v1/projects/${this.projectId}/users`,
                 {
                     headers: {
                         'Authorization': `Bearer ${token}`

@@ -3,6 +3,9 @@
  * 使用單一 project_users 表的簡化設計
  */
 
+import { FxCrmSyncService } from './services/fxCrmSyncService.js';
+import { FileService } from './services/fileService.js';
+
 // 直接在檔案中實作認證邏輯
 
 // 簡化的認證工具類
@@ -2997,6 +3000,156 @@ export default {
         return new Response(JSON.stringify({
           success: false,
           error: 'Failed to update user status',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
+    // 檔案上傳 API
+    if (path === '/api/v1/files/upload' && method === 'POST') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const fileService = new FileService(env);
+        const url = new URL(request.url);
+        const projectId = url.searchParams.get('projectId');
+        const siteId = url.searchParams.get('siteId');
+        const type = url.searchParams.get('type');
+
+        // 驗證必要參數
+        if (!projectId || !siteId || !type) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Missing required parameters: projectId, siteId, type'
+          }), { status: 400, headers });
+        }
+
+        // 上傳檔案
+        const metadata = {
+          projectId,
+          siteId,
+          type, // 'before', 'after', 'floorPlan'
+          userId: authCheck.user.user_id
+        };
+
+        const result = await fileService.uploadConstructionPhoto(request, metadata);
+
+        return new Response(JSON.stringify({
+          success: true,
+          data: result
+        }), { headers });
+      } catch (error) {
+        console.error('[File Upload Error]:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message || 'File upload failed'
+        }), { status: 500, headers });
+      }
+    }
+
+    // 檔案獲取 API
+    if (path.startsWith('/api/v1/files/') && method === 'GET') {
+      try {
+        const fileService = new FileService(env);
+        const pathParts = path.split('/');
+        const fileId = pathParts[pathParts.length - 1];
+
+        if (!fileId) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'File ID is required'
+          }), { status: 400, headers });
+        }
+
+        // 對於檔案訪問，我們需要直接從 R2 獲取檔案
+        // 這裡需要實現一個通過 fileId 查找實際檔案路徑的方式
+        // 暫時先返回錯誤，因為需要實現檔案 ID 到路徑的映射
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'File access not implemented yet'
+        }), { status: 501, headers });
+      } catch (error) {
+        console.error('[File Access Error]:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message || 'File access failed'
+        }), { status: 500, headers });
+      }
+    }
+
+    // 案場更新 PATCH 路由 - 混合方案：讀取用外部API，寫入只用D1
+    if (path.match(/^\/rest\/object_8W9cb__c\/[^\/]+$/) && method === 'PATCH') {
+      try {
+        const siteId = path.split('/').pop();
+        
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const body = await request.json();
+        console.log('[PATCH Site] Mixed mode: External read + D1 write only');
+        console.log('[PATCH Site] Received data:', body);
+        console.log('[PATCH Site] Site ID:', siteId);
+        
+        // 直接更新本地 D1 資料庫（不同步到外部CRM）
+        const updateFields = [];
+        const updateValues = [];
+        
+        // 建構更新 SQL，使用正確的欄位名稱
+        Object.keys(body).forEach(key => {
+          if (body[key] !== undefined) {
+            updateFields.push(`${key} = ?`);
+            updateValues.push(body[key]);
+          }
+        });
+        
+        // 添加 last_modified_time
+        updateFields.push('last_modified_time = ?');
+        updateValues.push(Date.now());
+        updateValues.push(siteId);
+        
+        const updateSQL = `UPDATE object_8W9cb__c SET ${updateFields.join(', ')} WHERE _id = ?`;
+        console.log('[PATCH Site] SQL:', updateSQL);
+        console.log('[PATCH Site] Values:', updateValues);
+        
+        const updateResult = await env.DB_CRM.prepare(updateSQL).bind(...updateValues).run();
+        console.log('[PATCH Site] D1 update result:', updateResult);
+        
+        if (updateResult.changes === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Site not found or no changes made'
+          }), { status: 404, headers });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          data: { 
+            _id: siteId,
+            updated_fields: Object.keys(body),
+            changes: updateResult.changes,
+            mode: 'D1-only (no CRM sync)'
+          },
+          message: 'Site updated successfully in D1 database only'
+        }), { headers });
+
+      } catch (error) {
+        console.error('[PATCH Site] Error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update site',
           message: error.message
         }), { status: 500, headers });
       }

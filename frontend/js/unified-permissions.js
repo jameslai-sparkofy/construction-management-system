@@ -7,7 +7,7 @@
 class UnifiedPermissions {
     constructor() {
         this.supabase = window.supabase || null;
-        this.workerApiUrl = window.CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
+        this.workerApiUrl = window.CONFIG?.API?.WORKER_API_URL || 'ERROR_NO_CONFIG';
         this.currentUser = null;
         this.simulatedUser = null; // Admin 模擬的用戶
         this.userPermissions = new Map(); // 快取權限資料

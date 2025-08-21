@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>成員管理 - 元心建材工程管理系統</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            background: #f9fafb;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .project-name {
+            color: #6b7280;
+            font-size: 1.25rem;
+            font-weight: normal;
+        }
+
+        /* 標籤頁 */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 1rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            color: #10b981;
+            border-bottom-color: #10b981;
+        }
+
+        .tab:hover {
+            color: #374151;
+        }
+
+        /* 按鈕樣式 */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #059669;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* 成員卡片 */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .member-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+        }
+
+        .member-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .member-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .member-info h3 {
+            font-size: 1.125rem;
+            color: #111827;
+            margin-bottom: 0.25rem;
+        }
+
+        .member-role {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .role-admin {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .role-foreman {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .role-worker {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .role-owner {
+            background: #fce7f3;
+            color: #9f1239;
+        }
+
+        .member-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .member-details span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .member-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* 新增成員表單 */
+        .add-member-form {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .add-member-form.active {
+            display: block;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 0.625rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        /* 權限設定 */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .permission-item input[type="checkbox"] {
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+        }
+
+        .permission-item label {
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        /* 工班列表 */
+        .teams-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .team-card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .team-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .team-members {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .team-member-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.375rem 0.75rem;
+            background: #f3f4f6;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+        }
+
+        /* 搜尋欄 */
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
+        /* 統計資訊 */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* 響應式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .members-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 頁面標題 -->
+        <div class="header">
+            <div>
+                <h1>
+                    <span>👥</span>
+                    成員管理
+                </h1>
+                <div class="project-name" id="projectName">測試專案</div>
+            </div>
+            <div style="display: flex; gap: 0.75rem;">
+                <button class="btn btn-secondary" onclick="window.location.href='project-list.html'">
+                    <span>←</span> 返回專案列表
+                </button>
+                <button class="btn btn-primary" id="ownerManageBtn" style="display: none;" 
+                        onclick="goToOwnerManagement()">
+                    <span>🏢</span> 業主管理
+                </button>
+                <button class="btn btn-primary" onclick="showAddMemberForm()">
+                    <span>➕</span> 新增成員
+                </button>
+            </div>
+        </div>
+
+        <!-- 統計資訊 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalMembers">0</div>
+                <div class="stat-label">總成員數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalForemen">0</div>
+                <div class="stat-label">工班負責人</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalWorkers">0</div>
+                <div class="stat-label">工班成員</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalTeams">0</div>
+                <div class="stat-label">工班數量</div>
+            </div>
+        </div>
+
+        <!-- 標籤頁 -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('members')">成員列表</button>
+            <button class="tab" onclick="switchTab('teams')">工班管理</button>
+            <button class="tab" onclick="switchTab('permissions')">權限設定</button>
+        </div>
+
+        <!-- 搜尋欄 -->
+        <div class="search-bar">
+            <input type="text" class="search-input" placeholder="搜尋成員姓名或電話..." id="searchInput">
+            <select class="search-input" style="width: 200px;" id="roleFilter">
+                <option value="">所有角色</option>
+                <option value="foreman">工班負責人</option>
+                <option value="worker">工班成員</option>
+                <option value="owner">業主</option>
+            </select>
+        </div>
+
+        <!-- 成員列表 -->
+        <div id="membersTab" class="tab-content">
+            <div class="members-grid" id="membersList">
+                <!-- 成員卡片將動態生成 -->
+            </div>
+        </div>
+
+        <!-- 工班管理 -->
+        <div id="teamsTab" class="tab-content" style="display: none;">
+            <div class="teams-list" id="teamsList">
+                <!-- 工班卡片將動態生成 -->
+            </div>
+        </div>
+
+        <!-- 權限設定 -->
+        <div id="permissionsTab" class="tab-content" style="display: none;">
+            <div class="team-card">
+                <h3>專案權限設定</h3>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <input type="checkbox" id="allowViewOtherTeams">
+                        <label for="allowViewOtherTeams">工班可查看其他工班進度</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="allowEditSites">
+                        <label for="allowEditSites">工班成員可編輯案場</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="allowUploadPhotos">
+                        <label for="allowUploadPhotos">工班成員可上傳照片</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="requireApproval">
+                        <label for="requireApproval">完工需要審核</label>
+                    </div>
+                </div>
+                <div style="margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="savePermissionSettings()">儲存設定</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增成員表單 -->
+        <div class="add-member-form" id="addMemberForm">
+            <h3 style="margin-bottom: 1.5rem;">新增成員</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>姓名 *</label>
+                    <input type="text" id="memberName" placeholder="請輸入姓名">
+                </div>
+                <div class="form-group">
+                    <label>電話號碼 * (用於登入)</label>
+                    <input type="tel" id="memberPhone" placeholder="0912345678">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="memberEmail" placeholder="選填">
+                </div>
+                <div class="form-group">
+                    <label>角色 *</label>
+                    <select id="memberRole">
+                        <option value="worker">工班成員</option>
+                        <option value="foreman">工班負責人</option>
+                        <option value="owner">業主</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>所屬工班</label>
+                    <select id="memberTeam">
+                        <option value="">請選擇工班</option>
+                        <!-- 動態載入工班選項 -->
+                    </select>
+                </div>
+            </div>
+
+            <div style="background: #fef3c7; padding: 1rem; border-radius: 6px; margin-bottom: 1.5rem;">
+                <p style="font-size: 0.875rem; color: #92400e;">
+                    <strong>注意：</strong>
+                    <br>• 電話號碼將作為登入帳號
+                    <br>• 預設密碼為電話號碼末3碼
+                    <br>• 若工地師傅資料庫已有此電話，將自動關聯
+                </p>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                <button class="btn btn-secondary" onclick="hideAddMemberForm()">取消</button>
+                <button class="btn btn-primary" onclick="addMember()">新增成員</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 編輯成員 Modal -->
+    <div class="modal" id="editMemberModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>編輯成員資料</h3>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>姓名</label>
+                        <input type="text" id="editMemberName">
+                    </div>
+                    <div class="form-group">
+                        <label>電話號碼</label>
+                        <input type="tel" id="editMemberPhone" readonly style="background: #f3f4f6;">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="editMemberEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>角色</label>
+                        <select id="editMemberRole">
+                            <option value="worker">工班成員</option>
+                            <option value="foreman">工班負責人</option>
+                            <option value="owner">業主</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h4 style="margin: 1.5rem 0 1rem;">權限設定</h4>
+                <div class="permissions-grid">
+                    <div class="permission-item">
+                        <input type="checkbox" id="editCanView">
+                        <label for="editCanView">查看專案</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editCanEdit">
+                        <label for="editCanEdit">編輯案場</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editCanManage">
+                        <label for="editCanManage">管理成員</label>
+                    </div>
+                    <div class="permission-item">
+                        <input type="checkbox" id="editCanViewOthers">
+                        <label for="editCanViewOthers">查看其他工班</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveEditMember()">儲存</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+        
+        // Supabase 配置
+        const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co'
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ'
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey)
+        window.supabase = supabase
+        
+        // 載入成員資料
+        window.loadMembers = async function() {
+            const projectId = new URLSearchParams(window.location.search).get('projectId')
+            if (!projectId) return
+            
+            try {
+                // 取得專案成員
+                const { data: permissions, error } = await supabase
+                    .from('project_permissions')
+                    .select(`
+                        *,
+                        user:user_id (
+                            id,
+                            email,
+                            raw_user_meta_data
+                        )
+                    `)
+                    .eq('project_id', projectId)
+                
+                if (error) throw error
+                
+                // 渲染成員列表
+                const membersList = document.getElementById('membersList')
+                membersList.innerHTML = ''
+                
+                let foremenCount = 0
+                let workersCount = 0
+                
+                permissions?.forEach(perm => {
+                    const user = perm.user
+                    const metadata = user?.raw_user_meta_data || {}
+                    
+                    if (perm.role === 'foreman') foremenCount++
+                    if (perm.role === 'worker') workersCount++
+                    
+                    const card = createMemberCard({
+                        id: user.id,
+                        name: metadata.full_name || 'Unknown',
+                        phone: metadata.phone || user.email,
+                        email: user.email,
+                        role: perm.role,
+                        permissions: perm
+                    })
+                    
+                    membersList.appendChild(card)
+                })
+                
+                // 更新統計
+                document.getElementById('totalMembers').textContent = permissions?.length || 0
+                document.getElementById('totalForemen').textContent = foremenCount
+                document.getElementById('totalWorkers').textContent = workersCount
+                
+            } catch (error) {
+                console.error('載入成員失敗:', error)
+            }
+        }
+        
+        // 建立成員卡片
+        function createMemberCard(member) {
+            const div = document.createElement('div')
+            div.className = 'member-card'
+            div.innerHTML = `
+                <div class="member-header">
+                    <div class="member-info">
+                        <h3>${member.name}</h3>
+                        <span class="member-role role-${member.role}">${getRoleName(member.role)}</span>
+                    </div>
+                </div>
+                <div class="member-details">
+                    <span>📱 ${member.phone}</span>
+                    ${member.email ? `<span>✉️ ${member.email}</span>` : ''}
+                    <span>🔑 登入帳號: ${member.phone}</span>
+                </div>
+                <div class="member-actions">
+                    <button class="btn btn-secondary" onclick="editMember('${member.id}')">編輯</button>
+                    <button class="btn btn-danger" onclick="removeMember('${member.id}')">移除</button>
+                </div>
+            `
+            return div
+        }
+        
+        // 取得角色名稱
+        function getRoleName(role) {
+            const roleNames = {
+                admin: '管理員',
+                foreman: '工班負責人',
+                worker: '工班成員',
+                owner: '業主'
+            }
+            return roleNames[role] || role
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            loadMembers()
+            loadTeams()
+            
+            // 檢查是否為 admin，顯示業主管理按鈕
+            await checkAdminRole()
+        })
+        
+        // 檢查是否為 admin
+        async function checkAdminRole() {
+            try {
+                // 從本地或 API 獲取用戶角色
+                const response = await fetch(`${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-dev.lai-jameslai.workers.dev'}/api/v1/users/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                })
+                
+                if (response.ok) {
+                    const userData = await response.json()
+                    if (userData.role === 'admin') {
+                        document.getElementById('ownerManageBtn').style.display = 'inline-flex'
+                    }
+                }
+            } catch (error) {
+                console.log('無法確認 admin 權限')
+            }
+        }
+        
+        // 前往業主管理頁面
+        window.goToOwnerManagement = function() {
+            const projectId = new URLSearchParams(window.location.search).get('projectId')
+            if (projectId) {
+                window.location.href = `owner-management.html?projectId=${projectId}`
+            } else {
+                alert('缺少專案參數')
+            }
+        }
+    </script>
+
+    <script>
+        // 切換標籤
+        function switchTab(tab) {
+            // 更新標籤樣式
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active')
+            })
+            event.target.classList.add('active')
+            
+            // 顯示對應內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none'
+            })
+            document.getElementById(tab + 'Tab').style.display = 'block'
+        }
+        
+        // 顯示新增成員表單
+        function showAddMemberForm() {
+            document.getElementById('addMemberForm').classList.add('active')
+        }
+        
+        // 隱藏新增成員表單
+        function hideAddMemberForm() {
+            document.getElementById('addMemberForm').classList.remove('active')
+        }
+        
+        // 新增成員
+        async function addMember() {
+            const name = document.getElementById('memberName').value
+            const phone = document.getElementById('memberPhone').value
+            const email = document.getElementById('memberEmail').value
+            const role = document.getElementById('memberRole').value
+            const teamId = document.getElementById('memberTeam').value
+            
+            if (!name || !phone || !role) {
+                alert('請填寫必要欄位')
+                return
+            }
+            
+            try {
+                const projectId = new URLSearchParams(window.location.search).get('projectId')
+                
+                // 1. 檢查工地師傅資料庫
+                // 這裡需要呼叫 Cloudflare D1 API
+                const workerData = {
+                    phone: phone,
+                    name: name,
+                    email: email,
+                    // 其他工地師傅欄位
+                }
+                
+                // 2. 建立 Supabase 用戶（如果不存在）
+                const password = phone.slice(-3) // 密碼為電話末3碼
+                const { data: signUpData, error: signUpError } = await window.supabase.auth.signUp({
+                    email: email || `${phone}@construction.local`,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: name,
+                            phone: phone,
+                            role: role
+                        }
+                    }
+                })
+                
+                if (signUpError && !signUpError.message.includes('already registered')) {
+                    throw signUpError
+                }
+                
+                // 3. 授予專案權限
+                const userId = signUpData?.user?.id || await getUserIdByPhone(phone)
+                
+                const permissions = {
+                    project_id: projectId,
+                    user_id: userId,
+                    role: role,
+                    can_view: true,
+                    can_edit: role !== 'owner',
+                    can_manage_members: role === 'foreman',
+                    can_view_other_teams: role !== 'worker'
+                }
+                
+                const { error: permError } = await window.supabase
+                    .from('project_permissions')
+                    .upsert(permissions)
+                
+                if (permError) throw permError
+                
+                // 4. 加入工班（如果有選擇）
+                if (teamId) {
+                    const { error: teamError } = await window.supabase
+                        .from('team_members')
+                        .insert({
+                            team_id: teamId,
+                            user_id: userId,
+                            role: role
+                        })
+                    
+                    if (teamError) console.error('加入工班失敗:', teamError)
+                }
+                
+                alert(`成員新增成功！\n登入帳號: ${phone}\n預設密碼: ${password}`)
+                hideAddMemberForm()
+                loadMembers()
+                
+            } catch (error) {
+                console.error('新增成員失敗:', error)
+                alert('新增成員失敗: ' + error.message)
+            }
+        }
+        
+        // 根據電話取得用戶ID
+        async function getUserIdByPhone(phone) {
+            const { data, error } = await window.supabase
+                .from('user_profiles')
+                .select('id')
+                .eq('phone', phone)
+                .single()
+            
+            return data?.id
+        }
+        
+        // 編輯成員
+        function editMember(userId) {
+            document.getElementById('editMemberModal').classList.add('active')
+            // 載入成員資料...
+        }
+        
+        // 關閉編輯視窗
+        function closeEditModal() {
+            document.getElementById('editMemberModal').classList.remove('active')
+        }
+        
+        // 移除成員
+        async function removeMember(userId) {
+            if (!confirm('確定要移除此成員嗎？')) return
+            
+            try {
+                const projectId = new URLSearchParams(window.location.search).get('projectId')
+                
+                const { error } = await window.supabase
+                    .from('project_permissions')
+                    .delete()
+                    .eq('project_id', projectId)
+                    .eq('user_id', userId)
+                
+                if (error) throw error
+                
+                alert('成員已移除')
+                loadMembers()
+                
+            } catch (error) {
+                console.error('移除成員失敗:', error)
+                alert('移除成員失敗: ' + error.message)
+            }
+        }
+        
+        // 載入工班列表
+        async function loadTeams() {
+            const projectId = new URLSearchParams(window.location.search).get('projectId')
+            if (!projectId) return
+            
+            try {
+                const { data: teams, error } = await window.supabase
+                    .from('teams')
+                    .select(`
+                        *,
+                        team_members (
+                            user:user_id (
+                                id,
+                                raw_user_meta_data
+                            )
+                        )
+                    `)
+                    .eq('project_id', projectId)
+                
+                if (error) throw error
+                
+                // 更新工班數量
+                document.getElementById('totalTeams').textContent = teams?.length || 0
+                
+                // 渲染工班列表
+                const teamsList = document.getElementById('teamsList')
+                teamsList.innerHTML = ''
+                
+                teams?.forEach(team => {
+                    const card = document.createElement('div')
+                    card.className = 'team-card'
+                    card.innerHTML = `
+                        <div class="team-header">
+                            <h3>${team.name}</h3>
+                            <span class="btn btn-secondary">編輯</span>
+                        </div>
+                        <div class="team-members">
+                            ${team.team_members?.map(tm => `
+                                <span class="team-member-badge">
+                                    ${tm.user?.raw_user_meta_data?.full_name || 'Unknown'}
+                                </span>
+                            `).join('') || '<span style="color: #6b7280;">尚無成員</span>'}
+                        </div>
+                    `
+                    teamsList.appendChild(card)
+                })
+                
+                // 更新工班選項
+                const teamSelect = document.getElementById('memberTeam')
+                teamSelect.innerHTML = '<option value="">請選擇工班</option>'
+                teams?.forEach(team => {
+                    teamSelect.innerHTML += `<option value="${team.id}">${team.name}</option>`
+                })
+                
+            } catch (error) {
+                console.error('載入工班失敗:', error)
+            }
+        }
+        
+        // 儲存權限設定
+        function savePermissionSettings() {
+            alert('權限設定已儲存')
+        }
+    </script>
+</body>
+</html>

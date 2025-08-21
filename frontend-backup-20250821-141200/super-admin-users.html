@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Admin - 全站用戶管理</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .tab-active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .tab-inactive {
+            background: #f8fafc;
+            color: #64748b;
+        }
+        .role-badge {
+            @apply inline-block px-2 py-1 text-xs font-medium rounded-full;
+        }
+        .role-super-admin {
+            @apply bg-red-100 text-red-800;
+        }
+        .role-admin {
+            @apply bg-blue-100 text-blue-800;
+        }
+        .role-owner {
+            @apply bg-green-100 text-green-800;
+        }
+        .role-team-leader {
+            @apply bg-purple-100 text-purple-800;
+        }
+        .role-member {
+            @apply bg-gray-100 text-gray-800;
+        }
+        .role-user {
+            @apply bg-yellow-100 text-yellow-800;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 導航欄 -->
+    <nav class="gradient-bg text-white p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <div class="text-2xl font-bold">🏗️</div>
+                <h1 class="text-xl font-bold">Super Admin - 全站用戶管理</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span id="userName" class="font-medium">載入中...</span>
+                <a href="project-list.html" class="bg-white bg-opacity-20 px-4 py-2 rounded-lg hover:bg-opacity-30 transition">
+                    回到專案列表
+                </a>
+                <button id="logoutBtn" class="bg-red-500 bg-opacity-80 px-4 py-2 rounded-lg hover:bg-opacity-100 transition">
+                    登出
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- 統計卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <div class="flex items-center">
+                    <div class="text-3xl text-blue-500 mr-4">👥</div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-800" id="totalUsers">0</div>
+                        <div class="text-sm text-gray-600">總用戶數</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <div class="flex items-center">
+                    <div class="text-3xl text-green-500 mr-4">📋</div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-800" id="totalProjects">0</div>
+                        <div class="text-sm text-gray-600">總專案數</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <div class="flex items-center">
+                    <div class="text-3xl text-purple-500 mr-4">🔧</div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-800" id="activeUsers">0</div>
+                        <div class="text-sm text-gray-600">活躍用戶</div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <div class="flex items-center">
+                    <div class="text-3xl text-red-500 mr-4">⚠️</div>
+                    <div>
+                        <div class="text-2xl font-bold text-gray-800" id="pendingUsers">0</div>
+                        <div class="text-sm text-gray-600">待啟用用戶</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分頁標籤 -->
+        <div class="bg-white rounded-lg card-shadow mb-6">
+            <div class="flex border-b">
+                <button id="usersTab" class="flex-1 py-4 px-6 text-center font-medium tab-active transition" onclick="showTab('users')">
+                    👥 用戶列表
+                </button>
+                <button id="rolesTab" class="flex-1 py-4 px-6 text-center font-medium tab-inactive transition" onclick="showTab('roles')">
+                    🔐 角色分析
+                </button>
+                <button id="projectsTab" class="flex-1 py-4 px-6 text-center font-medium tab-inactive transition" onclick="showTab('projects')">
+                    📊 專案統計
+                </button>
+            </div>
+        </div>
+
+        <!-- 用戶列表頁面 -->
+        <div id="usersContent" class="tab-content">
+            <div class="bg-white rounded-lg card-shadow">
+                <div class="p-6 border-b">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800">所有用戶</h2>
+                        <div class="flex space-x-4">
+                            <input type="text" id="searchUsers" placeholder="搜尋用戶..." 
+                                   class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <select id="filterRole" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">所有角色</option>
+                                <option value="super_admin">Super Admin</option>
+                                <option value="admin">管理員</option>
+                                <option value="owner">業主</option>
+                                <option value="team_leader">工班長</option>
+                                <option value="member">工班成員</option>
+                                <option value="user">一般用戶</option>
+                            </select>
+                            <select id="filterStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                <option value="">所有狀態</option>
+                                <option value="active">已啟用</option>
+                                <option value="pending">待啟用</option>
+                                <option value="suspended">已暫停</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <div id="usersTable" class="overflow-x-auto">
+                        <div class="text-center py-8">
+                            <div class="text-4xl mb-4">📋</div>
+                            <p class="text-gray-500">載入中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色分析頁面 -->
+        <div id="rolesContent" class="tab-content hidden">
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">角色分佈分析</h2>
+                <div id="roleAnalysis" class="space-y-4">
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">📊</div>
+                        <p class="text-gray-500">載入中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 專案統計頁面 -->
+        <div id="projectsContent" class="tab-content hidden">
+            <div class="bg-white rounded-lg card-shadow p-6">
+                <h2 class="text-xl font-bold text-gray-800 mb-6">專案用戶統計</h2>
+                <div id="projectStats" class="space-y-4">
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">📈</div>
+                        <p class="text-gray-500">載入中...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 成功/錯誤訊息 -->
+        <div id="messageContainer" class="fixed top-4 right-4 z-50"></div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="js/unified-auth.js"></script>
+    <script>
+        let currentUser = null;
+        let allUsers = [];
+        let allProjects = [];
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            // 檢查認證
+            if (!window.UnifiedAuth.requireAuth()) {
+                return;
+            }
+
+            currentUser = window.UnifiedAuth.getUser();
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name || currentUser.phone;
+            }
+
+            // 檢查 Super Admin 權限
+            if (!currentUser || currentUser.role !== 'super_admin') {
+                showMessage('您沒有權限存取此頁面', 'error');
+                setTimeout(() => {
+                    window.location.href = 'project-list.html';
+                }, 2000);
+                return;
+            }
+
+            // 載入資料
+            await loadAllData();
+            
+            // 綁定事件
+            bindEvents();
+        });
+
+        // 載入所有資料
+        async function loadAllData() {
+            try {
+                await Promise.all([
+                    loadAllUsers(),
+                    loadAllProjects(),
+                    loadStatistics()
+                ]);
+            } catch (error) {
+                console.error('載入資料失敗:', error);
+                showMessage('載入資料失敗', 'error');
+            }
+        }
+
+        // 載入所有用戶
+        async function loadAllUsers() {
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/users`, {
+                    headers: window.UnifiedAuth.getRequestHeaders()
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    allUsers = data.users || [];
+                    renderUsersTable(allUsers);
+                } else {
+                    showMessage('載入用戶資料失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('載入用戶資料錯誤:', error);
+                showMessage('載入用戶資料發生錯誤', 'error');
+            }
+        }
+
+        // 載入所有專案
+        async function loadAllProjects() {
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/projects`, {
+                    headers: window.UnifiedAuth.getRequestHeaders()
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    allProjects = data.projects || [];
+                } else {
+                    showMessage('載入專案資料失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('載入專案資料錯誤:', error);
+                showMessage('載入專案資料發生錯誤', 'error');
+            }
+        }
+
+        // 載入統計資料
+        async function loadStatistics() {
+            try {
+                // 更新統計數字
+                document.getElementById('totalUsers').textContent = allUsers.length;
+                document.getElementById('totalProjects').textContent = allProjects.length;
+                document.getElementById('activeUsers').textContent = allUsers.filter(u => u.user_status === 'active').length;
+                document.getElementById('pendingUsers').textContent = allUsers.filter(u => u.user_status === 'pending').length;
+                
+            } catch (error) {
+                console.error('載入統計資料錯誤:', error);
+            }
+        }
+
+        // 渲染用戶表格
+        function renderUsersTable(users) {
+            const container = document.getElementById('usersTable');
+            
+            if (users.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-4xl mb-4">📭</div>
+                        <p class="text-gray-500">沒有找到用戶</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const tableHtml = `
+                <table class="min-w-full">
+                    <thead>
+                        <tr class="border-b">
+                            <th class="text-left py-3 px-4 font-medium text-gray-700">用戶資訊</th>
+                            <th class="text-left py-3 px-4 font-medium text-gray-700">角色</th>
+                            <th class="text-left py-3 px-4 font-medium text-gray-700">狀態</th>
+                            <th class="text-left py-3 px-4 font-medium text-gray-700">專案角色</th>
+                            <th class="text-left py-3 px-4 font-medium text-gray-700">最後登入</th>
+                            <th class="text-left py-3 px-4 font-medium text-gray-700">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr class="border-b hover:bg-gray-50">
+                                <td class="py-3 px-4">
+                                    <div>
+                                        <div class="font-medium text-gray-900">${user.name || '未設定'}</div>
+                                        <div class="text-sm text-gray-600">${user.phone}</div>
+                                        ${user.email ? `<div class="text-sm text-gray-600">${user.email}</div>` : ''}
+                                    </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="role-badge role-${user.role}">${getRoleDisplayName(user.role)}</span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(user.user_status)}">
+                                        ${getStatusDisplayName(user.user_status)}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <button onclick="showUserProjectRoles('${user.user_id}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                                        查看詳情
+                                    </button>
+                                </td>
+                                <td class="py-3 px-4 text-sm text-gray-600">
+                                    ${formatDateTime(user.last_login)}
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex space-x-2">
+                                        <button onclick="editUser('${user.user_id}')" class="text-blue-600 hover:text-blue-800 text-sm">
+                                            編輯
+                                        </button>
+                                        ${user.role !== 'super_admin' ? `
+                                            <button onclick="toggleUserStatus('${user.user_id}')" class="text-red-600 hover:text-red-800 text-sm">
+                                                ${user.user_status === 'active' ? '停用' : '啟用'}
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            container.innerHTML = tableHtml;
+        }
+
+        // 顯示分頁
+        function showTab(tabName) {
+            // 隱藏所有內容
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // 移除所有活動標籤樣式
+            document.querySelectorAll('[id$="Tab"]').forEach(tab => {
+                tab.className = 'flex-1 py-4 px-6 text-center font-medium tab-inactive transition';
+            });
+            
+            // 顯示選中的內容
+            document.getElementById(tabName + 'Content').classList.remove('hidden');
+            document.getElementById(tabName + 'Tab').className = 'flex-1 py-4 px-6 text-center font-medium tab-active transition';
+            
+            // 載入對應的資料
+            if (tabName === 'roles') {
+                loadRoleAnalysis();
+            } else if (tabName === 'projects') {
+                loadProjectStats();
+            }
+        }
+
+        // 載入角色分析
+        function loadRoleAnalysis() {
+            const container = document.getElementById('roleAnalysis');
+            
+            const roleStats = {};
+            allUsers.forEach(user => {
+                roleStats[user.role] = (roleStats[user.role] || 0) + 1;
+            });
+
+            const html = Object.entries(roleStats).map(([role, count]) => `
+                <div class="flex justify-between items-center p-4 border rounded-lg">
+                    <div class="flex items-center">
+                        <span class="role-badge role-${role} mr-3">${getRoleDisplayName(role)}</span>
+                    </div>
+                    <div class="text-xl font-bold text-gray-800">${count} 人</div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+        }
+
+        // 載入專案統計
+        function loadProjectStats() {
+            const container = document.getElementById('projectStats');
+            
+            const html = allProjects.map(project => `
+                <div class="border rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <h3 class="font-medium text-gray-900">${project.name}</h3>
+                        <span class="text-sm text-gray-600">${project.project_status}</span>
+                    </div>
+                    <div class="text-sm text-gray-600">
+                        用戶數: ${project.user_count || 0} 人
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html || '<p class="text-gray-500">暫無專案資料</p>';
+        }
+
+        // 綁定事件
+        function bindEvents() {
+            // 搜尋和篩選
+            document.getElementById('searchUsers').addEventListener('input', filterUsers);
+            document.getElementById('filterRole').addEventListener('change', filterUsers);
+            document.getElementById('filterStatus').addEventListener('change', filterUsers);
+
+            // 登出按鈕
+            document.getElementById('logoutBtn').addEventListener('click', function() {
+                if (confirm('確定要登出嗎？')) {
+                    window.UnifiedAuth.logout();
+                    window.location.href = 'index.html';
+                }
+            });
+        }
+
+        // 篩選用戶
+        function filterUsers() {
+            const searchTerm = document.getElementById('searchUsers').value.toLowerCase();
+            const roleFilter = document.getElementById('filterRole').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            const filteredUsers = allUsers.filter(user => {
+                const matchSearch = !searchTerm || 
+                    user.name?.toLowerCase().includes(searchTerm) ||
+                    user.phone?.toLowerCase().includes(searchTerm) ||
+                    user.email?.toLowerCase().includes(searchTerm);
+                
+                const matchRole = !roleFilter || user.role === roleFilter;
+                const matchStatus = !statusFilter || user.user_status === statusFilter;
+
+                return matchSearch && matchRole && matchStatus;
+            });
+
+            renderUsersTable(filteredUsers);
+        }
+
+        // 顯示用戶專案角色
+        async function showUserProjectRoles(userId) {
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/users/${userId}/projects`, {
+                    headers: window.UnifiedAuth.getRequestHeaders()
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const projects = data.projects || [];
+                    let content = `
+                        <div class="max-w-2xl mx-auto">
+                            <h3 class="text-lg font-bold mb-4">用戶專案角色</h3>
+                            ${projects.length === 0 ? 
+                                '<p class="text-gray-500">此用戶尚未參與任何專案</p>' :
+                                projects.map(project => `
+                                    <div class="border rounded-lg p-3 mb-2">
+                                        <div class="font-medium">${project.project_name}</div>
+                                        <div class="text-sm text-gray-600">
+                                            角色: ${getUserTypeDisplayName(project.user_role)}
+                                            ${project.team_name ? ` | 工班: ${project.team_name}` : ''}
+                                        </div>
+                                    </div>
+                                `).join('')
+                            }
+                        </div>
+                    `;
+                    
+                    // 這裡可以用 modal 顯示，暫時用 alert
+                    alert(projects.map(p => `${p.project_name}: ${getUserTypeDisplayName(p.user_role)}`).join('\n') || '尚未參與任何專案');
+                } else {
+                    showMessage('載入用戶專案角色失敗：' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('載入用戶專案角色錯誤:', error);
+                showMessage('載入用戶專案角色發生錯誤', 'error');
+            }
+        }
+
+        // 編輯用戶
+        function editUser(userId) {
+            // TODO: 實現用戶編輯功能
+            showMessage('編輯功能開發中', 'info');
+        }
+
+        // 切換用戶狀態
+        async function toggleUserStatus(userId) {
+            const user = allUsers.find(u => u.user_id === userId);
+            if (!user) return;
+
+            const newStatus = user.user_status === 'active' ? 'suspended' : 'active';
+            const action = newStatus === 'active' ? '啟用' : '停用';
+
+            if (!confirm(`確定要${action}用戶 ${user.name || user.phone} 嗎？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/users/${userId}/status`, {
+                    method: 'PUT',
+                    headers: window.UnifiedAuth.getRequestHeaders(),
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    showMessage(`用戶${action}成功`, 'success');
+                    await loadAllUsers(); // 重新載入用戶列表
+                } else {
+                    showMessage(`${action}用戶失敗：` + data.error, 'error');
+                }
+            } catch (error) {
+                console.error(`${action}用戶錯誤:`, error);
+                showMessage(`${action}用戶發生錯誤`, 'error');
+            }
+        }
+
+        // 顯示訊息
+        function showMessage(message, type = 'info') {
+            const container = document.getElementById('messageContainer');
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+
+            const messageEl = document.createElement('div');
+            messageEl.className = `${colors[type]} text-white px-6 py-3 rounded-lg shadow-lg mb-4 max-w-sm`;
+            messageEl.textContent = message;
+
+            container.appendChild(messageEl);
+
+            setTimeout(() => {
+                messageEl.remove();
+            }, 5000);
+        }
+
+        // 輔助函數
+        function getRoleDisplayName(role) {
+            const roleNames = {
+                'super_admin': 'Super Admin',
+                'admin': '管理員',
+                'user': '一般用戶',
+                'owner': '業主',
+                'team_leader': '工班長',
+                'member': '工班成員'
+            };
+            return roleNames[role] || role;
+        }
+
+        function getUserTypeDisplayName(userType) {
+            const typeNames = {
+                'admin': '管理員',
+                'owner': '業主',
+                'worker': '工班'
+            };
+            return typeNames[userType] || userType;
+        }
+
+        function getStatusDisplayName(status) {
+            const statusNames = {
+                'active': '已啟用',
+                'pending': '待啟用',
+                'suspended': '已暫停'
+            };
+            return statusNames[status] || status;
+        }
+
+        function getStatusColor(status) {
+            const colors = {
+                'active': 'bg-green-100 text-green-800',
+                'pending': 'bg-yellow-100 text-yellow-800',
+                'suspended': 'bg-red-100 text-red-800'
+            };
+            return colors[status] || 'bg-gray-100 text-gray-800';
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '無';
+            return new Date(dateStr).toLocaleString('zh-TW');
+        }
+    </script>
+</body>
+</html>

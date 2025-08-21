@@ -1,0 +1,130 @@
+name: Deploy Full Stack
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+        - development
+        - production
+      confirm_production:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: false
+        default: ''
+
+jobs:
+  deploy-api:
+    runs-on: ubuntu-latest
+    name: Deploy API
+    
+    steps:
+      - name: Validate Production Deployment
+        if: github.event.inputs.environment == 'production'
+        run: |
+          if [ "${{ github.event.inputs.confirm_production }}" != "DEPLOY" ]; then
+            echo "❌ Production deployment not confirmed. Please type 'DEPLOY' to proceed."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: 'workers/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./workers
+        run: npm ci
+
+      - name: Deploy API Development
+        if: github.event.inputs.environment == 'development'
+        working-directory: ./workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy --config wrangler.dev.toml
+
+      - name: Deploy API Production
+        if: github.event.inputs.environment == 'production'
+        working-directory: ./workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy --config wrangler.prod.toml
+
+      - name: Health Check
+        run: |
+          sleep 5
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            API_URL="https://construction-management-api-prod.lai-jameslai.workers.dev"
+          else
+            API_URL="https://construction-management-api-dev.lai-jameslai.workers.dev"
+          fi
+          curl -f $API_URL/health
+          echo "✅ API deployment successful!"
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend
+    needs: deploy-api
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update Frontend Config
+        working-directory: ./frontend
+        run: |
+          cp config.unified.js config.js
+          echo "Updated frontend config for ${{ github.event.inputs.environment }} environment"
+
+      - name: Deploy Frontend Development
+        if: github.event.inputs.environment == 'development'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler pages deploy frontend \
+            --project-name construction-management-frontend-dev \
+            --commit-dirty=true
+
+      - name: Deploy Frontend Production
+        if: github.event.inputs.environment == 'production'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler pages deploy frontend \
+            --project-name construction-management-frontend-prod \
+            --commit-dirty=true
+
+      - name: Test Frontend
+        run: |
+          sleep 10
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            FRONTEND_URL="https://construction-management-frontend-prod.pages.dev"
+          else
+            FRONTEND_URL="https://construction-management-frontend-dev.pages.dev"
+          fi
+          curl -f $FRONTEND_URL
+          echo "✅ Frontend deployment successful!"
+
+      - name: Summary
+        run: |
+          echo "🚀 Full stack deployment to ${{ github.event.inputs.environment }} completed!"
+          if [ "${{ github.event.inputs.environment }}" == "production" ]; then
+            echo "📍 API: https://construction-management-api-prod.lai-jameslai.workers.dev"
+            echo "📍 Frontend: https://construction-management-frontend-prod.pages.dev"
+          else
+            echo "📍 API: https://construction-management-api-dev.lai-jameslai.workers.dev"
+            echo "📍 Frontend: https://construction-management-frontend-dev.pages.dev"
+          fi

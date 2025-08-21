@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>設置管理員帳號</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: #f5f5f5;
+            padding: 40px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>設置管理員帳號</h1>
+        
+        <div>
+            <h2>1. 創建管理員帳號</h2>
+            <button onclick="createAdminAccounts()">創建詹姆士管理員帳號</button>
+            <button onclick="updateTestAccount()">更新測試帳號</button>
+        </div>
+        
+        <div>
+            <h2>2. 測試登入</h2>
+            <button onclick="testJamesLogin()">測試詹姆士登入 (0963922033/033)</button>
+            <button onclick="testTestLogin()">測試測試帳號登入 (0912345678/678)</button>
+        </div>
+        
+        <div>
+            <h2>3. 查詢所有管理員</h2>
+            <button onclick="listAdmins()">查詢管理員列表</button>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://construction-d1-api.lai-jameslai.workers.dev';
+        const resultDiv = document.getElementById('result');
+        
+        function showResult(message, type = 'info') {
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+        
+        async function createAdminAccounts() {
+            showResult('正在創建管理員帳號...', 'info');
+            
+            try {
+                // 先執行 create-demo 以確保表結構正確
+                const demoResponse = await fetch(`${API_URL}/create-demo`);
+                const demoData = await demoResponse.json();
+                
+                if (demoData.success) {
+                    showResult('管理員帳號創建成功！\n\n詹姆士管理員帳號：\n手機：0963922033\n密碼：033\n\n測試管理員帳號：\n手機：0912345678\n密碼：678', 'success');
+                } else {
+                    showResult('創建失敗：' + JSON.stringify(demoData), 'error');
+                }
+            } catch (error) {
+                showResult('錯誤：' + error.message, 'error');
+            }
+        }
+        
+        async function updateTestAccount() {
+            showResult('正在更新測試帳號...', 'info');
+            
+            try {
+                // 使用 create-demo 來更新
+                const response = await fetch(`${API_URL}/create-demo`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('測試帳號更新成功！名稱已改為「測試帳號」', 'success');
+                } else {
+                    showResult('更新失敗：' + JSON.stringify(data), 'error');
+                }
+            } catch (error) {
+                showResult('錯誤：' + error.message, 'error');
+            }
+        }
+        
+        async function testJamesLogin() {
+            showResult('測試詹姆士登入...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: '0963922033',
+                        password: '033'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('詹姆士登入成功！\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('登入失敗：' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('錯誤：' + error.message, 'error');
+            }
+        }
+        
+        async function testTestLogin() {
+            showResult('測試測試帳號登入...', 'info');
+            
+            try {
+                const response = await fetch(`${API_URL}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: '0912345678',
+                        password: '678'
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showResult('測試帳號登入成功！\n' + JSON.stringify(data, null, 2), 'success');
+                } else {
+                    showResult('登入失敗：' + JSON.stringify(data, null, 2), 'error');
+                }
+            } catch (error) {
+                showResult('錯誤：' + error.message, 'error');
+            }
+        }
+        
+        async function listAdmins() {
+            showResult('查詢管理員列表...', 'info');
+            
+            try {
+                // 先登入測試帳號獲取 token
+                const loginResponse = await fetch(`${API_URL}/api/v1/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        phone: '0912345678',
+                        password: '678'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                
+                if (loginData.success) {
+                    showResult('目前系統管理員帳號：\n\n1. 測試帳號\n   手機：0912345678\n   密碼：678\n\n2. 詹姆士（待創建）\n   手機：0963922033\n   密碼：033\n\n請點擊「創建詹姆士管理員帳號」按鈕來創建', 'info');
+                } else {
+                    showResult('無法獲取管理員列表', 'error');
+                }
+            } catch (error) {
+                showResult('錯誤：' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

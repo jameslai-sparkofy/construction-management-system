@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>元心建材工程管理系統 v1.2.1</title>
+    <script src="js/version-manager.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            text-align: center;
+            background: white;
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 3rem;
+        }
+
+        h1 {
+            color: #1a202c;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .subtitle {
+            color: #718096;
+            margin-bottom: 3rem;
+            font-size: 1.1rem;
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f7fafc;
+            color: #4a5568;
+            border: 2px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .features {
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .feature-item {
+            text-align: left;
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+        }
+
+        .feature-desc {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .version {
+            margin-top: 2rem;
+            font-size: 0.85rem;
+            color: #a0aec0;
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <div class="logo">🏗️</div>
+        <h1 id="main-title">元心建材工程管理系統 <span style="font-size: 0.6em; color: #764ba2;">v1.2.1</span></h1>
+        <p class="subtitle">專業的建築施工管理平台</p>
+        
+        <div class="btn-container">
+            <a href="login-simple.html" class="btn btn-primary" id="loginBtn">登入系統</a>
+            <a href="login-simple.html" class="btn btn-secondary">傳統登入</a>
+            <button class="btn btn-secondary" onclick="showDemo()">系統演示</button>
+        </div>
+
+        <div class="features">
+            <h3 style="color: #2d3748; margin-bottom: 1rem;">系統特色</h3>
+            <div class="feature-grid">
+                <div class="feature-item">
+                    <div class="feature-icon">📊</div>
+                    <div class="feature-title">進度管理</div>
+                    <div class="feature-desc">視覺化施工進度追蹤</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">👥</div>
+                    <div class="feature-title">團隊協作</div>
+                    <div class="feature-desc">多角色權限管理</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📷</div>
+                    <div class="feature-title">照片記錄</div>
+                    <div class="feature-desc">施工照片雲端儲存</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">📱</div>
+                    <div class="feature-title">行動優先</div>
+                    <div class="feature-desc">支援手機平板操作</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="version" id="version-info">Version 1.2.1 | Powered by Cloudflare Workers</div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // 初始化環境標示
+        function initEnvironmentDisplay() {
+            const hostname = window.location.hostname;
+            const mainTitle = document.getElementById('main-title');
+            const versionInfo = document.getElementById('version-info');
+
+            if (hostname.includes('construction-management-frontend-dev') || 
+                hostname.includes('dev.') || 
+                hostname.includes('develop.') ||
+                hostname.includes('localhost') ||
+                hostname.includes('127.0.0.1')) {
+                // 開發環境
+                mainTitle.innerHTML = '元心建材工程管理系統 開發版 <span style="font-size: 0.6em; color: #ff9800;">v1.2.1-dev</span>';
+                versionInfo.innerHTML = 'Version 1.2.1-dev | 開發環境 | Powered by Cloudflare Workers';
+            } else if (hostname.includes('construction-management-frontend-prod') || 
+                       hostname.includes('manage.yes-ceramics.com')) {
+                // 生產環境
+                mainTitle.innerHTML = '元心建材工程管理系統 正式版 <span style="font-size: 0.6em; color: #764ba2;">v1.2.1</span>';
+                versionInfo.innerHTML = 'Version 1.2.1 | 正式環境 | Powered by Cloudflare Workers';
+            } else {
+                // 預設為開發環境
+                mainTitle.innerHTML = '元心建材工程管理系統 開發版 <span style="font-size: 0.6em; color: #ff9800;">v1.2.1-dev</span>';
+                versionInfo.innerHTML = 'Version 1.2.1-dev | 開發環境 | Powered by Cloudflare Workers';
+            }
+        }
+
+        // 檢查是否已登入
+        window.onload = async function() {
+            // 初始化環境顯示
+            initEnvironmentDisplay();
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                // 驗證 token
+                try {
+                    const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/verify`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        // 已登入，直接跳轉到專案列表
+                        document.getElementById('loginBtn').textContent = '進入系統';
+                        document.getElementById('loginBtn').href = 'project-list.html';
+                    }
+                } catch (error) {
+                    console.error('Token validation failed:', error);
+                }
+            }
+
+            // 檢查 API 狀態
+            checkApiStatus();
+        };
+
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/health`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('API Status:', data.data);
+                }
+            } catch (error) {
+                console.error('API is not available:', error);
+                // 可以顯示離線提示
+            }
+        }
+
+        function showDemo() {
+            document.getElementById('loading').classList.add('active');
+            
+            // 使用演示帳號自動登入
+            setTimeout(async () => {
+                try {
+                    const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            phone: '0912345678',
+                            password: '678'
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.token) {
+                        localStorage.setItem('auth_token', data.data.token);
+                        localStorage.setItem('user_info', JSON.stringify(data.data.user));
+                        window.location.href = 'project-list.html';
+                    } else {
+                        alert('演示帳號登入失敗，請手動登入');
+                        window.location.href = 'login-simple.html';
+                    }
+                } catch (error) {
+                    console.error('Demo login failed:', error);
+                    alert('系統連線失敗，請檢查網路');
+                } finally {
+                    document.getElementById('loading').classList.remove('active');
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>

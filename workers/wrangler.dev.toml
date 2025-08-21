@@ -1,0 +1,69 @@
+# Construction Management API - Development Environment
+name = "construction-management-api-dev"
+main = "src/index.js"
+compatibility_date = "2024-11-06"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+API_BASE_URL = "https://construction-management-api-dev.lai-jameslai.workers.dev"
+CRUD_API_URL = "https://sync.yes-ceramics.com/api"
+REST_API_TOKEN = "fx-crm-api-secret-2025"
+JWT_SECRET = "your-jwt-secret-key-change-in-production"
+FRONTEND_BASE_URL = "https://construction-management-frontend-dev.pages.dev"
+
+# Supabase Authentication
+SUPABASE_URL = "https://pbecqosbkuyypsgwxnmq.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ"
+
+# Emergency Login (開發環境啟用)
+ENABLE_EMERGENCY_LOGIN = "true"
+EMERGENCY_ADMIN_PHONE = "0900000000"
+EMERGENCY_ADMIN_CODE = "secure-emergency-code-2025"
+
+# Development Token
+DEV_TOKEN = "dev-token-for-testing"
+
+# KV Namespaces for session management
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "3d3356dca3684619bea5750829dbcaa5"
+preview_id = "sessions_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "55484742a0dd4410b548aaa506c8c0bc"
+preview_id = "users_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "FILES_KV"
+id = "1e62bab6fb30404e9b753dd0b1f1ee6a"
+preview_id = "files_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "SESSION_STORE"
+id = "8c8b7ae9df6b43f18a457a0cea0affc2"
+
+[[kv_namespaces]]
+binding = "SYNC_STATE"
+id = "4f55c6c04ae74847a9339c0bf2584c4a"
+
+# R2 Bucket for construction photos
+[[r2_buckets]]
+binding = "CONSTRUCTION_PHOTOS"
+bucket_name = "construction-photos"
+preview_bucket_name = "construction-photos-preview"
+
+# D1 Databases
+# CRM 資料庫 (綠色區塊 - 從紛享銷客同步的資料)
+[[d1_databases]]
+binding = "DB_CRM"
+database_name = "fx-crm-database"
+database_id = "332221d8-61cb-4084-88dc-394e208ae8b4"
+
+# 工程管理資料庫 (白色區塊 - 專案自己的資料)
+[[d1_databases]]
+binding = "DB_ENGINEERING"
+database_name = "engineering-management"
+database_id = "21fce5cd-8364-4dc2-be7f-6d68cbd6fca9"
