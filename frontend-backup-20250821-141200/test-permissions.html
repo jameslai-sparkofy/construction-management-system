@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>權限系統測試 - 元心建材工程管理系統</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft JhengHei', sans-serif;
+            padding: 2rem;
+            background: #f9fafb;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 1rem;
+            color: #111827;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn:hover {
+            background: #059669;
+        }
+        .btn-secondary {
+            background: #6b7280;
+        }
+        .btn-danger {
+            background: #ef4444;
+        }
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f3f4f6;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .status-card {
+            padding: 1rem;
+            background: #f9fafb;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .status-card h4 {
+            margin: 0 0 0.5rem 0;
+            color: #374151;
+        }
+        .status-value {
+            font-weight: bold;
+            color: #111827;
+        }
+        input, select {
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+        }
+    </style>
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // Supabase configuration
+        const supabaseUrl = 'https://pbecqosbkuyypsgwxnmq.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZWNxb3Nia3V5eXBzZ3d4bm1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ2NDgyOTcsImV4cCI6MjA3MDIyNDI5N30.RxgJZpII8Fm1ym6UtMEdmw87DExR1MxtJXISag9vszQ';
+        
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+        window.supabase = supabase;
+    </script>
+    <script src="js/unified-permissions.js"></script>
+</head>
+<body>
+    <h1>🔧 權限系統測試頁面</h1>
+    <p style="color: #6b7280;">這個頁面用於測試認證和權限系統的整合</p>
+
+    <!-- 系統狀態 -->
+    <div class="test-section">
+        <h2>1. 系統狀態檢查</h2>
+        <button class="btn" onclick="checkSystemStatus()">檢查系統狀態</button>
+        <div id="systemStatus" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- 認證測試 -->
+    <div class="test-section">
+        <h2>2. 認證測試</h2>
+        <div>
+            <h3>登入測試</h3>
+            <input type="text" id="loginPhone" placeholder="電話號碼" value="0912345678">
+            <input type="password" id="loginPassword" placeholder="密碼（末3碼）" value="678">
+            <button class="btn" onclick="testLogin()">測試登入</button>
+            <button class="btn btn-secondary" onclick="testLogout()">登出</button>
+        </div>
+        <div>
+            <h3>當前用戶</h3>
+            <button class="btn" onclick="getCurrentUser()">獲取當前用戶</button>
+        </div>
+        <div id="authResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- 權限測試 -->
+    <div class="test-section">
+        <h2>3. 權限測試</h2>
+        <div>
+            <input type="text" id="projectId" placeholder="專案 ID" value="test-project-001">
+            <button class="btn" onclick="testPermissions()">測試權限</button>
+        </div>
+        <div id="permissionResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- 建立測試用戶 -->
+    <div class="test-section">
+        <h2>4. 建立測試用戶</h2>
+        <div style="margin-bottom: 1rem;">
+            <select id="testRole">
+                <option value="owner">業主</option>
+                <option value="foreman">工班負責人</option>
+                <option value="worker">工班成員</option>
+                <option value="admin">管理員</option>
+            </select>
+            <input type="text" id="testName" placeholder="姓名" value="測試用戶">
+            <input type="text" id="testPhone" placeholder="電話" value="0987654321">
+            <button class="btn" onclick="createTestUser()">建立測試用戶</button>
+        </div>
+        <div id="createUserResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- 映射檢查 -->
+    <div class="test-section">
+        <h2>5. 認證映射檢查</h2>
+        <button class="btn" onclick="checkAuthMapping()">檢查映射狀態</button>
+        <div id="mappingResult" class="result" style="display: none;"></div>
+    </div>
+
+    <!-- 完整流程測試 -->
+    <div class="test-section">
+        <h2>6. 完整流程測試</h2>
+        <button class="btn btn-danger" onclick="runFullTest()">執行完整測試</button>
+        <div id="fullTestResult" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // API 配置
+        const WORKER_API_URL = 'https://construction-management-api.lai-jameslai.workers.dev';
+        
+        // 檢查系統狀態
+        async function checkSystemStatus() {
+            const resultDiv = document.getElementById('systemStatus');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            
+            let status = '系統狀態檢查\n' + '='.repeat(50) + '\n\n';
+            
+            // 檢查 Supabase
+            if (window.supabase) {
+                status += '✅ Supabase SDK 已載入\n';
+                
+                try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        status += `✅ Supabase 已登入: ${user.email}\n`;
+                    } else {
+                        status += '⚠️ Supabase 未登入\n';
+                    }
+                } catch (error) {
+                    status += `❌ Supabase 連接失敗: ${error.message}\n`;
+                }
+            } else {
+                status += '❌ Supabase SDK 未載入\n';
+            }
+            
+            // 檢查統一權限系統
+            if (window.permissions) {
+                status += '✅ 統一權限系統已載入\n';
+                
+                await window.permissions.init();
+                if (window.permissions.currentUser) {
+                    status += `✅ 權限系統已初始化\n`;
+                    status += `   用戶來源: ${window.permissions.currentUser.source}\n`;
+                    status += `   用戶 ID: ${window.permissions.currentUser.id}\n`;
+                } else {
+                    status += '⚠️ 權限系統未找到用戶\n';
+                }
+            } else {
+                status += '❌ 統一權限系統未載入\n';
+            }
+            
+            // 檢查 D1 API
+            try {
+                const response = await fetch(`${WORKER_API_URL}/health`);
+                if (response.ok) {
+                    status += '✅ D1 Worker API 正常\n';
+                } else {
+                    status += `⚠️ D1 Worker API 回應: ${response.status}\n`;
+                }
+            } catch (error) {
+                status += `❌ D1 Worker API 無法連接\n`;
+            }
+            
+            resultDiv.textContent = status;
+        }
+        
+        // 測試登入
+        async function testLogin() {
+            const phone = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+            const resultDiv = document.getElementById('authResult');
+            
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            
+            try {
+                const email = `${phone}@construction.local`;
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) throw error;
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `登入成功！\n用戶 ID: ${data.user.id}\nEmail: ${data.user.email}\n電話: ${data.user.user_metadata?.phone}`;
+                
+                // 重新初始化權限系統
+                await window.permissions.init();
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `登入失敗: ${error.message}`;
+            }
+        }
+        
+        // 測試登出
+        async function testLogout() {
+            const resultDiv = document.getElementById('authResult');
+            
+            try {
+                await window.permissions.logout();
+                resultDiv.className = 'result success';
+                resultDiv.textContent = '登出成功';
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `登出失敗: ${error.message}`;
+            }
+        }
+        
+        // 獲取當前用戶
+        async function getCurrentUser() {
+            const resultDiv = document.getElementById('authResult');
+            resultDiv.style.display = 'block';
+            
+            await window.permissions.init();
+            
+            if (window.permissions.currentUser) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = JSON.stringify(window.permissions.currentUser, null, 2);
+            } else {
+                resultDiv.className = 'result warning';
+                resultDiv.textContent = '未找到當前用戶';
+            }
+        }
+        
+        // 測試權限
+        async function testPermissions() {
+            const projectId = document.getElementById('projectId').value;
+            const resultDiv = document.getElementById('permissionResult');
+            resultDiv.style.display = 'block';
+            
+            if (!window.permissions.currentUser) {
+                await window.permissions.init();
+            }
+            
+            if (!window.permissions.currentUser) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '請先登入';
+                return;
+            }
+            
+            let result = `專案 ${projectId} 的權限測試\n` + '='.repeat(50) + '\n\n';
+            
+            // 測試各種權限
+            const permissions = ['view', 'edit', 'manage_members', 'view_other_teams'];
+            
+            for (const perm of permissions) {
+                const hasPermission = await window.permissions.hasPermission(projectId, perm);
+                result += `${hasPermission ? '✅' : '❌'} ${perm}\n`;
+            }
+            
+            // 獲取角色
+            const role = await window.permissions.getUserRole(projectId);
+            result += `\n角色: ${role}\n`;
+            
+            // 是否為管理員
+            const isAdmin = await window.permissions.isAdmin();
+            result += `管理員: ${isAdmin ? '是' : '否'}\n`;
+            
+            resultDiv.className = 'result';
+            resultDiv.textContent = result;
+        }
+        
+        // 建立測試用戶
+        async function createTestUser() {
+            const role = document.getElementById('testRole').value;
+            const name = document.getElementById('testName').value;
+            const phone = document.getElementById('testPhone').value;
+            const resultDiv = document.getElementById('createUserResult');
+            
+            resultDiv.style.display = 'block';
+            
+            try {
+                await window.permissions.createAuthAccount({
+                    phone: phone,
+                    name: name,
+                    role: role,
+                    projectId: 'test-project-001',
+                    d1_user_id: `test_${phone}`
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `用戶建立成功！\n姓名: ${name}\n電話: ${phone}\n角色: ${role}\n密碼: ${phone.slice(-3)}`;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `建立失敗: ${error.message}`;
+            }
+        }
+        
+        // 檢查認證映射
+        async function checkAuthMapping() {
+            const resultDiv = document.getElementById('mappingResult');
+            resultDiv.style.display = 'block';
+            
+            if (!window.supabase) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Supabase 未初始化';
+                return;
+            }
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                if (!user) {
+                    resultDiv.className = 'result warning';
+                    resultDiv.textContent = '未登入';
+                    return;
+                }
+                
+                // 查詢映射
+                const { data: mapping } = await supabase
+                    .from('auth_mapping')
+                    .select('*')
+                    .eq('auth_user_id', user.id)
+                    .single();
+                
+                if (mapping) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `映射狀態\n` + '='.repeat(50) + '\n\n` +
+                        `Supabase ID: ${user.id}\n` +
+                        `D1 用戶 ID: ${mapping.d1_user_id}\n` +
+                        `D1 電話: ${mapping.d1_user_phone}\n` +
+                        `最後同步: ${mapping.last_synced_at}`;
+                } else {
+                    resultDiv.className = 'result warning';
+                    resultDiv.textContent = '未找到映射記錄';
+                }
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `查詢失敗: ${error.message}`;
+            }
+        }
+        
+        // 執行完整測試
+        async function runFullTest() {
+            const resultDiv = document.getElementById('fullTestResult');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            
+            let result = '完整流程測試\n' + '='.repeat(50) + '\n\n';
+            
+            try {
+                // 步驟 1: 系統狀態
+                result += '步驟 1: 檢查系統狀態\n';
+                await checkSystemStatus();
+                result += '✅ 完成\n\n';
+                
+                // 步驟 2: 建立測試用戶
+                result += '步驟 2: 建立測試業主\n';
+                const testPhone = '09' + Math.floor(Math.random() * 100000000).toString().padStart(8, '0');
+                await window.permissions.createAuthAccount({
+                    phone: testPhone,
+                    name: '測試業主',
+                    role: 'owner',
+                    projectId: 'test-project-001',
+                    d1_user_id: `owner_${testPhone}`
+                });
+                result += `✅ 建立成功 (${testPhone})\n\n`;
+                
+                // 步驟 3: 登入測試
+                result += '步驟 3: 測試登入\n';
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: `${testPhone}@construction.local`,
+                    password: testPhone.slice(-3)
+                });
+                
+                if (error) throw error;
+                result += '✅ 登入成功\n\n';
+                
+                // 步驟 4: 權限驗證
+                result += '步驟 4: 驗證業主權限\n';
+                await window.permissions.init();
+                
+                const canView = await window.permissions.hasPermission('test-project-001', 'view');
+                const canEdit = await window.permissions.hasPermission('test-project-001', 'edit');
+                const canViewOthers = await window.permissions.hasPermission('test-project-001', 'view_other_teams');
+                
+                result += `查看權限: ${canView ? '✅' : '❌'}\n`;
+                result += `編輯權限: ${canEdit ? '❌ (正確)' : '✅'}\n`;
+                result += `查看其他工班: ${canViewOthers ? '✅' : '❌'}\n\n`;
+                
+                // 步驟 5: 登出
+                result += '步驟 5: 登出\n';
+                await window.permissions.logout();
+                result += '✅ 登出成功\n\n';
+                
+                result += '🎉 所有測試通過！';
+                resultDiv.className = 'result success';
+                
+            } catch (error) {
+                result += `\n❌ 測試失敗: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+            
+            resultDiv.textContent = result;
+        }
+        
+        // 頁面載入時執行初始檢查
+        document.addEventListener('DOMContentLoaded', () => {
+            checkSystemStatus();
+        });
+    </script>
+</body>
+</html>

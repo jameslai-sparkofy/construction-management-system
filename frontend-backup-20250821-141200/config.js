@@ -1,19 +1,19 @@
 /**
- * 完整版前端配置檔 - 基於 cm-prod.pages.dev 的工作版本
- * 所有環境都使用相同的 API 端點（有數據的版本）
+ * 前端統一配置檔
+ * 自動根據域名環境切換 API 端點
  */
 
 // 環境檢測函數
 function detectEnvironment() {
   const hostname = window.location.hostname;
   
-  // 生產環境檢測
+  // 生產環境檢測 - 修正域名匹配
   if (hostname.includes('construction-management-frontend-prod.pages.dev') || 
       hostname === 'cm-prod.pages.dev') {
     return 'production';
   }
   
-  // 開發環境檢測
+  // 開發環境檢測 - 修正域名匹配
   if (hostname.includes('construction-management-frontend-dev.pages.dev') ||
       hostname === 'localhost' || 
       hostname === '127.0.0.1') {
@@ -24,10 +24,15 @@ function detectEnvironment() {
   return 'development';
 }
 
-// 統一使用有數據的 API 端點
+// 根據環境獲取 API URL
 function getApiUrl(environment) {
-  // 所有環境都使用相同的有數據的 API
-  return 'https://construction-management-api.lai-jameslai.workers.dev';
+  switch (environment) {
+    case 'production':
+      return 'https://construction-management-api-prod.lai-jameslai.workers.dev';
+    case 'development':
+    default:
+      return 'https://construction-management-api-dev.lai-jameslai.workers.dev';
+  }
 }
 
 // 統一配置
@@ -37,7 +42,7 @@ const IS_PRODUCTION = ENVIRONMENT === 'production';
 const CONFIG = {
   // API 配置
   API: {
-    // 主要 API Worker URL - 統一使用有數據的版本
+    // 主要 API Worker URL
     WORKER_API_URL: getApiUrl(ENVIRONMENT),
     
     // CRM REST API (共用)
@@ -57,7 +62,7 @@ const CONFIG = {
     ENABLE_MOCK_DATA: false
   },
   
-  VERSION: IS_PRODUCTION ? '1.2.1-prod-complete' : '1.2.1-dev-complete',
+  VERSION: '1.1.0-unified',
   ENVIRONMENT: ENVIRONMENT
 };
 

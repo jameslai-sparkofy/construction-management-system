@@ -178,6 +178,7 @@
         <div class="btn-container">
             <a href="login-simple.html" class="btn btn-primary" id="loginBtn">登入系統</a>
             <a href="login-simple.html" class="btn btn-secondary">傳統登入</a>
+            <button class="btn btn-secondary" onclick="showDemo()">系統演示</button>
         </div>
 
         <div class="features">
@@ -279,6 +280,41 @@
             }
         }
 
+        function showDemo() {
+            document.getElementById('loading').classList.add('active');
+            
+            // 使用演示帳號自動登入
+            setTimeout(async () => {
+                try {
+                    const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/auth/login`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            phone: '0912345678',
+                            password: '678'
+                        })
+                    });
+
+                    const data = await response.json();
+                    
+                    if (data.success && data.data.token) {
+                        localStorage.setItem('auth_token', data.data.token);
+                        localStorage.setItem('user_info', JSON.stringify(data.data.user));
+                        window.location.href = 'project-list.html';
+                    } else {
+                        alert('演示帳號登入失敗，請手動登入');
+                        window.location.href = 'login-simple.html';
+                    }
+                } catch (error) {
+                    console.error('Demo login failed:', error);
+                    alert('系統連線失敗，請檢查網路');
+                } finally {
+                    document.getElementById('loading').classList.remove('active');
+                }
+            }, 500);
+        }
     </script>
 </body>
 </html>

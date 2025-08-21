@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全局專案用戶管理 - 元心建材工程管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .role-admin { background: #3b82f6; }
+        .role-owner { background: #059669; }
+        .role-leader { background: #dc2626; }
+        .role-member { background: #6b7280; }
+        .role-foreman { background: #dc2626; }
+        .role-worker { background: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <div class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">全局專案用戶管理</h1>
+                        <p class="text-sm text-gray-600 mt-1">管理所有專案中的用戶角色分配</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="exportData()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                            📊 匯出資料
+                        </button>
+                        <a href="project-list.html" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                            ← 返回首頁
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                <div class="flex flex-wrap gap-4 items-center">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">搜尋用戶</label>
+                        <input type="text" id="searchInput" placeholder="搜尋姓名或手機號碼..." 
+                               class="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">專案篩選</label>
+                        <select id="projectFilter" class="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">所有專案</option>
+                            <!-- Projects will be loaded here -->
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">角色篩選</label>
+                        <select id="roleFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">所有角色</option>
+                            <option value="admin">管理員</option>
+                            <option value="owner">業主</option>
+                            <option value="leader">工班負責人</option>
+                            <option value="member">工班成員</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">工班篩選</label>
+                        <select id="teamFilter" class="w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">所有工班</option>
+                            <!-- Teams will be loaded here -->
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="applyFilters()" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                            搜尋
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <div class="text-2xl font-bold text-blue-600" id="totalUsers">-</div>
+                    <div class="text-sm text-gray-600">總用戶數</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <div class="text-2xl font-bold text-green-600" id="totalProjects">-</div>
+                    <div class="text-sm text-gray-600">參與專案數</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <div class="text-2xl font-bold text-red-600" id="totalAssignments">-</div>
+                    <div class="text-sm text-gray-600">角色分配數</div>
+                </div>
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <div class="text-2xl font-bold text-purple-600" id="totalTeams">-</div>
+                    <div class="text-sm text-gray-600">工班數量</div>
+                </div>
+            </div>
+
+            <!-- Project Users Table -->
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">專案用戶分配</h2>
+                    <p class="text-sm text-gray-600" id="assignmentCount">載入中...</p>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">用戶資訊</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">專案</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">角色</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">工班</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分配時間</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignmentsTableBody" class="bg-white divide-y divide-gray-200">
+                            <!-- Assignments will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-8">
+                    <div class="text-gray-500">載入專案用戶資料中...</div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" class="text-center py-8" style="display: none;">
+                    <div class="text-gray-500">沒有找到符合條件的專案用戶分配</div>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div id="pagination" class="flex justify-center mt-6" style="display: none;">
+                <div class="flex gap-2">
+                    <button onclick="previousPage()" id="prevBtn" class="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50">
+                        上一頁
+                    </button>
+                    <span id="pageInfo" class="px-3 py-2 text-sm text-gray-700"></span>
+                    <button onclick="nextPage()" id="nextBtn" class="px-3 py-2 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50">
+                        下一頁
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="js/unified-auth.js"></script>
+    <script>
+        let currentAssignments = [];
+        let allProjects = [];
+        let allTeams = [];
+        let currentPage = 1;
+        const pageSize = 50;
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadInitialData();
+            setupEventListeners();
+        });
+
+        async function checkAuth() {
+            const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+            if (!token) {
+                window.location.href = 'login-simple.html';
+                return;
+            }
+
+            // Check if user is admin or super admin
+            try {
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    // API響應可能是雙層嵌套，需要處理不同格式
+                    const user = userData.user || userData;
+                    // 檢查多個可能的角色字段
+                    const userRole = user.global_role || user.role || user.user_type;
+                    if (!['super_admin', 'admin'].includes(userRole)) {
+                        alert('只有管理員可以訪問此頁面');
+                        window.location.href = 'project-list.html';
+                        return;
+                    }
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = 'login-simple.html';
+            }
+        }
+
+        async function loadInitialData() {
+            try {
+                await loadAssignments();
+                populateProjectFilter();
+                populateTeamFilter();
+                updateStatistics();
+            } catch (error) {
+                console.error('Error loading initial data:', error);
+                document.getElementById('loadingState').innerHTML = '<div class="text-red-500">載入失敗，請重試</div>';
+            }
+        }
+
+        // 不再需要單獨加載項目，直接從assignments中獲取
+
+        async function loadAssignments() {
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/admin/project-users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    currentAssignments = await response.json();
+                    renderAssignments(currentAssignments);
+                    updateAssignmentCount(currentAssignments.length);
+                } else {
+                    throw new Error('Failed to load assignments');
+                }
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+                document.getElementById('loadingState').innerHTML = '<div class="text-red-500">載入失敗，請重試</div>';
+            } finally {
+                document.getElementById('loadingState').style.display = 'none';
+            }
+        }
+
+        // 不再需要單獨加載團隊，直接從assignments中獲取
+
+        function populateProjectFilter() {
+            const select = document.getElementById('projectFilter');
+            select.innerHTML = '<option value="">所有專案</option>';
+            
+            // 從當前assignments中獲取唯一的專案
+            const uniqueProjects = new Map();
+            currentAssignments.forEach(assignment => {
+                if (assignment.project_id && assignment.project_name) {
+                    uniqueProjects.set(assignment.project_id, assignment.project_name);
+                }
+            });
+            
+            uniqueProjects.forEach((name, id) => {
+                select.innerHTML += `<option value="${id}">${name}</option>`;
+            });
+        }
+
+        function populateTeamFilter() {
+            const select = document.getElementById('teamFilter');
+            select.innerHTML = '<option value="">所有工班</option>';
+            
+            // 從當前assignments中獲取唯一的工班名稱
+            const uniqueTeams = [...new Set(
+                currentAssignments
+                    .map(assignment => assignment.team_name)
+                    .filter(Boolean)
+            )];
+            
+            uniqueTeams.forEach(teamName => {
+                select.innerHTML += `<option value="${teamName}">${teamName}</option>`;
+            });
+        }
+
+        function renderAssignments(assignments) {
+            const tbody = document.getElementById('assignmentsTableBody');
+            
+            if (assignments.length === 0) {
+                document.getElementById('emptyState').style.display = 'block';
+                tbody.innerHTML = '';
+                return;
+            }
+
+            document.getElementById('emptyState').style.display = 'none';
+            
+            tbody.innerHTML = assignments.map(assignment => {
+                const displayRole = assignment.user_type === 'worker' ? assignment.team_role : assignment.user_type;
+                const userName = assignment.user_name || `用戶_${assignment.user_id.split('_').pop()}`;
+                const userPhone = assignment.user_phone || '未設定';
+                const projectName = assignment.project_name || '未知專案';
+                const joinDate = assignment.joined_at ? new Date(assignment.joined_at).toLocaleDateString('zh-TW') : '未知';
+                
+                return `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div>
+                            <div class="font-medium text-gray-900">${userName}</div>
+                            <div class="text-sm text-gray-500">${userPhone}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-medium text-gray-900">${projectName}</div>
+                        <div class="text-sm text-gray-500">ID: ${assignment.project_id}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full text-white role-${displayRole}">
+                            ${getRoleDisplayName(displayRole)}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-gray-900">${assignment.team_name || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        ${joinDate}
+                    </td>
+                    <td class="px-6 py-4">
+                        <button onclick="removeAssignment('${assignment.project_id}', '${assignment.user_id}', '${userName}', '${projectName}')" 
+                                class="text-sm px-3 py-1 rounded bg-red-100 text-red-700 hover:bg-red-200 transition-colors">
+                            移除
+                        </button>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+
+        function getRoleDisplayName(role) {
+            const roles = {
+                'admin': '管理員',
+                'owner': '業主', 
+                'leader': '工班負責人',
+                'member': '工班成員',
+                'foreman': '工班長',
+                'worker': '工人'
+            };
+            return roles[role] || role;
+        }
+
+        function updateAssignmentCount(count) {
+            document.getElementById('assignmentCount').textContent = `共 ${count} 個角色分配`;
+        }
+
+        function updateStatistics() {
+            // Unique users
+            const uniqueUsers = new Set(currentAssignments.map(a => a.user_id)).size;
+            document.getElementById('totalUsers').textContent = uniqueUsers;
+
+            // Unique projects
+            const uniqueProjects = new Set(currentAssignments.map(a => a.project_id)).size;
+            document.getElementById('totalProjects').textContent = uniqueProjects;
+
+            // Total assignments
+            document.getElementById('totalAssignments').textContent = currentAssignments.length;
+
+            // Unique teams
+            const uniqueTeams = new Set(currentAssignments.map(a => a.team_name).filter(Boolean)).size;
+            document.getElementById('totalTeams').textContent = uniqueTeams;
+        }
+
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('searchInput').addEventListener('input', applyFilters);
+        }
+
+        function applyFilters() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const projectFilter = document.getElementById('projectFilter').value;
+            const roleFilter = document.getElementById('roleFilter').value;
+            const teamFilter = document.getElementById('teamFilter').value;
+
+            const filtered = currentAssignments.filter(assignment => {
+                const userName = assignment.user_name || `用戶_${assignment.user_id.split('_').pop()}`;
+                const userPhone = assignment.user_phone || '';
+                const projectName = assignment.project_name || '';
+                
+                const matchesSearch = !searchTerm || 
+                    userName.toLowerCase().includes(searchTerm) || 
+                    userPhone.includes(searchTerm) ||
+                    projectName.toLowerCase().includes(searchTerm);
+                
+                const matchesProject = !projectFilter || assignment.project_id === projectFilter;
+                
+                // 角色篩選：需要檢查 user_type 或 team_role
+                const displayRole = assignment.user_type === 'worker' ? assignment.team_role : assignment.user_type;
+                const matchesRole = !roleFilter || displayRole === roleFilter;
+                
+                const matchesTeam = !teamFilter || assignment.team_name === teamFilter;
+
+                return matchesSearch && matchesProject && matchesRole && matchesTeam;
+            });
+
+            renderAssignments(filtered);
+            updateAssignmentCount(filtered.length);
+        }
+
+        async function removeAssignment(projectId, userId, userName, projectName) {
+            if (!confirm(`確定要從專案「${projectName}」中移除用戶「${userName}」嗎？`)) return;
+
+            try {
+                const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
+                const response = await fetch(`${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    alert('已移除用戶');
+                    await loadAssignments();
+                    updateStatistics();
+                } else {
+                    const error = await response.json();
+                    alert(`移除失敗: ${error.error || '未知錯誤'}`);
+                }
+            } catch (error) {
+                console.error('Error removing assignment:', error);
+                alert('移除失敗，請重試');
+            }
+        }
+
+        function exportData() {
+            const csvData = [
+                ['用戶姓名', '手機號碼', '專案名稱', '角色', '工班', '分配時間'],
+                ...currentAssignments.map(assignment => [
+                    assignment.user_name || '',
+                    assignment.phone || assignment.user_phone || '',
+                    assignment.project_name || '',
+                    getRoleDisplayName(assignment.role),
+                    assignment.team_name || '',
+                    assignment.created_at ? new Date(assignment.created_at).toLocaleDateString('zh-TW') : ''
+                ])
+            ];
+
+            const csvContent = csvData.map(row => 
+                row.map(field => `"${field}"`).join(',')
+            ).join('\n');
+
+            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `專案用戶分配_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+    </script>
+</body>
+</html>
