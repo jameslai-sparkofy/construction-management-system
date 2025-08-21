@@ -2140,27 +2140,69 @@
             return timestamp + randomBytes;
         }
 
-        // 欄位對應表
+        /**
+         * SPC 案場欄位對應表 - 完整映射記錄
+         * 
+         * 📋 根據 CRM API 文件 '案場及工地師父對象及欄位API.csv' 建立的標準映射
+         * 🔄 最後更新: 2025-08-21
+         * 🎯 用途: 統一前端與 CRM object_8W9cb__c 表的欄位對應
+         */
         const fieldMapping = {
-            building: 'field_WD7k1__c',     // 棟別
-            floor: 'field_Q6Svh__c',         // 樓層
-            unit: 'field_XuJP2__c',          // 戶別
-            team: 'shift_time__c',           // 工班
-            area: 'field_B2gh1__c',          // 鋪設坪數
-            worker: 'field_u1wpv__c',        // 工班師父
-            date: 'field_23pFq__c',          // 施工日期
-            completed: 'construction_completed__c',  // 施工完成
-            beforeNotes: 'field_sF6fn__c',   // 施工前備註
-            floorPlan: 'field_3T38o__c',     // 平面圖
-            beforePhotos: 'field_V3d91__c',  // 施工前照片
-            afterPhotos: 'field_3Fqof__c',   // 完工照片
-            label: 'field_23Z5i__c',         // 標籤
-            stage: 'field_z9H6O__c',         // 階段
-            siteArea: 'field_tXAko__c',      // 工地坪數
-            opportunityId: 'field_1P96q__c',  // 商機關聯
-            workShiftCompletionNote: 'work_shift_completion_note__c',  // 工班施工完備註
-            constructionDifficultyPhotos: 'construction_difficulty_ph__c'  // 工地狀況照片(施工後)
+            // === 基本資訊欄位 ===
+            building: 'field_WD7k1__c',     // 棟別 (单行文本)
+            floor: 'field_Q6Svh__c',         // 樓層 (数字)
+            unit: 'field_XuJP2__c',          // 戶別 (单行文本)
+            team: 'shift_time__c',           // 工班 (引用字段)
+            
+            // === 施工資訊欄位 ===
+            area: 'field_B2gh1__c',          // 鋪設坪數 (数字) - 舖設坪數
+            worker: 'field_u1wpv__c',        // 工班師父 (单行文本)
+            date: 'field_23pFq__c',          // 施工日期 (日期)
+            completed: 'construction_completed__c',  // 施工完成 (布尔值)
+            siteArea: 'field_tXAko__c',      // 工地坪數 (数字)
+            
+            // === 備註欄位 ===
+            beforeNotes: 'field_sF6fn__c',   // 施工前備註 (单行文本) ✅ 已驗證正確
+            workShiftCompletionNote: 'work_shift_completion_note__c',  // 工班施工完備註 (多行文本)
+            
+            // === 圖片欄位 ===
+            floorPlan: 'field_3T38o__c',     // 平面圖 (图片)
+            beforePhotos: 'field_V3d91__c',  // 施工前照片 (图片)
+            afterPhotos: 'field_3Fqof__c',   // 完工照片 (图片)
+            constructionDifficultyPhotos: 'construction_difficulty_ph__c',  // 工地狀況照片(施工後) (图片)
+            
+            // === 狀態欄位 ===
+            label: 'field_23Z5i__c',         // 標籤 (多选) - 準備中;不可施工;可施工;已完工;需維修;維修完成;其他
+            stage: 'field_z9H6O__c',         // 階段 (单选) - 準備中;施工前場勘;施工;驗收;缺失維修;其他
+            
+            // === 關聯欄位 ===
+            opportunityId: 'field_1P96q__c', // 商機關聯 (查找关联)
+            
+            // === 未使用但可擴展的 CRM 欄位 ===
+            // protectionBoardArea: 'field_27g6n__c',      // 保護板坪數 (数字)
+            // inspectionPhotos: 'field_v1x3S__c',         // 驗收照片 (图片)
+            // warrantyDate: 'field_f0mz3__c',             // 保固日期 (日期)
+            // shortageArea: 'field_i2Q1g__c',             // 少請坪數 (计算字段)
+            // beforeDifficultyPhotos: 'field_03U9h__c',   // 工地狀況照片(施工前) (图片)
+            // badCaseScene: 'bad_case_scene__c',          // 做壞案場 (布尔值)
+            // billRequest: 'field_npLvn__c',              // 請款單 (查找关联)
+            // defectVideo: 'field_1zk34__c',              // 缺失影片 (附件)
+            // workOrder: 'field_k7e6q__c',                // 工單 (查找关联)
+            // inspectionNotes: 'field_n37jC__c',          // 驗收備註 (单行文本)
+            // siteNotes: 'field_g18hX__c',                // 工地備註 (多行文本)
+            // beforeDefects: 'field_W2i6j__c',            // 施工前缺失 (图片)
+            // siteType: 'field_dxr31__c'                  // 案場類型 (单选) - 工地;樣品屋;民宅;其他
         };
+        
+        /**
+         * 🚨 欄位映射診斷記錄 (2025-08-21)
+         * 
+         * 測試發現的問題:
+         * 1. ✅ beforeNotes 欄位映射正確 (field_sF6fn__c)
+         * 2. ❌ Worker API 路由問題: /rest/object_8W9cb__c 返回 404
+         * 3. ✅ 認證機制正常，可獲得有效 JWT token
+         * 4. 🔍 需檢查 Worker 中的 PATCH 路由實現
+         */
 
         // Global variables
         let currentProject = null;
