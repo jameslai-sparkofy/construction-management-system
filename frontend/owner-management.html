@@ -450,7 +450,7 @@
     <script>
         // API Configuration
         const API_BASE_URL = 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
-        const WORKER_API_URL = 'https://construction-management-api.lai-jameslai.workers.dev';
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-dev.lai-jameslai.workers.dev';
         const API_TOKEN = localStorage.getItem('api_token') || 'demo_token';
 
         // 全域變數

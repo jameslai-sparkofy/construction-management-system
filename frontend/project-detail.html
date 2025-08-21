@@ -2124,7 +2124,7 @@
     <script>
         // API Configuration
         const API_BASE_URL = CONFIG?.API?.CRM_API_URL || CONFIG?.API?.D1_REST_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
-        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev';
+        const WORKER_API_URL = CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-dev.lai-jameslai.workers.dev';
         const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || CONFIG?.API?.REST_API_TOKEN || 'fx-crm-api-secret-2025';
 
         // Generate MongoDB ObjectId
@@ -6105,7 +6105,7 @@
                     if (projectId && confirm(`確定要刪除專案「${projectName}」嗎？此操作無法復原。`)) {
                         try {
                             const response = await fetch(
-                                `${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api.lai-jameslai.workers.dev'}/api/v1/projects/${projectId}`,
+                                `${CONFIG?.API?.WORKER_API_URL || 'https://construction-management-api-dev.lai-jameslai.workers.dev'}/api/v1/projects/${projectId}`,
                                 {
                                     method: 'DELETE',
                                     headers: AuthUtils.getRequestHeaders()

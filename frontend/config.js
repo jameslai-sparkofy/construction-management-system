@@ -7,14 +7,14 @@
 function detectEnvironment() {
   const hostname = window.location.hostname;
   
-  // 生產環境檢測
-  if (hostname.includes('frontend-prod.pages.dev') || 
+  // 生產環境檢測 - 修正域名匹配
+  if (hostname.includes('construction-management-frontend-prod.pages.dev') || 
       hostname === 'cm-prod.pages.dev') {
     return 'production';
   }
   
-  // 開發環境檢測  
-  if (hostname.includes('frontend-dev.pages.dev') ||
+  // 開發環境檢測 - 修正域名匹配
+  if (hostname.includes('construction-management-frontend-dev.pages.dev') ||
       hostname === 'localhost' || 
       hostname === '127.0.0.1') {
     return 'development';
@@ -67,8 +67,6 @@ const CONFIG = {
 };
 
 // 環境信息顯示
-if (!IS_PRODUCTION) {
-  console.log(`%c🔧 Environment: ${ENVIRONMENT}`, 'color: orange; font-weight: bold;');
-  console.log(`%c🌐 API: ${CONFIG.API.WORKER_API_URL}`, 'color: blue;');
-  console.log(`%c📦 Version: ${CONFIG.VERSION}`, 'color: green;');
-}
+console.log(`%c🔧 Environment: ${ENVIRONMENT}`, IS_PRODUCTION ? 'color: green; font-weight: bold;' : 'color: orange; font-weight: bold;');
+console.log(`%c🌐 API: ${CONFIG.API.WORKER_API_URL}`, 'color: blue;');
+console.log(`%c📦 Version: ${CONFIG.VERSION}`, 'color: green;');
