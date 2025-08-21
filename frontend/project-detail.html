@@ -5627,7 +5627,7 @@
                 
                 for (let file of files) {
                     // Upload to R2
-                    const photoUrl = await uploadToR2(file);
+                    const photoUrl = await uploadToR2(file, type);
                     if (photoUrl) {
                         // Add to UI
                         let containerId;
@@ -5652,13 +5652,33 @@
             input.click();
         }
 
+        // Get project ID from URL
+        function getProjectIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id');
+        }
+
         // Upload to R2
-        async function uploadToR2(file) {
+        async function uploadToR2(file, type) {
             try {
+                // 獲取必要的參數
+                const projectId = getProjectIdFromUrl();
+                const siteId = currentSiteId;
+                
+                if (!projectId || !siteId || !type) {
+                    throw new Error(`Missing parameters: projectId=${projectId}, siteId=${siteId}, type=${type}`);
+                }
+                
                 const formData = new FormData();
                 formData.append('file', file);
                 
-                const response = await fetch(`${WORKER_API_URL}/api/v1/files/upload`, {
+                // 構建帶參數的 URL
+                const uploadUrl = new URL(`${WORKER_API_URL}/api/v1/files/upload`);
+                uploadUrl.searchParams.set('projectId', projectId);
+                uploadUrl.searchParams.set('siteId', siteId);
+                uploadUrl.searchParams.set('type', type);
+                
+                const response = await fetch(uploadUrl.toString(), {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${JWT_TOKEN}`
@@ -5667,14 +5687,15 @@
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Upload failed');
+                    const errorData = await response.text();
+                    throw new Error(`Upload failed: ${response.status} - ${errorData}`);
                 }
                 
                 const result = await response.json();
                 return result.url;
             } catch (error) {
                 console.error('Upload error:', error);
-                alert('上傳失敗');
+                alert(`上傳失敗: ${error.message}`);
                 return null;
             }
         }
