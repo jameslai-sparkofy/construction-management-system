@@ -32,13 +32,13 @@ if (typeof API_CONFIG === 'undefined') {
   function getApiUrl(environment) {
     const env = environment || detectEnvironment();
     
-    // 修復：開發環境應該使用正式 Worker，因為我們只有一個 Worker
+    // 修復：使用正確的 Worker API URL
     // 環境變數優先 (從 .env.dev 或 .env.prod 讀取)
     if (env === 'production') {
-      return window.ENV?.API_BASE_URL_PROD || 'https://construction-management-unified.lai-jameslai.workers.dev';
+      return window.ENV?.API_BASE_URL_PROD || 'https://construction-management-api-prod.lai-jameslai.workers.dev';
     }
-    // 開發環境也使用同一個 Worker (因為只有一個部署)
-    return window.ENV?.API_BASE_URL_DEV || 'https://construction-management-unified.lai-jameslai.workers.dev';
+    // 開發環境使用開發 Worker
+    return window.ENV?.API_BASE_URL_DEV || 'https://construction-management-api-dev.lai-jameslai.workers.dev';
   }
 } else {
   // 使用外部配置
@@ -86,8 +86,14 @@ const CONFIG = {
   }
 };
 
+// 確保 CONFIG 被正確設置到全域
+window.CONFIG = CONFIG;
+
 // 環境信息顯示
 console.log(`%c🔧 Environment: ${ENVIRONMENT} (Unified API)`, IS_PRODUCTION ? 'color: green; font-weight: bold;' : 'color: orange; font-weight: bold;');
 console.log(`%c🌐 API: ${CONFIG.API.WORKER_API_URL}`, 'color: blue;');
 console.log(`%c📦 Version: ${CONFIG.VERSION}`, 'color: green;');
 console.log(`%c🚀 Migration: ${CONFIG.MIGRATION.FROM} → ${CONFIG.MIGRATION.TO} (${CONFIG.MIGRATION.DATE})`, 'color: purple; font-weight: bold;');
+
+// 調試信息：確認 CONFIG 載入成功
+console.log('%c✅ CONFIG loaded successfully', 'color: green; font-weight: bold;', CONFIG);
