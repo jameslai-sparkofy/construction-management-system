@@ -2129,7 +2129,10 @@
             console.error('CONFIG.API.WORKER_API_URL not found! Check config.js loading.'),
             'ERROR_NO_API_CONFIG'
         );
-        const API_TOKEN = localStorage.getItem('token') || 'missing-auth-token';
+        // 區分兩種不同的 token
+        const JWT_TOKEN = localStorage.getItem('token') || 'missing-auth-token';  // 用於 Worker API
+        const CRM_TOKEN = CONFIG?.API?.CRM_API_TOKEN || CONFIG?.API?.REST_API_TOKEN || 'fx-crm-api-secret-2025';  // 用於 CRM API
+        const API_TOKEN = CRM_TOKEN;  // 保持向後相容，大部分呼叫使用 CRM token
 
         // Generate MongoDB ObjectId
         function generateObjectId() {
@@ -5658,7 +5661,7 @@
                 const response = await fetch(`${WORKER_API_URL}/api/v1/files/upload`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${API_TOKEN}`
+                        'Authorization': `Bearer ${JWT_TOKEN}`
                     },
                     body: formData
                 });
@@ -5768,7 +5771,7 @@
                     {
                         method: 'PATCH',
                         headers: {
-                            'Authorization': `Bearer ${API_TOKEN}`,
+                            'Authorization': `Bearer ${JWT_TOKEN}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify(updateData)
