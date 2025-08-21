@@ -201,27 +201,56 @@ export class FxCrmSyncService {
 
       console.log('[FxCrmSync] Updating site in CRM:', siteId, crmUpdateData);
 
-      // 調用 CRM API 更新
-      const response = await fetch(`${this.apiUrl}/api/crud/object_8W9cb__c/${siteId}`, {
-        method: 'PUT',
+      // 確保有有效的 access token
+      if (!this.corpAccessToken) {
+        await this.getAccessToken();
+      }
+
+      // 確保有有效的 currentOpenUserId
+      if (!this.defaultOwnerId || this.defaultOwnerId === 'thread' || this.defaultOwnerId === 'FSUID_1320691') {
+        await this.getUserByMobile();
+      }
+
+      // 準備紛享銷客自定義對象更新 API 請求
+      const requestData = {
+        corpAccessToken: this.corpAccessToken,
+        corpId: this.corpId,
+        currentOpenUserId: this.defaultOwnerId,
+        data: {
+          object_data: {
+            dataObjectApiName: "object_8W9cb__c", // 案場對象
+            _id: siteId,
+            ...crmUpdateData
+          },
+          details: {},
+          needConvertLookup: false
+        }
+      };
+
+      console.log('[FxCrmSync] Updating site with FX API format:', requestData);
+
+      // 調用紛享銷客自定義對象更新 API
+      const response = await fetch('https://open.fxiaoke.com/cgi/crm/custom/v2/data/update', {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiToken}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify(crmUpdateData)
+        body: JSON.stringify(requestData)
       });
 
       const result = await response.json();
+      console.log('[FxCrmSync] Update site response:', result);
 
-      if (!result.success) {
-        throw new Error(`CRM API Error: ${result.error || result.message}`);
+      // 檢查是否有錯誤
+      if (result.errorCode !== undefined && result.errorCode !== 0) {
+        throw new Error(`FX CRM API Error: ${result.errorMessage || 'Unknown error'} (${result.errorCode})`);
       }
 
-      console.log('[FxCrmSync] Site updated successfully:', result.data);
+      console.log('[FxCrmSync] Site updated successfully:', result);
 
       return {
         success: true,
-        data: result.data
+        data: result
       };
 
     } catch (error) {
