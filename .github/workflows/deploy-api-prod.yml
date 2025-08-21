@@ -1,0 +1,84 @@
+name: Deploy API to Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'workers/src/**'
+      - 'workers/wrangler.prod.toml'
+      - '.github/workflows/deploy-api-prod.yml'
+  workflow_dispatch:
+    inputs:
+      confirm_production_deploy:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: true
+        default: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy API Production
+    
+    steps:
+      - name: Validate Production Deployment
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.confirm_production_deploy }}" != "DEPLOY" ]; then
+            echo "❌ Production deployment not confirmed. Please type 'DEPLOY' to proceed."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'workers/package-lock.json'
+
+      - name: Install dependencies
+        working-directory: ./workers
+        run: npm ci
+
+      - name: Run Tests (if available)
+        working-directory: ./workers
+        run: |
+          if [ -f "package.json" ] && grep -q '"test"' package.json; then
+            npm test
+          else
+            echo "No tests found, proceeding with deployment"
+          fi
+
+      - name: Deploy to Cloudflare Workers
+        working-directory: ./workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler deploy --config wrangler.prod.toml
+
+      - name: Health Check
+        run: |
+          sleep 10
+          curl -f https://construction-management-api-prod.lai-jameslai.workers.dev/health
+          echo "✅ Production API deployment successful!"
+
+      - name: Test Login Endpoint
+        run: |
+          response=$(curl -s -X POST "https://construction-management-api-prod.lai-jameslai.workers.dev/api/v1/auth/login" \
+            -H "Content-Type: application/json" \
+            -d '{"phone":"0963922033","password":"033"}')
+          if echo "$response" | grep -q '"success":true'; then
+            echo "✅ Login endpoint working correctly"
+          else
+            echo "❌ Login endpoint test failed"
+            echo "$response"
+            exit 1
+          fi
+
+      - name: Notify Deployment
+        if: success()
+        run: |
+          echo "🚀 API Production deployment completed successfully"
+          echo "📍 URL: https://construction-management-api-prod.lai-jameslai.workers.dev"
+          echo "⚠️  Please verify the system is working correctly"

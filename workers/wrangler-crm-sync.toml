@@ -1,0 +1,66 @@
+name = "construction-management-api-crm-sync"
+main = "src/index-crm-sync.js"
+compatibility_date = "2024-11-06"
+compatibility_flags = ["nodejs_compat"]
+
+# Environment variables
+[vars]
+ENVIRONMENT = "development"
+API_BASE_URL = "https://d1.yes-ceramics.com"
+CRUD_API_URL = "https://sync.yes-ceramics.com/api"
+REST_API_TOKEN = "fx-crm-api-secret-2025"
+JWT_SECRET = "your-jwt-secret-key-change-in-production"
+FRONTEND_BASE_URL = "https://manage.yes-ceramics.com"
+
+# 紛享銷客真實 API 配置
+FX_CRM_API_URL = "https://open.fxiaoke.com"
+FX_APP_ID = "FSAID_1320691"
+FX_APP_SECRET = "ec63ff237c5c4a759be36d3a8fb7a3b4"
+FX_PERMANENT_CODE = "899433A4A04A3B8CB1CC2183DA4B5B48"
+FX_TOKEN = "a7e3281a220a4c35ac48f7a1433ca0ea"
+FX_ENCODING_AES_KEY = "YTRjYjkyMmZkYTdiNGRiY2FmN2I3MTIwMzZiNTRkNTg"
+DEFAULT_TENANT_ID = "default-tenant"
+DEFAULT_OWNER_ID = "FSUID_1320691"
+
+# KV Namespaces for session management
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "3d3356dca3684619bea5750829dbcaa5"
+preview_id = "sessions_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "USERS"
+id = "55484742a0dd4410b548aaa506c8c0bc"
+preview_id = "users_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "FILES_KV"
+id = "1e62bab6fb30404e9b753dd0b1f1ee6a"
+preview_id = "files_kv_preview_id"
+
+[[kv_namespaces]]
+binding = "SESSION_STORE"
+id = "8c8b7ae9df6b43f18a457a0cea0affc2"
+
+[[kv_namespaces]]
+binding = "SYNC_STATE"
+id = "4f55c6c04ae74847a9339c0bf2584c4a"
+
+# R2 Bucket for construction photos
+[[r2_buckets]]
+binding = "CONSTRUCTION_PHOTOS"
+bucket_name = "construction-photos"
+preview_bucket_name = "construction-photos-preview"
+
+# D1 Databases
+# CRM 資料庫 (綠色區塊 - 從紛享銷客同步的資料)
+[[d1_databases]]
+binding = "DB_CRM"
+database_name = "fx-crm-database"
+database_id = "332221d8-61cb-4084-88dc-394e208ae8b4"
+
+# 工程管理資料庫 (白色區塊 - 專案自己的資料)
+[[d1_databases]]
+binding = "DB_ENGINEERING"
+database_name = "engineering-management"
+database_id = "21fce5cd-8364-4dc2-be7f-6d68cbd6fca9"

@@ -1,0 +1,65 @@
+name: Deploy Frontend to Development
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend-dev.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend Development
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Update Frontend Config
+        working-directory: ./frontend
+        run: |
+          # Ensure using unified config for development
+          cp config.unified.js config.js
+          echo "Updated frontend config for development environment"
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler pages deploy frontend \
+            --project-name construction-management-frontend-dev \
+            --commit-dirty=true
+
+      - name: Get Deployment URL
+        id: deployment
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          # Get the latest deployment URL
+          DEPLOYMENT_URL=$(npx wrangler pages deployment list \
+            --project-name construction-management-frontend-dev \
+            --limit 1 \
+            --format json | jq -r '.[0].url')
+          echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+          echo "📍 Deployment URL: $DEPLOYMENT_URL"
+
+      - name: Test Frontend
+        run: |
+          sleep 10
+          # Test if the frontend loads
+          curl -f https://construction-management-frontend-dev.pages.dev
+          echo "✅ Frontend deployment successful!"
+
+      - name: Notify Deployment
+        if: success()
+        run: |
+          echo "🚀 Frontend Development deployment completed successfully"
+          echo "📍 URL: https://construction-management-frontend-dev.pages.dev"
+          echo "🔗 Latest deployment: ${{ steps.deployment.outputs.deployment_url }}"

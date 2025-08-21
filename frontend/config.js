@@ -1,15 +1,56 @@
-// 開發環境配置
+/**
+ * 前端統一配置檔
+ * 自動根據域名環境切換 API 端點
+ */
+
+// 環境檢測函數
+function detectEnvironment() {
+  const hostname = window.location.hostname;
+  
+  // 生產環境檢測
+  if (hostname.includes('frontend-prod.pages.dev') || 
+      hostname === 'cm-prod.pages.dev') {
+    return 'production';
+  }
+  
+  // 開發環境檢測  
+  if (hostname.includes('frontend-dev.pages.dev') ||
+      hostname === 'localhost' || 
+      hostname === '127.0.0.1') {
+    return 'development';
+  }
+  
+  // 預設開發環境
+  return 'development';
+}
+
+// 根據環境獲取 API URL
+function getApiUrl(environment) {
+  switch (environment) {
+    case 'production':
+      return 'https://construction-management-api-prod.lai-jameslai.workers.dev';
+    case 'development':
+    default:
+      return 'https://construction-management-api-dev.lai-jameslai.workers.dev';
+  }
+}
+
+// 統一配置
+const ENVIRONMENT = detectEnvironment();
+const IS_PRODUCTION = ENVIRONMENT === 'production';
+
 const CONFIG = {
+  // API 配置
   API: {
-    // 開發環境 API - 使用正確的 D1 API
-    WORKER_API_URL: 'https://construction-management-api.lai-jameslai.workers.dev',
+    // 主要 API Worker URL
+    WORKER_API_URL: getApiUrl(ENVIRONMENT),
     
-    // CRM API (共用)
+    // CRM REST API (共用)
     CRM_API_URL: 'https://fx-d1-rest-api.lai-jameslai.workers.dev',
     CRM_API_TOKEN: 'fx-crm-api-secret-2025',
     
     // Authentication
-    EMERGENCY_LOGIN_ENABLED: true,
+    EMERGENCY_LOGIN_ENABLED: !IS_PRODUCTION,
     
     // Supabase Configuration
     SUPABASE_URL: 'https://pbecqosbkuyypsgwxnmq.supabase.co',
@@ -17,14 +58,17 @@ const CONFIG = {
   },
   
   UI: {
-    SHOW_DEBUG_INFO: true,
+    SHOW_DEBUG_INFO: !IS_PRODUCTION,
     ENABLE_MOCK_DATA: false
   },
   
-  VERSION: '1.1.0-develop',
-  ENVIRONMENT: 'development'
+  VERSION: '1.1.0-unified',
+  ENVIRONMENT: ENVIRONMENT
 };
 
-// 在控制台顯示環境信息
-console.log('%c🔧 Development Environment', 'color: orange; font-weight: bold;');
-console.log('API:', CONFIG.API.WORKER_API_URL);
+// 環境信息顯示
+if (!IS_PRODUCTION) {
+  console.log(`%c🔧 Environment: ${ENVIRONMENT}`, 'color: orange; font-weight: bold;');
+  console.log(`%c🌐 API: ${CONFIG.API.WORKER_API_URL}`, 'color: blue;');
+  console.log(`%c📦 Version: ${CONFIG.VERSION}`, 'color: green;');
+}
