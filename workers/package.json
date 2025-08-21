@@ -11,7 +11,7 @@
     "tail": "wrangler tail",
     "logs": "wrangler tail --format pretty",
     "setup": "bash scripts/setup.sh",
-    "test": "vitest",
+    "test:manual": "vitest",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
     "test:api": "node scripts/test-api.js",
