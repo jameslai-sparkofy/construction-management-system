@@ -3058,11 +3058,11 @@ export default {
     if (path.startsWith('/api/v1/files/site/') && method === 'GET') {
       try {
         // 檢查認證
-        const authResult = await authUtils.authenticateRequest(request, env);
-        if (!authResult.success) {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
           return new Response(JSON.stringify({
             success: false,
-            error: authResult.error || 'Authentication required'
+            error: 'Authentication required'
           }), { status: 401, headers });
         }
 
@@ -3099,11 +3099,11 @@ export default {
     if (path.startsWith('/api/v1/files/delete/') && method === 'DELETE') {
       try {
         // 檢查認證
-        const authResult = await authUtils.authenticateRequest(request, env);
-        if (!authResult.success) {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
           return new Response(JSON.stringify({
             success: false,
-            error: authResult.error || 'Authentication required'
+            error: 'Authentication required'
           }), { status: 401, headers });
         }
 
