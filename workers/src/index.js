@@ -816,7 +816,7 @@ export default {
         // 並行獲取所有相關資料
         const [sitesResponse, usersQuery, statsQuery, teamsQuery] = await Promise.all([
           // 獲取案場資料 (增加更多欄位)
-          fetch(`https://sync.yes-ceramics.com/api/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`, {
+          fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`, {
             headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
           }),
           
@@ -848,7 +848,7 @@ export default {
           `).bind(projectId).first(),
 
           // 獲取工班映射資料 (from CRUD API)  
-          fetch('https://sync.yes-ceramics.com/api/rest/SupplierObj?limit=500', {
+          fetch('https://d1.yes-ceramics.com/rest/SupplierObj?limit=500', {
             headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
           })
         ]);
