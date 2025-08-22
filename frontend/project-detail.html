@@ -2908,7 +2908,7 @@
                 const siteCount = team.siteCount || 0;
                 const completedCount = team.completedCount || 0;
                 const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
-                countBadge.textContent = `${completedCount}/${siteCount}|${percentage}%`;
+                countBadge.innerHTML = `${completedCount}/${siteCount}<span style="font-size: 0.8em; font-weight: 300;">(${percentage}%)</span>`;
                 
                 teamButton.appendChild(teamNameSpan);
                 teamButton.appendChild(countBadge);
@@ -5368,7 +5368,7 @@
                 
                 currentSites.forEach(site => {
                     // 使用 fieldMapping 來獲取正確的欄位
-                    const buildingName = site[fieldMapping.building] || site.field_xCGMd__c || '未命名建築';
+                    const buildingName = site[fieldMapping.building] || site.field_xCGMd__c || 'A棟';
                     const isCompleted = site[fieldMapping.completed] || (site.field_iZJ5T__c === '已完工');
                     const teamNames = site[fieldMapping.team] || site.field_cBxzN__c || '';
                     
