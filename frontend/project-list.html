@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>專案列表 - 元心建材工程管理系統 v1.0</title>
-    <!-- 更新時間: 2025-08-19 | 版本: v1.0 -->
+    <title>專案列表 - 元心建材工程管理系統</title>
+    <!-- 更新時間: 2025-08-22 | 版本: 2.0 -->
     <script src="js/version-manager.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -774,8 +774,20 @@
             .user-name, 
             .header-right-section .user-profile-name,
             .header-right-section .user-profile-dropdown .user-name,
-            [id="userName"] {
+            [id="userName"],
+            [id="profile-button-name"],
+            .profile-button-name,
+            .user-profile-button .text-sm {
                 display: none !important;
+                visibility: hidden !important;
+            }
+            
+            /* 確保用戶按鈕只顯示圖示 */
+            .user-profile-button,
+            #profile-menu-button {
+                min-width: auto !important;
+                padding-left: 0.5rem !important;
+                padding-right: 0.5rem !important;
             }
 
             /* 手機版統計卡片 - 緊密排列 */
@@ -1353,11 +1365,12 @@
             
             currentUser = AuthUtils.getUser();
             if (currentUser) {
-                document.getElementById('userName').textContent = currentUser.name || currentUser.phone;
+                // 不再設置用戶名稱顯示，手機版已隱藏
+                // document.getElementById('userName').textContent = currentUser.name || currentUser.phone;
             } else if (AuthUtils.isDemoMode()) {
-                // 設定示範用戶
+                // 設定示範用戶但不顯示名稱
                 currentUser = { name: '示範用戶', phone: '0912345678' };
-                document.getElementById('userName').textContent = '示範用戶';
+                // document.getElementById('userName').textContent = '示範用戶';
             }
 
             // 檢查管理員權限並顯示管理功能

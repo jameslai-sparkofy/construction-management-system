@@ -312,7 +312,17 @@ class UserProfileComponent {
             // 確保姓名顯示正確，優先使用 currentUser 的資料
             const displayName = this.currentUser.name || this.currentUser.username || '未設定姓名';
             if (userNameEl) userNameEl.textContent = displayName;
-            if (profileButtonNameEl) profileButtonNameEl.textContent = displayName;
+            
+            // 手機版隱藏名稱顯示，只保留圖示
+            if (profileButtonNameEl) {
+                const isMobile = window.innerWidth <= 768;
+                if (isMobile) {
+                    profileButtonNameEl.style.display = 'none';
+                } else {
+                    profileButtonNameEl.textContent = displayName;
+                    profileButtonNameEl.style.display = 'inline';
+                }
+            }
             
             const displayPhone = this.currentUser.phone || this.currentUser.mobile || '未設定電話';
             if (userPhoneEl) userPhoneEl.textContent = displayPhone;
@@ -325,7 +335,18 @@ class UserProfileComponent {
             // 如果 currentUser 不存在，顯示載入中
             if (userNameEl) userNameEl.textContent = '載入中...';
             if (userPhoneEl) userPhoneEl.textContent = '載入中...';
-            if (profileButtonNameEl) profileButtonNameEl.textContent = '載入中...';
+            
+            // 手機版不顯示載入中文字
+            if (profileButtonNameEl) {
+                const isMobile = window.innerWidth <= 768;
+                if (isMobile) {
+                    profileButtonNameEl.style.display = 'none';
+                } else {
+                    profileButtonNameEl.textContent = '載入中...';
+                    profileButtonNameEl.style.display = 'inline';
+                }
+            }
+            
             if (userRoleDetailEl) {
                 userRoleDetailEl.textContent = '載入中...';
             }
