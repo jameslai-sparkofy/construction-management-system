@@ -56,9 +56,12 @@ const CONFIG = {
     // 統一 API Gateway URL - 取代原有的多個微服務
     WORKER_API_URL: getApiUrl(ENVIRONMENT),
     
-    // 移除舊的分散式 API 配置（已整合至統一 API）
-    // CRM_API_URL: 已整合至 /api/v1/crm/*
-    // CRM_API_TOKEN: 由統一 API 內部處理
+    // 暫時恢復 CRM API 配置，直到統一 API 完全實現
+    CRM_API_URL: 'https://sync.yes-ceramics.com/api',
+    CRM_API_TOKEN: 'fx-crm-api-secret-2025',
+    
+    // 備用：原有的分散式 API 配置
+    D1_REST_API_URL: 'https://sync.yes-ceramics.com/api'
     
     // Authentication - 統一處理
     EMERGENCY_LOGIN_ENABLED: !IS_PRODUCTION,
