@@ -1302,35 +1302,17 @@ export default {
     // Get current user
     if (path === '/api/v1/users/me' && method === 'GET') {
       try {
-        const authHeader = request.headers.get('Authorization');
-        if (!authHeader) {
+        const authResult = await checkAuth(request, env);
+        if (!authResult.authenticated) {
           return new Response(JSON.stringify({
             success: false,
             error: 'Unauthorized'
           }), { status: 401, headers });
         }
         
-        const tokenResult = authUtils.verifyToken(authHeader.replace('Bearer ', ''));
-        if (!tokenResult.valid) {
-          return new Response(JSON.stringify({
-            success: false,
-            error: tokenResult.error
-          }), { status: 401, headers });
-        }
-        
-        const verification = {
-          user: {
-            id: tokenResult.payload.user_id,
-            name: tokenResult.payload.name,
-            phone: tokenResult.payload.phone,
-            role: tokenResult.payload.role,
-            user_type: tokenResult.payload.role
-          }
-        };
-        
         return new Response(JSON.stringify({
           success: true,
-          user: verification.user
+          user: authResult.user
         }), { headers });
       } catch (error) {
         console.error('Get user API error:', error);
