@@ -189,6 +189,48 @@
             border-left-color: #0ea5e9;
         }
 
+        /* Status Tabs */
+        .status-tabs {
+            display: flex;
+            background: var(--surface);
+            border-radius: 12px;
+            padding: 0.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            overflow-x: auto;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--body-text);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            background: var(--background);
+            color: var(--heading);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(132, 199, 208, 0.3);
+        }
+
+        .tab-btn.active:hover {
+            background: #6eb5c0;
+        }
+
         /* 狀態選擇器樣式 */
         .status-select-inline {
             padding: 4px 8px;
@@ -589,6 +631,33 @@
                 min-width: 140px;
                 scroll-snap-align: start;
             }
+
+            /* 手機版狀態標籤 - 水平滑動 */
+            .status-tabs {
+                overflow-x: auto;
+                padding: 0.5rem 0.5rem 0.5rem 0.5rem;
+                margin-bottom: 1rem;
+            }
+
+            .status-tabs::-webkit-scrollbar {
+                height: 4px;
+            }
+
+            .status-tabs::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+            .status-tabs::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: 2px;
+            }
+
+            .tab-btn {
+                flex: 0 0 auto;
+                min-width: 100px;
+                font-size: 0.85rem;
+                padding: 0.6rem 0.8rem;
+            }
         }
 
         /* Admin Panel Styles */
@@ -950,30 +1019,45 @@
     <div class="container">
         <!-- Stats Cards -->
         <div class="stats-grid">
-            <div class="stat-card clickable" onclick="filterByStatus('all')">
+            <div class="stat-card" style="border-left-color: #6b7280;">
                 <div class="stat-value" id="totalProjects">0</div>
                 <div class="stat-label">總專案數</div>
             </div>
-            <div class="stat-card clickable" onclick="filterByStatus('not_started')">
+            <div class="stat-card" style="border-left-color: #eab308;">
                 <div class="stat-value" id="notStartedProjects">0</div>
                 <div class="stat-label">尚未開始</div>
             </div>
-            <div class="stat-card clickable" onclick="filterByStatus('in_progress')">
+            <div class="stat-card" style="border-left-color: #3b82f6;">
                 <div class="stat-value" id="inProgressProjects">0</div>
-                <div class="stat-label">進行中</div>
+                <div class="stat-label">施工中</div>
             </div>
-            <div class="stat-card clickable" onclick="filterByStatus('maintenance')">
-                <div class="stat-value" id="maintenanceProjects">0</div>
-                <div class="stat-label">維修中</div>
-            </div>
-            <div class="stat-card clickable" onclick="filterByStatus('warranty')">
-                <div class="stat-value" id="warrantyProjects">0</div>
-                <div class="stat-label">保固中</div>
-            </div>
-            <div class="stat-card clickable" onclick="filterByStatus('completed')">
+            <div class="stat-card" style="border-left-color: #84cc16;">
                 <div class="stat-value" id="completedProjects">0</div>
                 <div class="stat-label">已完工</div>
             </div>
+            <div class="stat-card" style="border-left-color: #f97316;">
+                <div class="stat-value" id="maintenanceProjects">0</div>
+                <div class="stat-label">維修中</div>
+            </div>
+        </div>
+
+        <!-- Status Tabs -->
+        <div class="status-tabs">
+            <button class="tab-btn active" onclick="filterByStatus('all')" data-status="all">
+                全部專案
+            </button>
+            <button class="tab-btn" onclick="filterByStatus('not_started')" data-status="not_started">
+                尚未開始
+            </button>
+            <button class="tab-btn" onclick="filterByStatus('in_progress')" data-status="in_progress">
+                施工中
+            </button>
+            <button class="tab-btn" onclick="filterByStatus('completed')" data-status="completed">
+                已完工
+            </button>
+            <button class="tab-btn" onclick="filterByStatus('maintenance')" data-status="maintenance">
+                維修中
+            </button>
         </div>
 
         <!-- Filters and Actions -->
@@ -1462,13 +1546,19 @@
 
 
 
-        // 點擊統計卡片篩選專案
+        // 點擊標籤篩選專案
         function filterByStatus(status) {
             const statusFilter = document.getElementById('statusFilter');
-            const statCards = document.querySelectorAll('.stat-card.clickable');
+            const tabBtns = document.querySelectorAll('.tab-btn');
             
-            // 清除所有卡片的 active 狀態
-            statCards.forEach(card => card.classList.remove('active'));
+            // 清除所有標籤的 active 狀態
+            tabBtns.forEach(btn => btn.classList.remove('active'));
+            
+            // 設置對應標籤為 active
+            const activeTab = [...tabBtns].find(btn => 
+                btn.getAttribute('data-status') === status
+            );
+            if (activeTab) activeTab.classList.add('active');
             
             if (status === 'all') {
                 statusFilter.value = '';
@@ -1486,17 +1576,6 @@
                 });
                 displayProjects(filtered);
                 updateStatsFromLocal(filtered);
-                
-                // 設置對應卡片為 active
-                const activeCard = [...statCards].find(card => 
-                    card.getAttribute('onclick').includes(`'${status}'`)
-                );
-                if (activeCard) activeCard.classList.add('active');
-            }
-            
-            // 如果是總專案數，設置第一個卡片為 active
-            if (status === 'all') {
-                statCards[0].classList.add('active');
             }
         }
 
