@@ -2872,48 +2872,76 @@
             
             // 先添加所有工班按鈕
             filteredTeams.forEach(team => {
-                const teamButton = document.createElement('button');
-                const buttonWidth = isMobile ? '160px' : '80px';
+                const teamButton = document.createElement('div');
+                const buttonWidth = isMobile ? '140px' : '120px';
                 teamButton.style.cssText = `
-                    padding: 0.625rem 1rem; 
-                    background: #84C7D0; 
+                    padding: 0.75rem; 
+                    background: linear-gradient(135deg, #84C7D0 0%, #6BB8C3 100%); 
                     color: white; 
                     border: none;
-                    border-radius: 20px; 
-                    font-weight: 600; 
+                    border-radius: 12px; 
+                    font-weight: 500; 
                     font-size: 0.875rem;
-                    display: inline-flex; 
+                    display: flex; 
+                    flex-direction: column;
                     align-items: center; 
-                    gap: 0.5rem; 
+                    gap: 0.25rem; 
                     min-width: ${buttonWidth};
-                    white-space: nowrap;
+                    box-shadow: 0 2px 8px rgba(132, 199, 208, 0.3);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
                     flex-shrink: 0;
                 `;
                 
-                // Show team abbreviation with site count badge
-                const teamNameSpan = document.createElement('span');
+                // 工班名稱
+                const teamNameSpan = document.createElement('div');
+                teamNameSpan.style.cssText = `
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    text-align: center;
+                    margin-bottom: 0.25rem;
+                `;
                 teamNameSpan.textContent = team.abbreviation || team.name || `工班 ${team.id}`;
                 
-                const countBadge = document.createElement('span');
-                countBadge.style.cssText = `
-                    background: #ef4444; 
-                    color: white; 
-                    border-radius: 12px; 
-                    padding: 2px 8px; 
-                    font-size: 0.75rem; 
-                    min-width: 24px; 
-                    text-align: center; 
-                    display: inline-block;
-                    font-weight: bold;
-                `;
-                // Calculate completion percentage
+                // 計算統計數據
                 const siteCount = team.siteCount || 0;
                 const completedCount = team.completedCount || 0;
                 const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
-                countBadge.innerHTML = `${completedCount}/${siteCount}<span style="font-size: 0.8em; font-weight: 300;">(${percentage}%)</span>`;
+                
+                // 進度數據容器
+                const progressContainer = document.createElement('div');
+                progressContainer.style.cssText = `
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    gap: 0.25rem;
+                `;
+                
+                // 完成數量
+                const countDisplay = document.createElement('div');
+                countDisplay.style.cssText = `
+                    font-size: 0.8rem;
+                    color: rgba(255, 255, 255, 0.9);
+                    text-align: center;
+                `;
+                countDisplay.textContent = `${completedCount}/${siteCount}`;
+                
+                // 百分比顯示
+                const percentageDisplay = document.createElement('div');
+                percentageDisplay.style.cssText = `
+                    background: rgba(255, 255, 255, 0.2);
+                    padding: 0.2rem 0.5rem;
+                    border-radius: 8px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: white;
+                `;
+                percentageDisplay.textContent = `${percentage}%`;
+                
+                progressContainer.appendChild(countDisplay);
+                progressContainer.appendChild(percentageDisplay);
                 
                 teamButton.appendChild(teamNameSpan);
-                teamButton.appendChild(countBadge);
+                teamButton.appendChild(progressContainer);
                 
                 // Tooltip shows both site count and member count
                 const siteText = team.siteCount ? `${team.siteCount} 個案場` : '無案場';
