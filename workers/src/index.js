@@ -3281,6 +3281,49 @@ export default {
         }), { status: 500, headers });
       }
     }
+
+    // CRM Opportunities API for project creation
+    if (path === '/api/v1/crm/opportunities' && method === 'GET') {
+      try {
+        // 檢查認證
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Authentication required'
+          }), { status: 401, headers });
+        }
+
+        const url = new URL(request.url);
+        const limit = url.searchParams.get('limit') || '100';
+
+        // 直接從 CRM API 獲取商機資料
+        const crmResponse = await fetch(`https://d1.yes-ceramics.com/rest/newopportunityobj?limit=${limit}`, {
+          headers: {
+            'Authorization': 'Bearer fx-crm-api-secret-2025'
+          }
+        });
+
+        if (!crmResponse.ok) {
+          throw new Error(`CRM API error: ${crmResponse.status}`);
+        }
+
+        const crmData = await crmResponse.json();
+        
+        return new Response(JSON.stringify({
+          success: true,
+          opportunities: crmData.results || [],
+          count: (crmData.results || []).length
+        }), { status: 200, headers });
+
+      } catch (error) {
+        console.error('[CRM Opportunities Error]:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message || 'Failed to load opportunities'
+        }), { status: 500, headers });
+      }
+    }
     
     // Default 404
     return new Response(JSON.stringify({

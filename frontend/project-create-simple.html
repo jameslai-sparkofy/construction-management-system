@@ -422,11 +422,12 @@
         // ========================================
         async function loadOpportunities() {
             try {
-                console.log('Loading opportunities from CRM...');
+                console.log('Loading opportunities from unified API...');
                 
-                const response = await fetch(`${CRM_API_URL}/newopportunityobj?limit=100`, {
+                // 使用統一 API 端點
+                const response = await fetch(`${WORKER_API_URL}/api/v1/crm/opportunities?limit=100`, {
                     headers: {
-                        'Authorization': `Bearer ${CRM_API_TOKEN}`
+                        'Authorization': `Bearer ${getToken()}`
                     }
                 });
 
@@ -435,13 +436,34 @@
                 }
 
                 const data = await response.json();
-                opportunities = data.results || [];
+                opportunities = data.opportunities || data.results || [];
                 
                 console.log(`Loaded ${opportunities.length} opportunities`);
                 populateOpportunitySelect();
                 
             } catch (error) {
                 console.error('Failed to load opportunities:', error);
+                
+                // 如果統一 API 失敗，嘗試直接 CRM API
+                try {
+                    console.log('Fallback to direct CRM API...');
+                    const fallbackResponse = await fetch(`https://d1.yes-ceramics.com/rest/newopportunityobj?limit=100`, {
+                        headers: {
+                            'Authorization': 'Bearer fx-crm-api-secret-2025'
+                        }
+                    });
+                    
+                    if (fallbackResponse.ok) {
+                        const fallbackData = await fallbackResponse.json();
+                        opportunities = fallbackData.results || [];
+                        console.log(`Loaded ${opportunities.length} opportunities via fallback`);
+                        populateOpportunitySelect();
+                        return;
+                    }
+                } catch (fallbackError) {
+                    console.error('Fallback also failed:', fallbackError);
+                }
+                
                 showError('載入商機資料失敗: ' + error.message);
             }
         }
@@ -676,14 +698,12 @@
                 return;
             }
             
-            // 確保所有必要的 API 端點都有設定
+            // 使用統一 API 配置
             window.WORKER_API_URL = CONFIG.API.WORKER_API_URL;
-            window.CRM_API_URL = CONFIG.API.CRM_API_URL;
-            window.CRM_API_TOKEN = CONFIG.API.CRM_API_TOKEN;
             
             console.log('Config loaded successfully', {
                 workerApiUrl: window.WORKER_API_URL,
-                crmApiUrl: window.CRM_API_URL
+                environment: CONFIG.ENVIRONMENT
             });
         }
     </script>
