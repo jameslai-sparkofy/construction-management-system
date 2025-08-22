@@ -13,7 +13,8 @@ if (typeof API_CONFIG === 'undefined') {
     
     // 生產環境檢測
     if (hostname.includes('construction-management-frontend-prod.pages.dev') || 
-        hostname === 'cm-prod.pages.dev') {
+        hostname === 'cm-prod.pages.dev' ||
+        hostname.includes('frontend-prod.pages.dev')) {
       return 'production';
     }
     
