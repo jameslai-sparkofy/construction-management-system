@@ -422,12 +422,21 @@
         // ========================================
         async function loadOpportunities() {
             try {
-                console.log('Loading opportunities from unified API...');
+                console.log('Loading opportunities from CRM...');
                 
-                // 使用統一 API 端點
-                const response = await fetch(`${WORKER_API_URL}/api/v1/crm/opportunities?limit=100`, {
+                // 使用和原版 project-create.html 相同的邏輯
+                const API_BASE_URL = CONFIG?.API?.CRM_API_URL || 'https://fx-d1-rest-api.lai-jameslai.workers.dev';
+                const API_TOKEN = CONFIG?.API?.CRM_API_TOKEN || 'fx-crm-api-secret-2025';
+                
+                // 如果新配置沒有 CRM_API_URL，使用直接 CRM API
+                const crmApiUrl = API_BASE_URL.includes('fx-d1-rest-api') ? 
+                    'https://d1.yes-ceramics.com/rest' : API_BASE_URL;
+                
+                console.log('Using CRM API:', crmApiUrl);
+                
+                const response = await fetch(`${crmApiUrl}/newopportunityobj?limit=500`, {
                     headers: {
-                        'Authorization': `Bearer ${getToken()}`
+                        'Authorization': `Bearer ${API_TOKEN}`
                     }
                 });
 
@@ -435,35 +444,18 @@
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                const data = await response.json();
-                opportunities = data.opportunities || data.results || [];
+                const result = await response.json();
+                // 過濾出贏單的商機（和原版相同）
+                const allOpportunities = result.results || [];
+                opportunities = allOpportunities.filter(opp => 
+                    opp.sales_status__r === '贏單' || opp.sales_status === '2'
+                );
                 
-                console.log(`Loaded ${opportunities.length} opportunities`);
+                console.log(`Loaded ${opportunities.length} winning opportunities (from ${allOpportunities.length} total)`);
                 populateOpportunitySelect();
                 
             } catch (error) {
                 console.error('Failed to load opportunities:', error);
-                
-                // 如果統一 API 失敗，嘗試直接 CRM API
-                try {
-                    console.log('Fallback to direct CRM API...');
-                    const fallbackResponse = await fetch(`https://d1.yes-ceramics.com/rest/newopportunityobj?limit=100`, {
-                        headers: {
-                            'Authorization': 'Bearer fx-crm-api-secret-2025'
-                        }
-                    });
-                    
-                    if (fallbackResponse.ok) {
-                        const fallbackData = await fallbackResponse.json();
-                        opportunities = fallbackData.results || [];
-                        console.log(`Loaded ${opportunities.length} opportunities via fallback`);
-                        populateOpportunitySelect();
-                        return;
-                    }
-                } catch (fallbackError) {
-                    console.error('Fallback also failed:', fallbackError);
-                }
-                
                 showError('載入商機資料失敗: ' + error.message);
             }
         }
