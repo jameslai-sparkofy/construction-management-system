@@ -94,6 +94,10 @@
             font-weight: 600;
             color: var(--heading);
             margin-bottom: 0.125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
 
         .project-info p {
@@ -1585,42 +1589,54 @@
         /* Building Statistics Section */
         .building-stats-section {
             background: var(--surface);
-            padding: 1.5rem;
+            padding: 1rem;
             margin-bottom: 1rem;
             border-radius: 8px;
             box-shadow: var(--shadow-sm);
         }
 
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--heading);
-            margin-bottom: 1rem;
-            text-align: center;
+        .building-charts-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
         }
 
-        .building-charts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 1.5rem;
-            justify-items: center;
+        .building-charts-carousel::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .building-charts-carousel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+
+        .building-charts-carousel::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 2px;
         }
 
         .building-chart {
+            flex: 0 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 0.75rem;
+            min-width: 160px;
         }
 
         .pie-chart {
             position: relative;
-            width: 120px;
-            height: 120px;
+            width: 150px;
+            height: 150px;
             border-radius: 50%;
             background: conic-gradient(var(--completed) 0deg, var(--pending) 0deg);
             transition: all 0.8s ease-in-out;
             transform: rotate(-90deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .pie-chart::before {
@@ -1629,38 +1645,61 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             background: white;
             border-radius: 50%;
-        }
-
-        .pie-chart-percentage {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(90deg);
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--heading);
             z-index: 1;
         }
 
-        .building-info {
+        .pie-chart-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
+            z-index: 2;
+            width: 120px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .building-name {
             font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--heading);
+            margin-bottom: 0.15rem;
+        }
+
+        .pie-chart-percentage {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.1rem;
+        }
+
+        .building-progress {
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--heading);
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.1rem;
         }
 
         .building-teams {
-            font-size: 0.75rem;
+            font-size: 0.65rem;
             color: var(--body-text);
-            line-height: 1.4;
+            line-height: 1.1;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pie-chart-stats {
+            font-size: 0.65rem;
+            color: var(--primary);
+            font-weight: 500;
         }
 
         .loading-placeholder {
@@ -1672,31 +1711,39 @@
 
         /* Mobile responsive */
         @media (max-width: 768px) {
-            .building-charts-container {
-                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-                gap: 1rem;
+            .building-chart {
+                min-width: 140px;
             }
 
             .pie-chart {
+                width: 130px;
+                height: 130px;
+            }
+
+            .pie-chart::before {
                 width: 100px;
                 height: 100px;
             }
 
-            .pie-chart::before {
-                width: 65px;
-                height: 65px;
-            }
-
-            .pie-chart-percentage {
-                font-size: 1rem;
+            .pie-chart-content {
+                width: 100px;
             }
 
             .building-name {
                 font-size: 0.8rem;
             }
 
-            .building-teams {
+            .pie-chart-percentage {
+                font-size: 1.2rem;
+            }
+
+            .building-progress {
                 font-size: 0.7rem;
+            }
+
+            .building-teams {
+                font-size: 0.6rem;
+                max-width: 80px;
             }
         }
 
@@ -1779,8 +1826,7 @@
 
         <!-- Building Completion Statistics -->
         <div class="building-stats-section">
-            <h2 class="section-title">各棟完成度統計</h2>
-            <div class="building-charts-container" id="buildingChartsContainer">
+            <div class="building-charts-carousel" id="buildingChartsContainer">
                 <div class="loading-placeholder">載入中...</div>
             </div>
         </div>
@@ -5256,7 +5302,16 @@
                     return;
                 }
                 
-                Object.entries(buildingStats).forEach(([buildingName, stats]) => {
+                // 排序：A棟優先，然後按字母順序
+                const buildingEntries = Object.entries(buildingStats).sort(([a], [b]) => {
+                    // A棟永遠排第一
+                    if (a.includes('A') && !b.includes('A')) return -1;
+                    if (!a.includes('A') && b.includes('A')) return 1;
+                    // 其他按字母順序
+                    return a.localeCompare(b, 'zh-TW');
+                });
+                
+                buildingEntries.forEach(([buildingName, stats]) => {
                     const percentage = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
                     const teamsList = Array.from(stats.teams).join(', ');
                     
@@ -5316,15 +5371,16 @@
             
             const degrees = (percentage / 100) * 360;
             
+            // 智能縮短工班名稱
+            const shortTeams = teams ? teams.split(', ').map(team => getTeamAbbreviation(team)).join(', ') : '無';
+            
             chartDiv.innerHTML = `
                 <div class="pie-chart" style="background: conic-gradient(var(--completed) ${degrees}deg, var(--pending) ${degrees}deg);">
-                    <div class="pie-chart-percentage">${percentage}%</div>
-                </div>
-                <div class="building-info">
-                    <div class="building-name">${buildingName}</div>
-                    <div class="building-teams">${teams || '無工班資料'}</div>
-                    <div class="building-teams" style="margin-top: 0.25rem; font-weight: 500; color: var(--primary);">
-                        ${completed}/${total} 完成
+                    <div class="pie-chart-content">
+                        <div class="building-name">${buildingName}</div>
+                        <div class="pie-chart-percentage">${percentage}%</div>
+                        <div class="building-progress">${completed}/${total}</div>
+                        <div class="building-teams">${shortTeams}</div>
                     </div>
                 </div>
             `;
