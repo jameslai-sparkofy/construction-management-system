@@ -64,6 +64,7 @@
 2. 確認 Cloudflare API Token 權限
 3. 檢查配置檔語法
 4. 查看 GitHub Actions 執行日誌
+5. **Commit Message 編碼問題**：Cloudflare Pages 部署不支援中文 commit message，會出現「Invalid commit message, it must be a valid UTF-8 string」錯誤。解決方案：使用英文 commit message 或用 `git commit --amend` 修改後強制推送
 
 ### CRM 同步功能
 
