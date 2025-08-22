@@ -743,7 +743,14 @@
 
     <script>
         // 配置 - 延遲初始化避免競態條件，提供默認值
-        let API_BASE = 'https://construction-management-api-dev.lai-jameslai.workers.dev';
+        // 根據當前域名自動選擇對應的 API 端點
+        const hostname = window.location.hostname;
+        let API_BASE;
+        if (hostname.includes('frontend-prod.pages.dev') || hostname === 'cm-prod.pages.dev') {
+            API_BASE = 'https://construction-management-api-prod.lai-jameslai.workers.dev';
+        } else {
+            API_BASE = 'https://construction-management-api-dev.lai-jameslai.workers.dev';
+        }
         
         // 初始化配置函數
         function initializeConfig() {
