@@ -675,7 +675,7 @@
                 display: none;
             }
             
-            /* 手機版按鈕只顯示圖示 */
+            /* 手機版按鈕只顯示圖示，隱藏用戶名稱 */
             .admin-btn .btn-text,
             .admin-btn:not(:has(.btn-icon)) {
                 font-size: 0;
@@ -686,40 +686,71 @@
                 font-size: 1rem;
             }
             
-            .header-right-section .user-profile-name {
+            .header-right-section .user-profile-name,
+            .header-right-section .user-profile-dropdown .user-name {
+                display: none;
+            }
+            
+            .header-right-section .user-profile-button {
                 font-size: 0;
             }
             
-            .header-right-section .user-profile-name::before {
+            .header-right-section .user-profile-button::before {
                 content: "👤";
                 font-size: 1rem;
             }
             
             .container {
                 padding: 0 1rem;
+                margin: 1rem auto;
             }
 
             .controls {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 1rem;
+                gap: 0.75rem;
+                margin-bottom: 1rem;
             }
 
             .search-input {
                 width: 100%;
+                padding: 0.6rem 1rem 0.6rem 2.2rem;
             }
 
             .projects-grid {
-                gap: 0.75rem;
+                gap: 0.5rem;
             }
 
             .project-card {
                 padding: 1rem;
             }
 
+            .project-card-header {
+                margin-bottom: 0.75rem;
+            }
+
+            .project-card-name {
+                font-size: 1.2rem !important;
+                margin-bottom: 0.25rem;
+            }
+
+            .project-card-company {
+                font-size: 1rem !important;
+            }
+
             .project-card-body {
                 grid-template-columns: 1fr 1fr;
-                gap: 1rem 0.75rem;
+                gap: 0.75rem 0.5rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .project-card-label {
+                font-size: 0.9rem !important;
+                margin-bottom: 0.2rem;
+            }
+
+            .project-card-value {
+                font-size: 1rem !important;
             }
             
             .project-card-progress-wrapper {
@@ -728,48 +759,65 @@
             }
             
             .project-card-progress-wrapper .progress-bar {
-                height: 10px;
+                height: 12px;
                 min-width: 150px;
+                border-radius: 6px;
             }
 
-            /* 手機版統計卡片 - 水平滑動 */
+            .project-card-progress-wrapper .progress-text {
+                font-size: 0.9rem !important;
+                margin-top: 0.25rem;
+            }
+
+            /* 手機版統計卡片 - 緊密排列 */
             .stats-grid {
                 display: flex;
                 overflow-x: auto;
                 scroll-snap-type: x mandatory;
-                gap: 1rem;
+                gap: 0.75rem;
                 padding-bottom: 0.5rem;
+                margin-bottom: 1rem;
             }
 
             .stats-grid::-webkit-scrollbar {
-                height: 6px;
+                height: 4px;
             }
 
             .stats-grid::-webkit-scrollbar-track {
                 background: var(--border);
-                border-radius: 3px;
+                border-radius: 2px;
             }
 
             .stats-grid::-webkit-scrollbar-thumb {
                 background: var(--primary);
-                border-radius: 3px;
+                border-radius: 2px;
             }
 
             .stat-card {
                 flex: 0 0 auto;
-                min-width: 140px;
+                min-width: 120px;
+                padding: 1rem 0.75rem;
                 scroll-snap-align: start;
             }
 
-            /* 手機版狀態標籤 - 水平滑動 */
+            .stat-value {
+                font-size: 1.6rem !important;
+            }
+
+            .stat-label {
+                font-size: 0.85rem !important;
+            }
+
+            /* 手機版狀態標籤 - 緊湊設計 */
             .status-tabs {
                 overflow-x: auto;
-                padding: 0.5rem 0.5rem 0.5rem 0.5rem;
-                margin-bottom: 1rem;
+                padding: 0.4rem;
+                margin-bottom: 0.75rem;
+                gap: 0.3rem;
             }
 
             .status-tabs::-webkit-scrollbar {
-                height: 4px;
+                height: 3px;
             }
 
             .status-tabs::-webkit-scrollbar-track {
@@ -783,9 +831,9 @@
 
             .tab-btn {
                 flex: 0 0 auto;
-                min-width: 100px;
-                font-size: 0.85rem;
-                padding: 0.6rem 0.8rem;
+                min-width: 90px;
+                font-size: 0.9rem;
+                padding: 0.5rem 0.7rem;
             }
         }
 
@@ -1121,7 +1169,7 @@
         <div class="header-content">
             <h1>
                 <span class="desktop-title">專案管理系統</span>
-                <span class="mobile-title">工程管理</span>
+                <span class="mobile-title">元心工程管理</span>
                 <span class="version" style="font-size: 0.6em; color: #84C7D0;">v1.2.0</span>
             </h1>
             <div class="user-info" style="display: none;">
