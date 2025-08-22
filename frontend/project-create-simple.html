@@ -544,7 +544,9 @@
             document.querySelectorAll('.engineering-option').forEach(option => {
                 option.addEventListener('click', function(e) {
                     console.log('Engineering option clicked:', e.target.tagName, e.target);
+                    // 防止雙重觸發：只處理非 input 元素的點擊
                     if (e.target.tagName !== 'INPUT') {
+                        e.preventDefault(); // 防止 label 自動觸發 input
                         const checkbox = this.querySelector('input[type="checkbox"]');
                         console.log('Checkbox found:', checkbox);
                         checkbox.checked = !checkbox.checked;
@@ -615,7 +617,7 @@
                     selectedOpportunity ? selectedOpportunity.name : '-';
                 
                 document.getElementById('summaryProjectName').textContent = 
-                    selectedOpportunity ? `${selectedOpportunity.name} 工程專案` : '-';
+                    selectedOpportunity ? selectedOpportunity.name : '-';
                 
                 const engineeringTypeNames = selectedEngineeringTypes.map(type => {
                     switch (type) {
