@@ -1562,7 +1562,8 @@ export default {
             user_id: user.user_id,
             name: user.name,
             phone: user.phone,
-            nickname: user.nickname
+            nickname: user.nickname,
+            role: user.role || 'member'  // 添加缺失的 role 字段
           };
           
           if (user.user_type === 'admin') {
