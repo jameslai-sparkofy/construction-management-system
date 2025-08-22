@@ -2939,8 +2939,7 @@
                     e.preventDefault();
                     e.stopPropagation();
                     console.log('Team button clicked:', team.name);
-                    // 直接跳轉到用戶管理頁面
-                    window.location.href = 'project-user-management.html?id=' + encodeURIComponent(window.currentProject.id);
+                    showTeamModal(team);
                 });
                 
                 teamsContainer.appendChild(teamButton);
