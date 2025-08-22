@@ -1,0 +1,7 @@
+<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+            <rect width="300" height="200" fill="#22C55E"/>
+            <text x="20" y="50" fill="white" font-size="20" font-weight="bold">Test Photo Upload</text>
+            <text x="20" y="80" fill="white" font-size="14">Time: 8/22/2025, 8:04:19 AM</text>
+            <text x="20" y="110" fill="white" font-size="12">Testing complete photo features</text>
+            <text x="20" y="140" fill="white" font-size="12">Upload → Display → Delete</text>
+        </svg>
