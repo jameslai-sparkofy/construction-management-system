@@ -340,7 +340,23 @@ export default {
         return { authenticated: false, error: 'No authorization header' };
       }
       
-      const tokenResult = authUtils.verifyToken(authHeader.replace('Bearer ', ''));
+      const token = authHeader.replace('Bearer ', '');
+      
+      // 開發環境緊急認證
+      if (env.ENABLE_EMERGENCY_LOGIN === 'true' && token === env.DEV_TOKEN) {
+        return {
+          authenticated: true,
+          user: {
+            id: 'dev-user',
+            name: '開發用戶',
+            phone: '0900000000',
+            role: 'super_admin',
+            user_type: 'super_admin'
+          }
+        };
+      }
+      
+      const tokenResult = authUtils.verifyToken(token);
       if (!tokenResult.valid) {
         return { authenticated: false, error: tokenResult.error };
       }
@@ -800,7 +816,7 @@ export default {
         // 並行獲取所有相關資料
         const [sitesResponse, usersQuery, statsQuery, teamsQuery] = await Promise.all([
           // 獲取案場資料 (增加更多欄位)
-          fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000&fields=_id,field_xCGMd__c,field_B2gh1__c,field_u1wpv__c,field_23pFq__c,construction_completed__c,field_iZJ5T__c,field_cBxzN__c,field_tCAEa__c,field_jdKSo__c,created_time,updated_time`, {
+          fetch(`https://sync.yes-ceramics.com/api/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`, {
             headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
           }),
           
@@ -831,8 +847,8 @@ export default {
             WHERE project_id = ?
           `).bind(projectId).first(),
 
-          // 獲取工班映射資料 (from CRUD API)
-          fetch('https://sync.yes-ceramics.com/api/rest/object_6Iu5g__c?limit=500', {
+          // 獲取工班映射資料 (from CRUD API)  
+          fetch('https://sync.yes-ceramics.com/api/rest/SupplierObj?limit=500', {
             headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
           })
         ]);
@@ -886,12 +902,16 @@ export default {
           const teamsData = await teamsQuery.json();
           const teams = teamsData.results || teamsData.dataList || [];
           teams.forEach(team => {
-            teamMappings[team.field_K6vOv__c] = {
-              id: team._id,
-              name: team.field_K6vOv__c,
-              abbreviation: team.field_zN7zO__c,
-              created_time: team.created_time
-            };
+            // SupplierObj 使用不同的字段名稱
+            const teamName = team.name || team.field_K6vOv__c;
+            if (teamName) {
+              teamMappings[teamName] = {
+                id: team._id,
+                name: teamName,
+                abbreviation: team.abbreviation || team.field_zN7zO__c || teamName.substring(0, 2),
+                created_time: team.created_time || team.createTime
+              };
+            }
           });
         }
 
