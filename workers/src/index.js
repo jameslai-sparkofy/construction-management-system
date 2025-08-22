@@ -756,6 +756,213 @@ export default {
       }
     }
 
+    // 超級優化的專案完整資訊端點：批次載入所有資料
+    if (path.match(/^\/api\/v1\/projects\/([^\/]+)\/full$/) && method === 'GET') {
+      try {
+        const authCheck = await checkAuth(request);
+        if (!authCheck.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const projectId = path.split('/')[4];
+        const user = authCheck.user;
+
+        // 獲取專案基本資訊
+        const project = await env.DB_ENGINEERING.prepare(`
+          SELECT * FROM projects WHERE id = ?
+        `).bind(projectId).first();
+
+        if (!project) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Project not found'
+          }), { status: 404, headers });
+        }
+
+        // 檢查權限
+        const hasPermission = user.role === 'super_admin' || user.role === 'admin';
+        if (!hasPermission) {
+          const userProject = await env.DB_ENGINEERING.prepare(`
+            SELECT * FROM project_users WHERE project_id = ? AND user_id = ?
+          `).bind(projectId, user.user_id).first();
+          
+          if (!userProject) {
+            return new Response(JSON.stringify({
+              success: false,
+              error: 'Access denied'
+            }), { status: 403, headers });
+          }
+        }
+
+        // 並行獲取所有相關資料
+        const [sitesResponse, usersQuery, statsQuery, teamsQuery] = await Promise.all([
+          // 獲取案場資料 (增加更多欄位)
+          fetch(`https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000&fields=_id,field_xCGMd__c,field_B2gh1__c,field_u1wpv__c,field_23pFq__c,construction_completed__c,field_iZJ5T__c,field_cBxzN__c,field_tCAEa__c,field_jdKSo__c,created_time,updated_time`, {
+            headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
+          }),
+          
+          // 獲取專案用戶 (包含更多詳情)
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              pu.*,
+              u.name as user_name,
+              u.phone as user_phone,
+              u.email as user_email,
+              u.global_role,
+              u.created_at as user_created_at
+            FROM project_users pu
+            LEFT JOIN users u ON pu.user_id = u.id
+            WHERE pu.project_id = ?
+            ORDER BY pu.user_type, pu.team_name, pu.name
+          `).bind(projectId).all(),
+          
+          // 獲取專案統計
+          env.DB_ENGINEERING.prepare(`
+            SELECT 
+              COUNT(*) as total_users,
+              SUM(CASE WHEN user_type = 'admin' THEN 1 ELSE 0 END) as admin_count,
+              SUM(CASE WHEN user_type = 'owner' THEN 1 ELSE 0 END) as owner_count,
+              SUM(CASE WHEN user_type = 'worker' THEN 1 ELSE 0 END) as worker_count,
+              COUNT(DISTINCT team_id) as team_count
+            FROM project_users 
+            WHERE project_id = ?
+          `).bind(projectId).first(),
+
+          // 獲取工班映射資料 (from CRUD API)
+          fetch('https://sync.yes-ceramics.com/api/rest/object_6Iu5g__c?limit=500', {
+            headers: { 'Authorization': 'Bearer fx-crm-api-secret-2025' }
+          })
+        ]);
+
+        // 處理案場資料
+        let sites = [];
+        let sitesStats = {
+          totalSites: 0,
+          completedSites: 0,
+          inProgressSites: 0,
+          pendingSites: 0,
+          buildingStats: {}
+        };
+
+        if (sitesResponse.ok) {
+          const sitesData = await sitesResponse.json();
+          sites = sitesData.results || sitesData.dataList || [];
+          
+          sitesStats.totalSites = sites.length;
+          
+          // 計算各種統計
+          sites.forEach(site => {
+            const isCompleted = site.construction_completed__c === true || site.field_iZJ5T__c === '已完工';
+            if (isCompleted) sitesStats.completedSites++;
+            
+            // 建築物統計
+            const building = site.field_xCGMd__c || '未命名建築';
+            if (!sitesStats.buildingStats[building]) {
+              sitesStats.buildingStats[building] = { total: 0, completed: 0, teams: new Set() };
+            }
+            sitesStats.buildingStats[building].total++;
+            if (isCompleted) sitesStats.buildingStats[building].completed++;
+            
+            // 收集工班資訊
+            if (site.field_cBxzN__c) {
+              sitesStats.buildingStats[building].teams.add(site.field_cBxzN__c);
+            }
+          });
+          
+          sitesStats.pendingSites = sitesStats.totalSites - sitesStats.completedSites;
+          
+          // 轉換 Set 為 Array
+          Object.keys(sitesStats.buildingStats).forEach(building => {
+            sitesStats.buildingStats[building].teams = Array.from(sitesStats.buildingStats[building].teams);
+          });
+        }
+
+        // 處理工班映射
+        let teamMappings = {};
+        if (teamsQuery.ok) {
+          const teamsData = await teamsQuery.json();
+          const teams = teamsData.results || teamsData.dataList || [];
+          teams.forEach(team => {
+            teamMappings[team.field_K6vOv__c] = {
+              id: team._id,
+              name: team.field_K6vOv__c,
+              abbreviation: team.field_zN7zO__c,
+              created_time: team.created_time
+            };
+          });
+        }
+
+        // 處理用戶資料
+        const users = usersQuery.results || [];
+        const groupedUsers = {
+          admins: users.filter(u => u.user_type === 'admin'),
+          owners: users.filter(u => u.user_type === 'owner'),  
+          workers: users.filter(u => u.user_type === 'worker')
+        };
+
+        // 組織工班資料
+        const teams = {};
+        groupedUsers.workers.forEach(worker => {
+          if (worker.team_id) {
+            if (!teams[worker.team_id]) {
+              teams[worker.team_id] = {
+                id: worker.team_id,
+                name: worker.team_name || worker.team_id,
+                members: [],
+                abbreviation: teamMappings[worker.team_name]?.abbreviation
+              };
+            }
+            teams[worker.team_id].members.push(worker);
+          }
+        });
+
+        return new Response(JSON.stringify({
+          success: true,
+          project: {
+            ...project,
+            calculated_progress: sitesStats.totalSites > 0 ? 
+              Math.round((sitesStats.completedSites / sitesStats.totalSites) * 100) : 0
+          },
+          sites: sites,
+          sitesStats: sitesStats,
+          users: groupedUsers,
+          teams: Object.values(teams),
+          teamMappings: teamMappings,
+          userStats: statsQuery || {
+            total_users: 0,
+            admin_count: 0,
+            owner_count: 0,
+            worker_count: 0,
+            team_count: 0
+          },
+          permissions: {
+            canEdit: hasPermission,
+            canManageUsers: hasPermission,
+            canViewAllSites: hasPermission,
+            userRole: user.role
+          },
+          metadata: {
+            loadedAt: new Date().toISOString(),
+            sitesCount: sites.length,
+            usersCount: users.length,
+            teamsCount: Object.keys(teams).length,
+            endpoint: 'full'
+          }
+        }), { headers: addCacheHeaders(headers, 'api-short') });
+
+      } catch (error) {
+        console.error('Project full API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get project full data',
+          message: error.message
+        }), { status: 500, headers });
+      }
+    }
+
     // 優化的案場詳情端點：一次性獲取完整案場資訊
     if (path.match(/^\/api\/v1\/sites\/([^\/]+)\/detail$/) && method === 'GET') {
       try {

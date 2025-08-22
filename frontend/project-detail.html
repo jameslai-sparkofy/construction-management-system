@@ -2491,10 +2491,8 @@
                 container: headerActions
             });
             
-            // IMPORTANT: Load team mappings FIRST before any other data
-            console.log('載入工班映射...');
-            await loadTeamMappings();
-            console.log('工班映射載入完成:', Object.keys(teamNameToIdMap).length, '個工班');
+            // 跳過個別載入工班映射，將在批次載入中一起獲取
+            console.log('⚡ 使用批次載入，跳過單獨的工班映射載入...');
 
             
             // Update user management button visibility
@@ -2506,9 +2504,7 @@
             // Load project data (this will also load sites)
             await loadProject(projectId);
             
-            // Load teams data after sites are loaded
-            // This will be called after sites are processed
-            // await loadProjectTeams(projectId); // Will be called from loadSites
+            // ⚡ 工班和案場資料已在批次載入中獲取，無需額外調用
             
             // If site_id is provided, open the modal
             if (siteId) {
@@ -4717,14 +4713,17 @@
             // TODO: Implement edit member form
         }
 
-        // Load project data
+        // 批次載入專案完整資料 - 性能優化版本
         async function loadProject(projectId) {
             try {
                 isDataLoading = true;
-                console.log('[DEBUG] Starting project load:', projectId);
-                // Fetch project data from engineering management API
+                console.log('🚀 [OPTIMIZED] Starting batch project load:', projectId);
+                
+                const startTime = performance.now();
+                
+                // 使用新的 /full 端點一次性載入所有資料
                 const response = await fetch(
-                    `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}`,
+                    `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}/full`,
                     {
                         headers: {
                             'Content-Type': 'application/json',
@@ -4734,27 +4733,94 @@
                 );
 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    // 如果新端點失敗，回退到舊的載入方式
+                    console.warn('Full endpoint failed, falling back to legacy loading');
+                    return await loadProjectLegacy(projectId);
                 }
 
                 const result = await response.json();
-                console.log('[DEBUG] Project API response:', result);
+                const loadTime = performance.now() - startTime;
                 
-                if (result.success && result.project) {
+                console.log(`⚡ [OPTIMIZED] Project data loaded in ${loadTime.toFixed(2)}ms`, result);
+                
+                if (result.success) {
+                    // 設置全域變數
                     currentProject = result.project;
-                    window.currentProject = result.project; // Save globally for team functions
-                    console.log('[DEBUG] Project loaded successfully:', window.currentProject);
+                    window.currentProject = result.project;
+                    currentSites = result.sites || [];
+                    window.projectTeams = result.teams || [];
+                    window.teamMappings = result.teamMappings || {};
+                    
+                    // 建立工班映射表
+                    teamNameToIdMap = {};
+                    Object.values(result.teamMappings || {}).forEach(team => {
+                        teamNameToIdMap[team.name] = team.id;
+                    });
+                    
+                    console.log('✅ [OPTIMIZED] All data loaded:', {
+                        project: result.project.name,
+                        sites: result.sites.length,
+                        teams: result.teams.length,
+                        users: result.userStats.total_users,
+                        loadTime: loadTime.toFixed(2) + 'ms'
+                    });
+
+                    // 更新 UI (不需要額外的 API 調用)
                     updateProjectInfo();
-                    await loadSites();
+                    processSitesData(); // 使用已載入的資料
+                    renderBuildingTabs();
+                    renderFloorGrid();
+                    updateStatistics();
+                    generateBuildingCompletionStats(); // 使用已載入的資料
+
+                    // 清除載入狀態
+                    const gridContent = document.getElementById('gridContent');
+                    if (gridContent) gridContent.classList.remove('loading');
+                    
+                    // 設置建築統計資料 (已經在 API 中計算好)
+                    if (result.sitesStats?.buildingStats) {
+                        window.buildingStats = result.sitesStats.buildingStats;
+                    }
+                    
                 } else {
-                    showError('專案不存在');
+                    throw new Error(result.error || '專案不存在');
                 }
             } catch (error) {
-                console.error('Error loading project:', error);
+                console.error('❌ [OPTIMIZED] Error loading project:', error);
                 showError('載入專案失敗: ' + error.message);
             } finally {
                 isDataLoading = false;
-                console.log('[DEBUG] Project loading complete. isDataLoading:', isDataLoading);
+                console.log('🏁 [OPTIMIZED] Project loading complete');
+            }
+        }
+
+        // 舊版載入方式 (備用)
+        async function loadProjectLegacy(projectId) {
+            console.log('🔄 [LEGACY] Using legacy project loading');
+            // 保持原有的邏輯作為備用
+            const response = await fetch(
+                `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}`,
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+                    }
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success && result.project) {
+                currentProject = result.project;
+                window.currentProject = result.project;
+                updateProjectInfo();
+                await loadSites();
+            } else {
+                throw new Error('專案不存在');
             }
         }
 
@@ -4767,9 +4833,17 @@
                 currentProject.field_tOYE1__c || '暫無描述'; // 假設有描述欄位
         }
 
-        // Load sites for the project
+        // Load sites for the project (現在主要用於舊版備用)
         async function loadSites() {
             try {
+                // ⚡ 檢查是否已透過批次載入獲取資料
+                if (currentSites && currentSites.length > 0) {
+                    console.log('⚡ [OPTIMIZED] Sites already loaded via batch, skipping individual API call');
+                    return;
+                }
+                
+                console.log('🔄 [LEGACY] Loading sites via individual API call');
+                
                 // Ensure team mappings are loaded first
                 if (Object.keys(teamNameToIdMap).length === 0) {
                     console.log('工班映射尚未載入，先載入映射...');
@@ -4790,7 +4864,7 @@
                 
                 // Show loading state
                 const gridContent = document.getElementById('gridContent');
-                gridContent.innerHTML = '<div class="loading">載入案場資料中...</div>';
+                if (gridContent) gridContent.innerHTML = '<div class="loading">載入案場資料中...</div>';
                 
                 // Fetch sites data
                 const response = await fetch(
@@ -4916,11 +4990,8 @@
             // 更新工班圖例（傳遞包含案場數的工班資訊）
             updateTeamLegend(teamsMap);
             
-            // Now load team members from users table
-            const projectId = new URLSearchParams(window.location.search).get('id');
-            if (projectId) {
-                loadProjectTeams(projectId);
-            }
+            // ⚡ 工班成員資料已在批次載入中獲取
+            console.log('✅ 工班資料已載入，跳過額外的 loadProjectTeams 調用');
         }
         
         // Update team legend
