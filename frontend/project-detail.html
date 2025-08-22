@@ -260,7 +260,9 @@
         /* Floor Grid Table */
         .floor-grid-container {
             padding: 1.5rem;
-            overflow-x: auto;
+            overflow: auto;
+            position: relative;
+            max-height: 80vh;
         }
 
         .floor-grid {
@@ -275,6 +277,10 @@
             color: var(--heading);
             background: var(--background);
             border: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
         }
 
         .floor-grid tbody th {
@@ -284,6 +290,18 @@
             color: var(--heading);
             background: var(--background);
             border: 1px solid var(--border);
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 左上角固定單元格需要特殊處理 */
+        .floor-grid thead th:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 15;
+            background: var(--background);
         }
 
         .grid-cell {
@@ -1008,8 +1026,9 @@
             
             .floor-grid-container {
                 padding: 0.5rem;
-                overflow-x: auto;
+                overflow: auto;
                 -webkit-overflow-scrolling: touch;
+                max-height: 70vh;
             }
             
         }
@@ -1023,6 +1042,7 @@
 
             .floor-grid-container {
                 padding: 0.5rem;
+                max-height: 65vh;
             }
             
             .floor-grid {
@@ -1667,7 +1687,7 @@
         }
 
         .building-name {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             font-weight: 700;
             color: var(--heading);
             margin-bottom: 0.15rem;
@@ -5374,10 +5394,13 @@
             // 智能縮短工班名稱
             const shortTeams = teams ? teams.split(', ').map(team => getTeamAbbreviation(team)).join(', ') : '無';
             
+            // 智能建築名稱處理：如果是單字母則加上"棟"
+            const displayBuildingName = buildingName.length === 1 ? `${buildingName}棟` : buildingName;
+            
             chartDiv.innerHTML = `
                 <div class="pie-chart" style="background: conic-gradient(var(--completed) ${degrees}deg, var(--pending) ${degrees}deg);">
                     <div class="pie-chart-content">
-                        <div class="building-name">${buildingName}</div>
+                        <div class="building-name">${displayBuildingName}</div>
                         <div class="pie-chart-percentage">${percentage}%</div>
                         <div class="building-progress">${completed}/${total}</div>
                         <div class="building-teams">${shortTeams}</div>
