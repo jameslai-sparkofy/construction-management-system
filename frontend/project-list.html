@@ -1043,20 +1043,20 @@
 
         <!-- Status Tabs -->
         <div class="status-tabs">
-            <button class="tab-btn active" onclick="filterByStatus('all')" data-status="all">
+            <button class="tab-btn" onclick="filterByStatus('all')" data-status="all">
                 全部專案
             </button>
             <button class="tab-btn" onclick="filterByStatus('not_started')" data-status="not_started">
                 尚未開始
             </button>
-            <button class="tab-btn" onclick="filterByStatus('in_progress')" data-status="in_progress">
+            <button class="tab-btn active" onclick="filterByStatus('in_progress')" data-status="in_progress">
                 施工中
-            </button>
-            <button class="tab-btn" onclick="filterByStatus('completed')" data-status="completed">
-                已完工
             </button>
             <button class="tab-btn" onclick="filterByStatus('maintenance')" data-status="maintenance">
                 維修中
+            </button>
+            <button class="tab-btn" onclick="filterByStatus('completed')" data-status="completed">
+                已完工
             </button>
         </div>
 
@@ -1149,6 +1149,10 @@
             loadUserInfo();
             loadProjects();
             setupFilters();
+            // 預設顯示施工中的專案
+            setTimeout(() => {
+                filterByStatus('in_progress');
+            }, 500);
         });
 
         // Load user info

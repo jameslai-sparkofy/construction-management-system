@@ -670,7 +670,7 @@
                 // 準備專案資料
                 const projectData = {
                     opportunity_id: selectedOpportunity.id,
-                    name: `${selectedOpportunity.name} 工程專案`,
+                    name: selectedOpportunity.name,
                     spc_engineering: selectedEngineeringTypes.includes('spc') ? JSON.stringify({ enabled: true }) : null,
                     cabinet_engineering: selectedEngineeringTypes.includes('cabinet') ? JSON.stringify({ enabled: true }) : null,
                     status: 'active'
