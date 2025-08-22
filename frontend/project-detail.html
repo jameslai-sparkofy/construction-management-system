@@ -1772,6 +1772,28 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* 水波動畫效果 */
+        @keyframes wave {
+            0% { 
+                background: linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.8) 0%, 
+                    rgba(255, 255, 255, 0.9) 50%, 
+                    rgba(255, 255, 255, 0.8) 100%);
+            }
+            50% { 
+                background: linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.9) 0%, 
+                    rgba(255, 255, 255, 1) 50%, 
+                    rgba(255, 255, 255, 0.9) 100%);
+            }
+            100% { 
+                background: linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.8) 0%, 
+                    rgba(255, 255, 255, 0.9) 50%, 
+                    rgba(255, 255, 255, 0.8) 100%);
+            }
+        }
     </style>
     <script src="config.js"></script>
     <script src="js/unified-auth.js"></script>
@@ -2873,9 +2895,9 @@
             // 先添加所有工班按鈕
             filteredTeams.forEach(team => {
                 const teamButton = document.createElement('div');
-                const buttonWidth = isMobile ? '140px' : '120px';
+                const buttonWidth = isMobile ? '160px' : '140px';
                 teamButton.style.cssText = `
-                    padding: 0.75rem; 
+                    padding: 0.5rem 0.75rem; 
                     background: linear-gradient(135deg, #84C7D0 0%, #6BB8C3 100%); 
                     color: white; 
                     border: none;
@@ -2883,9 +2905,8 @@
                     font-weight: 500; 
                     font-size: 0.875rem;
                     display: flex; 
-                    flex-direction: column;
                     align-items: center; 
-                    gap: 0.25rem; 
+                    gap: 0.5rem; 
                     min-width: ${buttonWidth};
                     box-shadow: 0 2px 8px rgba(132, 199, 208, 0.3);
                     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -2893,12 +2914,11 @@
                 `;
                 
                 // 工班名稱
-                const teamNameSpan = document.createElement('div');
+                const teamNameSpan = document.createElement('span');
                 teamNameSpan.style.cssText = `
                     font-weight: 600;
-                    font-size: 0.9rem;
-                    text-align: center;
-                    margin-bottom: 0.25rem;
+                    font-size: 0.875rem;
+                    flex-shrink: 0;
                 `;
                 teamNameSpan.textContent = team.abbreviation || team.name || `工班 ${team.id}`;
                 
@@ -2907,41 +2927,65 @@
                 const completedCount = team.completedCount || 0;
                 const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
                 
-                // 進度數據容器
-                const progressContainer = document.createElement('div');
-                progressContainer.style.cssText = `
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    gap: 0.25rem;
-                `;
-                
-                // 完成數量
-                const countDisplay = document.createElement('div');
+                // 完成數量顯示
+                const countDisplay = document.createElement('span');
                 countDisplay.style.cssText = `
-                    font-size: 0.8rem;
+                    font-size: 0.75rem;
                     color: rgba(255, 255, 255, 0.9);
-                    text-align: center;
+                    margin-right: 0.25rem;
                 `;
                 countDisplay.textContent = `${completedCount}/${siteCount}`;
                 
-                // 百分比顯示
-                const percentageDisplay = document.createElement('div');
-                percentageDisplay.style.cssText = `
+                // 水位效果容器
+                const waterContainer = document.createElement('div');
+                waterContainer.style.cssText = `
+                    position: relative;
+                    width: 40px;
+                    height: 16px;
                     background: rgba(255, 255, 255, 0.2);
-                    padding: 0.2rem 0.5rem;
                     border-radius: 8px;
-                    font-size: 0.75rem;
-                    font-weight: 600;
-                    color: white;
+                    border: 1px solid rgba(255, 255, 255, 0.3);
+                    overflow: hidden;
                 `;
-                percentageDisplay.textContent = `${percentage}%`;
                 
-                progressContainer.appendChild(countDisplay);
-                progressContainer.appendChild(percentageDisplay);
+                // 水位效果
+                const waterLevel = document.createElement('div');
+                waterLevel.style.cssText = `
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    height: 100%;
+                    width: ${percentage}%;
+                    background: linear-gradient(90deg, 
+                        rgba(255, 255, 255, 0.8) 0%, 
+                        rgba(255, 255, 255, 0.9) 50%, 
+                        rgba(255, 255, 255, 0.8) 100%);
+                    border-radius: 7px;
+                    transition: width 0.8s ease-in-out;
+                    animation: wave 2s ease-in-out infinite;
+                `;
+                
+                // 百分比文字
+                const percentageText = document.createElement('span');
+                percentageText.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 0.65rem;
+                    font-weight: 600;
+                    color: ${percentage > 50 ? '#333' : 'white'};
+                    z-index: 2;
+                    text-shadow: ${percentage <= 50 ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'};
+                `;
+                percentageText.textContent = `${percentage}%`;
+                
+                waterContainer.appendChild(waterLevel);
+                waterContainer.appendChild(percentageText);
                 
                 teamButton.appendChild(teamNameSpan);
-                teamButton.appendChild(progressContainer);
+                teamButton.appendChild(countDisplay);
+                teamButton.appendChild(waterContainer);
                 
                 // Tooltip shows both site count and member count
                 const siteText = team.siteCount ? `${team.siteCount} 個案場` : '無案場';
