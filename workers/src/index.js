@@ -3324,6 +3324,68 @@ export default {
         }), { status: 500, headers });
       }
     }
+
+    // 專案創建 API
+    if (path === '/api/v1/projects' && method === 'POST') {
+      try {
+        // 檢查認證
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const data = await request.json();
+        console.log('[DEBUG] Creating project with data:', JSON.stringify(data));
+        
+        const projectId = 'proj_' + Date.now();
+        
+        // 插入專案記錄
+        const insertProject = env.DB_ENGINEERING.prepare(`
+          INSERT INTO projects (
+            id, opportunity_id, name, 
+            spc_engineering, cabinet_engineering,
+            status, created_by, created_at
+          ) VALUES (?, ?, ?, ?, ?, 'active', ?, datetime('now'))
+        `);
+
+        const result = await insertProject.bind(
+          projectId,
+          data.opportunity_id || '',
+          data.name || '',
+          data.spc_engineering ? JSON.stringify(data.spc_engineering) : null,
+          data.cabinet_engineering ? JSON.stringify(data.cabinet_engineering) : null,
+          auth.user.user_id || 'system'
+        ).run();
+
+        if (!result.success) {
+          throw new Error('Failed to create project');
+        }
+
+        console.log('[DEBUG] Project created successfully:', projectId);
+        
+        return new Response(JSON.stringify({
+          success: true,
+          project: {
+            id: projectId,
+            opportunity_id: data.opportunity_id,
+            name: data.name,
+            spc_engineering: data.spc_engineering,
+            cabinet_engineering: data.cabinet_engineering,
+            status: 'active'
+          }
+        }), { status: 201, headers });
+
+      } catch (error) {
+        console.error('[Project Creation Error]:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: error.message || 'Failed to create project'
+        }), { status: 500, headers });
+      }
+    }
     
     // Default 404
     return new Response(JSON.stringify({
