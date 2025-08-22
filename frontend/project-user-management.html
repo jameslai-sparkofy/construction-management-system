@@ -1885,11 +1885,14 @@
                 // Owner 和 Worker 沒有操作權限，所以 actions 保持為空字符串
             }
             
+            // 決定角色顯示文字
+            const roleText = role === 'leader' ? '負責人' : '成員';
+            
             return `
                 <div class="project-user-item ${role === 'leader' ? 'leader-item' : ''}">
                     <div>
                         <div class="user-name">
-                            ${user.name}
+                            ${user.name} (${roleText})
                         </div>
                         <div class="user-detail">${user.phone || ''}</div>
                     </div>

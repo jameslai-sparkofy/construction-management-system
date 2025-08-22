@@ -290,7 +290,8 @@
       "Bash(source ~/.bashrc)",
       "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
       "Bash($HOME/.local/bin/uvx:*)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" timeout 60 npx wrangler deploy --config workers/wrangler.dev.toml)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" timeout 60 npx wrangler deploy --config workers/wrangler.dev.toml)",
+      "WebFetch(domain:cm-prod.pages.dev)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
