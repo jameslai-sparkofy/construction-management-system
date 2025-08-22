@@ -1582,6 +1582,124 @@
             }
         }
 
+        /* Building Statistics Section */
+        .building-stats-section {
+            background: var(--surface);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--heading);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .building-charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.5rem;
+            justify-items: center;
+        }
+
+        .building-chart {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pie-chart {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(var(--completed) 0deg, var(--pending) 0deg);
+            transition: all 0.8s ease-in-out;
+            transform: rotate(-90deg);
+        }
+
+        .pie-chart::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .pie-chart-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(90deg);
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--heading);
+            z-index: 1;
+        }
+
+        .building-info {
+            text-align: center;
+        }
+
+        .building-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--heading);
+            margin-bottom: 0.25rem;
+        }
+
+        .building-teams {
+            font-size: 0.75rem;
+            color: var(--body-text);
+            line-height: 1.4;
+        }
+
+        .loading-placeholder {
+            text-align: center;
+            padding: 2rem;
+            color: var(--body-text);
+            font-size: 0.9rem;
+        }
+
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .building-charts-container {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+                gap: 1rem;
+            }
+
+            .pie-chart {
+                width: 100px;
+                height: 100px;
+            }
+
+            .pie-chart::before {
+                width: 65px;
+                height: 65px;
+            }
+
+            .pie-chart-percentage {
+                font-size: 1rem;
+            }
+
+            .building-name {
+                font-size: 0.8rem;
+            }
+
+            .building-teams {
+                font-size: 0.7rem;
+            }
+        }
+
         /* Loading spinner animation */
         @keyframes spin {
             0% { transform: rotate(0deg); }
@@ -1656,6 +1774,14 @@
                         <span>刪除</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Building Completion Statistics -->
+        <div class="building-stats-section">
+            <h2 class="section-title">各棟完成度統計</h2>
+            <div class="building-charts-container" id="buildingChartsContainer">
+                <div class="loading-placeholder">載入中...</div>
             </div>
         </div>
 
@@ -5054,6 +5180,9 @@
             const pendingSites = totalSites - completedSites;
             const completionRate = totalSites > 0 ? Math.round((completedSites / totalSites) * 100) : 0;
             
+            // 生成建築物完成度統計
+            generateBuildingCompletionStats();
+            
             // Update stat cards
             document.getElementById('statTotalSites').textContent = totalSites;
             document.getElementById('statCompleted').textContent = completedSites;
@@ -5068,6 +5197,139 @@
                 pendingCount: pendingSites,
                 completionRate: completionRate
             };
+        }
+
+        // 生成建築物完成度統計（基於已載入的案場數據）
+        function generateBuildingCompletionStats() {
+            try {
+                const container = document.getElementById('buildingChartsContainer');
+                if (!container) return;
+                
+                // 如果沒有案場數據，顯示載入中
+                if (!currentSites || currentSites.length === 0) {
+                    container.innerHTML = '<div class="loading-placeholder">暫無案場資料</div>';
+                    return;
+                }
+                
+                console.log('[DEBUG] Generating building stats from', currentSites.length, 'sites');
+                
+                // 按建築物分組並統計完成度
+                const buildingStats = {};
+                
+                currentSites.forEach(site => {
+                    // 使用 fieldMapping 來獲取正確的欄位
+                    const buildingName = site[fieldMapping.building] || site.field_xCGMd__c || '未命名建築';
+                    const isCompleted = site[fieldMapping.completed] || (site.field_iZJ5T__c === '已完工');
+                    const teamNames = site[fieldMapping.team] || site.field_cBxzN__c || '';
+                    
+                    if (!buildingStats[buildingName]) {
+                        buildingStats[buildingName] = {
+                            total: 0,
+                            completed: 0,
+                            teams: new Set()
+                        };
+                    }
+                    
+                    buildingStats[buildingName].total++;
+                    if (isCompleted) {
+                        buildingStats[buildingName].completed++;
+                    }
+                    
+                    // 收集工班名稱，支援逗號分隔
+                    if (teamNames && teamNames !== '-') {
+                        teamNames.split(',').forEach(team => {
+                            const trimmedTeam = team.trim();
+                            if (trimmedTeam) {
+                                // 使用智能簡稱邏輯
+                                const teamAbbr = getTeamAbbreviation(trimmedTeam);
+                                buildingStats[buildingName].teams.add(teamAbbr);
+                            }
+                        });
+                    }
+                });
+                
+                // 生成圓餅圖
+                container.innerHTML = '';
+                
+                if (Object.keys(buildingStats).length === 0) {
+                    container.innerHTML = '<div class="loading-placeholder">暫無建築物資料</div>';
+                    return;
+                }
+                
+                Object.entries(buildingStats).forEach(([buildingName, stats]) => {
+                    const percentage = stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+                    const teamsList = Array.from(stats.teams).join(', ');
+                    
+                    const chartElement = createBuildingChart(buildingName, percentage, teamsList, stats.completed, stats.total);
+                    container.appendChild(chartElement);
+                });
+                
+                // 觸發動畫
+                setTimeout(() => {
+                    document.querySelectorAll('.pie-chart').forEach(chart => {
+                        chart.classList.add('animate');
+                    });
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error generating building stats:', error);
+                document.getElementById('buildingChartsContainer').innerHTML = 
+                    '<div class="loading-placeholder">載入統計資料失敗</div>';
+            }
+        }
+        
+        // 智能工班簡稱生成
+        function getTeamAbbreviation(teamName) {
+            if (!teamName) return '';
+            
+            const name = teamName.trim();
+            
+            // 特殊規則：如果包含「有限公司」，取前面的簡稱
+            if (name.includes('有限公司')) {
+                // 例如：「塔塔家建材有限公司」 -> 「塔塔」
+                const companyName = name.replace('有限公司', '').replace('建材', '').replace('工程', '').replace('股份', '').trim();
+                if (companyName.length >= 2) {
+                    return companyName.substring(0, 2); // 取前兩個字
+                } else if (companyName.length > 0) {
+                    return companyName;
+                }
+            }
+            
+            // 如果是「XX工班」格式，取XX的最後一個字
+            const match = name.match(/(.+?)工班/);
+            if (match) {
+                return match[1].slice(-1); // 取工班前面名字的最後一個字
+            }
+            
+            // 否則取名稱的前兩個字作為簡稱
+            if (name.length >= 2) {
+                return name.substring(0, 2);
+            } else {
+                return name;
+            }
+        }
+        
+        // 創建個別建築物圓餅圖
+        function createBuildingChart(buildingName, percentage, teams, completed, total) {
+            const chartDiv = document.createElement('div');
+            chartDiv.className = 'building-chart';
+            
+            const degrees = (percentage / 100) * 360;
+            
+            chartDiv.innerHTML = `
+                <div class="pie-chart" style="background: conic-gradient(var(--completed) ${degrees}deg, var(--pending) ${degrees}deg);">
+                    <div class="pie-chart-percentage">${percentage}%</div>
+                </div>
+                <div class="building-info">
+                    <div class="building-name">${buildingName}</div>
+                    <div class="building-teams">${teams || '無工班資料'}</div>
+                    <div class="building-teams" style="margin-top: 0.25rem; font-weight: 500; color: var(--primary);">
+                        ${completed}/${total} 完成
+                    </div>
+                </div>
+            `;
+            
+            return chartDiv;
         }
 
         // 檢查案場存取權限
