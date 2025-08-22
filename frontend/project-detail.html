@@ -1935,11 +1935,9 @@
             
             <!-- Construction Team Info -->
             <div class="construction-team-info" id="constructionTeamInfo">
-                <button class="team-info-toggle" onclick="toggleTeamInfo()">工班資訊</button>
-                <div class="team-info-content">
+                <div class="team-info-content" style="display: block;">
                     <div style="padding: 1rem 1.5rem; background: #fffbeb;">
                         <div class="legend-group" style="background: transparent; padding: 0;">
-                            <span class="legend-title">工班：</span>
                             <div class="legend-item" id="legendTeams">
                                 <!-- 動態生成工班圖例 -->
                             </div>
@@ -2629,7 +2627,9 @@
                             ...teamWithMembers,
                             id: teamId,  // Use team ID
                             name: teamInfo.name || teamWithMembers.name || `工班 ${teamId}`,
+                            abbreviation: teamInfo.abbreviation,
                             siteCount: teamInfo.siteCount,
+                            completedCount: teamInfo.completedCount,
                             sites: teamInfo.sites
                         });
                     }
@@ -2888,9 +2888,9 @@
                     flex-shrink: 0;
                 `;
                 
-                // Show full team name with site count badge
+                // Show team abbreviation with site count badge
                 const teamNameSpan = document.createElement('span');
-                teamNameSpan.textContent = team.name || `工班 ${team.id}`;
+                teamNameSpan.textContent = team.abbreviation || team.name || `工班 ${team.id}`;
                 
                 const countBadge = document.createElement('span');
                 countBadge.style.cssText = `
@@ -2904,7 +2904,11 @@
                     display: inline-block;
                     font-weight: bold;
                 `;
-                countBadge.textContent = team.siteCount || 0;
+                // Calculate completion percentage
+                const siteCount = team.siteCount || 0;
+                const completedCount = team.completedCount || 0;
+                const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
+                countBadge.textContent = `${completedCount}/${siteCount}|${percentage}%`;
                 
                 teamButton.appendChild(teamNameSpan);
                 teamButton.appendChild(countBadge);
@@ -4941,6 +4945,7 @@
                                         name: teamName,
                                         abbreviation: teamAbbreviation,
                                         siteCount: 0,
+                                        completedCount: 0,
                                         sites: []
                                     });
                                 }
@@ -4960,12 +4965,19 @@
                             name: teamInfo?.name || teamNameFromSite, // 優先使用映射的名稱
                             abbreviation: teamInfo?.abbreviation || null,
                             siteCount: 0,
+                            completedCount: 0,
                             sites: []
                         });
                     }
                     const teamData = teamsMap.get(teamId);
                     teamData.siteCount++;
                     teamData.sites.push(site._id);
+                    
+                    // Check if site is completed
+                    const isCompleted = site[fieldMapping.completed] || (site.field_iZJ5T__c === '已完工');
+                    if (isCompleted) {
+                        teamData.completedCount++;
+                    }
                     
                     // 記錄此棟別有此工班（使用 ID）
                     buildingTeams[building].add(teamId);
@@ -6191,27 +6203,8 @@
                 const files = e.target.files;
                 
                 for (let file of files) {
-                    // Upload to R2
-                    const photoUrl = await uploadToR2(file, type);
-                    if (photoUrl) {
-                        // Add to UI
-                        let containerId;
-                        switch(type) {
-                            case 'floorPlan':
-                                containerId = 'floorPlanPhotos';
-                                break;
-                            case 'before':
-                                containerId = 'beforePhotos';
-                                break;
-                            case 'after':
-                                containerId = 'afterPhotos';
-                                break;
-                            case 'difficulty':
-                                containerId = 'difficultyPhotos';
-                                break;
-                        }
-                        addPhotoToContainer(containerId, photoUrl);
-                    }
+                    // Upload to R2 (uploadToR2 handles displaying the photo)
+                    await uploadToR2(file, type);
                 }
             };
             input.click();
@@ -6576,29 +6569,17 @@
         }
 
         // Toggle construction team info
-        function toggleTeamInfo() {
-            const teamInfo = document.getElementById('constructionTeamInfo');
-            if (teamInfo) {
-                teamInfo.classList.toggle('collapsed');
-            }
-        }
 
         // Initialize collapsible sections on mobile
         function initCollapsibleSections() {
             if (window.innerWidth <= 768) {
                 // Collapse sections by default on mobile
                 const statsSection = document.getElementById('statsSection');
-                const constructionTeamInfo = document.getElementById('constructionTeamInfo');
                 const statsToggle = statsSection?.previousElementSibling;
                 
                 if (statsSection && statsToggle && statsToggle.classList.contains('section-toggle')) {
                     statsSection.classList.add('collapsed');
                     statsToggle.classList.add('collapsed');
-                }
-                
-                // Collapse construction team info by default on mobile
-                if (constructionTeamInfo) {
-                    constructionTeamInfo.classList.add('collapsed');
                 }
             }
         }
@@ -6608,7 +6589,7 @@
         window.addEventListener('resize', () => {
             // Remove collapsed state when switching to desktop
             if (window.innerWidth > 768) {
-                const sections = document.querySelectorAll('.stats-section, .construction-team-info');
+                const sections = document.querySelectorAll('.stats-section');
                 const toggles = document.querySelectorAll('.section-toggle');
                 
                 sections.forEach(section => section.classList.remove('collapsed'));
