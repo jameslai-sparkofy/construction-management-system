@@ -2875,7 +2875,6 @@
                 const teamButton = document.createElement('button');
                 const buttonWidth = isMobile ? '160px' : '80px';
                 teamButton.style.cssText = `
-                    cursor: pointer; 
                     padding: 0.625rem 1rem; 
                     background: #84C7D0; 
                     color: white; 
@@ -2886,7 +2885,6 @@
                     display: inline-flex; 
                     align-items: center; 
                     gap: 0.5rem; 
-                    transition: all 0.2s;
                     min-width: ${buttonWidth};
                     white-space: nowrap;
                     flex-shrink: 0;
@@ -2922,25 +2920,9 @@
                 const memberText = team.memberCount ? `${team.memberCount} 位成員` : '無成員';
                 teamButton.title = `${team.name}\n${siteText}\n${memberText}`;
                 
-                // Add hover effect
-                teamButton.onmouseenter = () => {
-                    teamButton.style.transform = 'scale(1.05)';
-                    teamButton.style.boxShadow = '0 4px 12px rgba(132, 199, 208, 0.4)';
-                    teamButton.style.background = '#6BB8C3';
-                };
-                teamButton.onmouseleave = () => {
-                    teamButton.style.transform = 'scale(1)';
-                    teamButton.style.boxShadow = 'none';
-                    teamButton.style.background = '#84C7D0';
-                };
+                // 移除 hover 效果，工班按鈕僅供顯示
                 
-                // Fix onclick event
-                teamButton.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('Team button clicked:', team.name);
-                    showTeamModal(team);
-                });
+                // 移除點擊功能，工班按鈕僅供顯示
                 
                 teamsContainer.appendChild(teamButton);
             });
