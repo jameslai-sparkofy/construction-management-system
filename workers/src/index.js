@@ -908,7 +908,7 @@ export default {
               teamMappings[teamName] = {
                 id: team._id,
                 name: teamName,
-                abbreviation: team.abbreviation || team.field_zN7zO__c || teamName.substring(0, 2),
+                abbreviation: team.abbreviation__c || team.abbreviation || teamName.substring(0, 1),
                 created_time: team.created_time || team.createTime
               };
             }

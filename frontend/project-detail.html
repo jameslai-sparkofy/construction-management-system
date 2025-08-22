@@ -4753,8 +4753,8 @@
                     
                     // 建立工班映射表
                     teamNameToIdMap = {};
-                    Object.values(result.teamMappings || {}).forEach(team => {
-                        teamNameToIdMap[team.name] = team.id;
+                    Object.entries(result.teamMappings || {}).forEach(([name, team]) => {
+                        teamNameToIdMap[name] = team.id;
                     });
                     
                     console.log('✅ [OPTIMIZED] All data loaded:', {
@@ -4762,6 +4762,7 @@
                         sites: result.sites.length,
                         teams: result.teams.length,
                         users: result.userStats.total_users,
+                        teamMappings: Object.keys(teamNameToIdMap).length,
                         loadTime: loadTime.toFixed(2) + 'ms'
                     });
 
