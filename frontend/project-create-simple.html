@@ -142,11 +142,13 @@
             font-weight: 600;
             font-size: 1.1rem;
             margin-bottom: 0.5rem;
+            pointer-events: none;
         }
 
         .engineering-description {
             font-size: 0.9rem;
             opacity: 0.8;
+            pointer-events: none;
         }
 
         .engineering-option.selected .engineering-description {
@@ -167,6 +169,7 @@
             font-size: 12px;
             opacity: 0;
             transition: opacity 0.2s ease;
+            pointer-events: none;
         }
 
         .engineering-option.selected .checkmark {
@@ -330,6 +333,11 @@
                 </div>
                 
                 <div class="form-group">
+                    <label for="opportunitySearch" class="form-label">搜尋商機</label>
+                    <input type="text" id="opportunitySearch" class="form-control" placeholder="輸入關鍵字搜尋商機...">
+                </div>
+                
+                <div class="form-group">
                     <label for="opportunitySelect" class="form-label">選擇要建立專案的商機 *</label>
                     <select id="opportunitySelect" class="form-control select-control" required>
                         <option value="">請選擇商機...</option>
@@ -460,26 +468,70 @@
             }
         }
 
-        function populateOpportunitySelect() {
+        function populateOpportunitySelect(searchTerm = '') {
             const select = document.getElementById('opportunitySelect');
             
             // 清空現有選項（保留預設選項）
             select.innerHTML = '<option value="">請選擇商機...</option>';
             
+            // 過濾商機（如果有搜尋條件）
+            let filteredOpportunities = opportunities;
+            if (searchTerm.trim()) {
+                const term = searchTerm.toLowerCase();
+                filteredOpportunities = opportunities.filter(opp => {
+                    const name = (opp.name || '').toLowerCase();
+                    const id = (opp._id || '').toLowerCase();
+                    return name.includes(term) || id.includes(term);
+                });
+            }
+            
             // 添加商機選項
-            opportunities.forEach(opp => {
+            filteredOpportunities.forEach(opp => {
                 const option = document.createElement('option');
                 option.value = opp._id;
                 option.textContent = opp.name || `商機 ${opp._id.slice(-8)}`;
                 option.dataset.opportunityData = JSON.stringify(opp);
                 select.appendChild(option);
             });
+            
+            // 顯示搜尋結果數量
+            if (searchTerm.trim()) {
+                const searchResult = document.getElementById('searchResult') || (() => {
+                    const div = document.createElement('div');
+                    div.id = 'searchResult';
+                    div.style.cssText = 'font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem;';
+                    document.getElementById('opportunitySearch').parentNode.appendChild(div);
+                    return div;
+                })();
+                searchResult.textContent = `找到 ${filteredOpportunities.length} 個商機`;
+            } else {
+                const searchResult = document.getElementById('searchResult');
+                if (searchResult) searchResult.remove();
+            }
         }
 
         // ========================================
         // 事件監聽器
         // ========================================
         function setupEventListeners() {
+            // 商機搜尋
+            document.getElementById('opportunitySearch').addEventListener('input', function(e) {
+                const searchTerm = e.target.value;
+                populateOpportunitySelect(searchTerm);
+                
+                // 清除當前選擇（如果搜尋條件改變）
+                const select = document.getElementById('opportunitySelect');
+                if (select.value && searchTerm.trim()) {
+                    const currentOption = select.querySelector(`option[value="${select.value}"]`);
+                    if (!currentOption) {
+                        select.value = '';
+                        selectedOpportunity = null;
+                        updateProjectSummary();
+                        updateCreateButton();
+                    }
+                }
+            });
+            
             // 商機選擇
             document.getElementById('opportunitySelect').addEventListener('change', handleOpportunityChange);
             
