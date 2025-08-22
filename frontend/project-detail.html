@@ -2633,6 +2633,7 @@
                             name: teamInfo.name || teamWithMembers.name || `工班 ${teamId}`,
                             abbreviation: teamInfo.abbreviation,
                             siteCount: teamInfo.siteCount,
+                            completedCount: teamInfo.completedCount,
                             sites: teamInfo.sites
                         });
                     }
@@ -2907,7 +2908,11 @@
                     display: inline-block;
                     font-weight: bold;
                 `;
-                countBadge.textContent = team.siteCount || 0;
+                // Calculate completion percentage
+                const siteCount = team.siteCount || 0;
+                const completedCount = team.completedCount || 0;
+                const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
+                countBadge.textContent = `${completedCount}/${siteCount}|${percentage}%`;
                 
                 teamButton.appendChild(teamNameSpan);
                 teamButton.appendChild(countBadge);
@@ -4865,6 +4870,7 @@
                                         name: teamName,
                                         abbreviation: teamAbbreviation,
                                         siteCount: 0,
+                                        completedCount: 0,
                                         sites: []
                                     });
                                 }
@@ -4884,12 +4890,19 @@
                             name: teamInfo?.name || teamNameFromSite, // 優先使用映射的名稱
                             abbreviation: teamInfo?.abbreviation || null,
                             siteCount: 0,
+                            completedCount: 0,
                             sites: []
                         });
                     }
                     const teamData = teamsMap.get(teamId);
                     teamData.siteCount++;
                     teamData.sites.push(site._id);
+                    
+                    // Check if site is completed
+                    const isCompleted = site[fieldMapping.completed] || (site.field_iZJ5T__c === '已完工');
+                    if (isCompleted) {
+                        teamData.completedCount++;
+                    }
                     
                     // 記錄此棟別有此工班（使用 ID）
                     buildingTeams[building].add(teamId);
@@ -6118,27 +6131,8 @@
                 const files = e.target.files;
                 
                 for (let file of files) {
-                    // Upload to R2
-                    const photoUrl = await uploadToR2(file, type);
-                    if (photoUrl) {
-                        // Add to UI
-                        let containerId;
-                        switch(type) {
-                            case 'floorPlan':
-                                containerId = 'floorPlanPhotos';
-                                break;
-                            case 'before':
-                                containerId = 'beforePhotos';
-                                break;
-                            case 'after':
-                                containerId = 'afterPhotos';
-                                break;
-                            case 'difficulty':
-                                containerId = 'difficultyPhotos';
-                                break;
-                        }
-                        addPhotoToContainer(containerId, photoUrl);
-                    }
+                    // Upload to R2 (uploadToR2 handles displaying the photo)
+                    await uploadToR2(file, type);
                 }
             };
             input.click();
