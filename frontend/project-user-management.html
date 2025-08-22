@@ -742,8 +742,8 @@
     </div>
 
     <script>
-        // 配置 - 延遲初始化避免競態條件
-        let API_BASE = null;
+        // 配置 - 延遲初始化避免競態條件，提供默認值
+        let API_BASE = 'https://construction-management-api-dev.lai-jameslai.workers.dev';
         
         // 初始化配置函數
         function initializeConfig() {
@@ -752,8 +752,8 @@
                 console.log('API_BASE initialized:', API_BASE);
                 return true;
             } else {
-                console.warn('CONFIG not ready, retrying...');
-                return false;
+                console.warn('CONFIG not ready, using fallback API URL:', API_BASE);
+                return true; // 即使沒有 CONFIG，也使用默認值繼續
             }
         }
         let projectId = null;
