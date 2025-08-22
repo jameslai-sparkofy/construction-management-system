@@ -543,10 +543,15 @@
             // 工程類型卡片點擊
             document.querySelectorAll('.engineering-option').forEach(option => {
                 option.addEventListener('click', function(e) {
+                    console.log('Engineering option clicked:', e.target.tagName, e.target);
                     if (e.target.tagName !== 'INPUT') {
                         const checkbox = this.querySelector('input[type="checkbox"]');
+                        console.log('Checkbox found:', checkbox);
                         checkbox.checked = !checkbox.checked;
-                        checkbox.dispatchEvent(new Event('change'));
+                        console.log('Checkbox state:', checkbox.checked);
+                        
+                        // 手動調用處理函數
+                        handleEngineeringTypeChange({ target: checkbox });
                     }
                 });
             });
@@ -576,7 +581,9 @@
         }
 
         function handleEngineeringTypeChange(e) {
+            console.log('Engineering type change handler called:', e.target.value, e.target.checked);
             const option = e.target.closest('.engineering-option');
+            console.log('Option element:', option);
             
             if (e.target.checked) {
                 option.classList.add('selected');
@@ -588,6 +595,7 @@
                 selectedEngineeringTypes = selectedEngineeringTypes.filter(type => type !== e.target.value);
             }
             
+            console.log('Selected engineering types:', selectedEngineeringTypes);
             updateProjectSummary();
             updateCreateButton();
         }

@@ -93,21 +93,38 @@ async function testSimpleProjectCreate() {
         console.log('商機載入檢查:', opportunityCheck);
         
         if (opportunityCheck.hasValidOptions) {
-            // 5. 選擇第一個商機
-            console.log('5. 選擇第一個商機...');
+            // 5. 測試搜尋功能
+            console.log('5. 測試商機搜尋功能...');
+            await page.fill('#opportunitySearch', '勝美');
+            await page.waitForTimeout(1000);
+            
+            const searchCheck = await page.evaluate(() => {
+                const select = document.getElementById('opportunitySelect');
+                const searchResult = document.getElementById('searchResult');
+                return {
+                    filteredOptions: select.options.length,
+                    searchResultText: searchResult?.textContent || 'N/A'
+                };
+            });
+            console.log('搜尋結果檢查:', searchCheck);
+            
+            // 清空搜尋並選擇第一個商機
+            console.log('6. 清空搜尋並選擇第一個商機...');
+            await page.fill('#opportunitySearch', '');
+            await page.waitForTimeout(500);
             await page.selectOption('#opportunitySelect', { index: 1 });
             await page.waitForTimeout(1000);
             
-            // 6. 選擇工程類型
-            console.log('6. 選擇 SPC 工程...');
-            await page.check('#spcEngineering');
+            // 7. 選擇工程類型
+            console.log('7. 選擇 SPC 工程...');
+            await page.click('label[for="spcEngineering"]');
             await page.waitForTimeout(1000);
             
-            console.log('7. 選擇浴櫃工程...');
-            await page.check('#cabinetEngineering');
+            console.log('8. 選擇浴櫃工程...');
+            await page.click('label[for="cabinetEngineering"]');
             await page.waitForTimeout(1000);
             
-            // 7. 檢查專案摘要是否顯示
+            // 8. 檢查專案摘要是否顯示
             const summaryCheck = await page.evaluate(() => {
                 const summary = document.getElementById('projectSummary');
                 return {
@@ -120,7 +137,7 @@ async function testSimpleProjectCreate() {
             
             console.log('專案摘要:', summaryCheck);
             
-            // 8. 檢查建立按鈕是否啟用
+            // 9. 檢查建立按鈕是否啟用
             const buttonCheck = await page.evaluate(() => {
                 const createBtn = document.getElementById('createBtn');
                 return {
@@ -132,8 +149,8 @@ async function testSimpleProjectCreate() {
             console.log('建立按鈕狀態:', buttonCheck);
             
             if (!buttonCheck.disabled) {
-                // 9. 點擊建立專案（但不實際建立，改為測試模式）
-                console.log('9. 測試建立專案流程...');
+                // 10. 點擊建立專案（但不實際建立，改為測試模式）
+                console.log('10. 測試建立專案流程...');
                 
                 // 檢查表單資料準備
                 const formData = await page.evaluate(() => {
