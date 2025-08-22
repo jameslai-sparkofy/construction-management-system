@@ -742,10 +742,20 @@
     </div>
 
     <script>
-        // 配置
-        // 使用與其他頁面相同的 API URL - 確保使用正確的 development API
-        // 使用統一配置，移除 hardcode fallback
-        const API_BASE = window.CONFIG?.API?.WORKER_API_URL || 'ERROR_NO_CONFIG';
+        // 配置 - 延遲初始化避免競態條件
+        let API_BASE = null;
+        
+        // 初始化配置函數
+        function initializeConfig() {
+            if (window.CONFIG?.API?.WORKER_API_URL) {
+                API_BASE = window.CONFIG.API.WORKER_API_URL;
+                console.log('API_BASE initialized:', API_BASE);
+                return true;
+            } else {
+                console.warn('CONFIG not ready, retrying...');
+                return false;
+            }
+        }
         let projectId = null;
         let currentUserData = null;
         let currentUserProjectRole = null; // 當前用戶在專案中的角色
@@ -807,6 +817,19 @@
 
         // 初始化
         async function init() {
+            // 等待配置載入
+            let configRetries = 0;
+            while (!initializeConfig() && configRetries < 10) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                configRetries++;
+            }
+            
+            if (!API_BASE) {
+                console.error('Failed to initialize CONFIG after retries');
+                alert('系統配置載入失敗，請重新整理頁面');
+                return;
+            }
+            
             // 從 URL 獲取專案 ID
             const urlParams = new URLSearchParams(window.location.search);
             projectId = urlParams.get('project_id');
