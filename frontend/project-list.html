@@ -393,7 +393,7 @@
         }
 
         .project-card-name {
-            font-size: 1.4rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: var(--heading);
             margin-bottom: 0.25rem;
@@ -461,80 +461,10 @@
         }
 
         .project-card-engineering {
-            position: relative;
-        }
-
-        .engineering-hamburger {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
             display: flex;
-            flex-direction: column;
-            gap: 2px;
-            width: 32px;
-            height: 32px;
-            align-items: center;
+            gap: 0.25rem;
             justify-content: center;
-        }
-
-        .engineering-hamburger:hover {
-            background: var(--background);
-            border-color: var(--primary);
-        }
-
-        .hamburger-line {
-            width: 16px;
-            height: 2px;
-            background: var(--body-text);
-            border-radius: 1px;
-            transition: all 0.2s ease;
-        }
-
-        .engineering-hamburger:hover .hamburger-line {
-            background: var(--primary);
-        }
-
-        .engineering-dropdown {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            margin-top: 0.5rem;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            box-shadow: var(--shadow-md);
-            min-width: 120px;
-            z-index: 1000;
-            display: none;
-            padding: 0.5rem;
-        }
-
-        .engineering-dropdown.show {
-            display: block;
-        }
-
-        .engineering-dropdown-item {
-            padding: 0.5rem;
-            margin: 0.25rem 0;
-            border-radius: 4px;
-            background: var(--background);
-            font-size: 0.9rem;
-            color: var(--body-text);
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .engineering-dropdown-item.tag-spc {
-            background: linear-gradient(135deg, #84C7D0 0%, #67a3af 100%);
-            color: white;
-        }
-
-        .engineering-dropdown-item.tag-cabinet {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
+            flex-wrap: wrap;
         }
 
         /* Project Name Column */
@@ -1532,42 +1462,15 @@
             adminBtn.classList.toggle('active');
         }
 
-        function toggleEngineeringDropdown(event, dropdownId) {
-            // 阻止卡片點擊事件
-            event.stopPropagation();
-            
-            // 關閉其他打開的工程下拉選單
-            const allDropdowns = document.querySelectorAll('.engineering-dropdown.show');
-            allDropdowns.forEach(dropdown => {
-                if (dropdown.id !== dropdownId) {
-                    dropdown.classList.remove('show');
-                }
-            });
-            
-            // 切換目標下拉選單
-            const dropdown = document.getElementById(dropdownId);
-            dropdown.classList.toggle('show');
-        }
-
         // 點擊其他地方關閉下拉選單
         document.addEventListener('click', function(event) {
             const adminMenu = document.getElementById('adminMenu');
             const adminDropdown = document.getElementById('adminDropdown');
             const adminBtn = document.getElementById('adminBtn');
             
-            // 關閉管理選單
             if (!adminMenu.contains(event.target)) {
                 adminDropdown.classList.remove('show');
                 adminBtn.classList.remove('active');
-            }
-            
-            // 關閉工程類型下拉選單
-            const clickedEngineering = event.target.closest('.project-card-engineering');
-            if (!clickedEngineering) {
-                const allEngineeringDropdowns = document.querySelectorAll('.engineering-dropdown.show');
-                allEngineeringDropdowns.forEach(dropdown => {
-                    dropdown.classList.remove('show');
-                });
             }
         });
 
@@ -1659,15 +1562,11 @@
                 window.location.href = `project-detail.html?id=${project.id}`;
             };
 
-            const engineeringTypes = project.engineeringTypes || [];
-            const engineeringDropdown = engineeringTypes.length > 0 ? engineeringTypes.map(type => {
+            const engineeringTags = (project.engineeringTypes || []).map(type => {
                 const className = type === 'SPC' ? 'tag-spc' : 'tag-cabinet';
                 const label = type === 'SPC' ? 'SPC' : '浴櫃';
-                return `<div class="engineering-dropdown-item ${className}">${label}</div>`;
-            }).join('') : '<div class="engineering-dropdown-item">無工程類型</div>';
-            
-            const engineeringMenuId = `engineering-menu-${project.id}`;
-            const engineeringDropdownId = `engineering-dropdown-${project.id}`;
+                return `<span class="engineering-tag ${className}">${label}</span>`;
+            }).join('');
 
             // 使用計算後的狀態（優先）或原始狀態（備用）
             const displayStatus = project.calculated_status || project.project_status || 'not_started';
@@ -1697,14 +1596,7 @@
                     </div>
                     <div class="project-card-header-right">
                         <div class="project-card-engineering">
-                            <div class="engineering-hamburger" id="${engineeringMenuId}" onclick="toggleEngineeringDropdown(event, '${engineeringDropdownId}')">
-                                <div class="hamburger-line"></div>
-                                <div class="hamburger-line"></div>
-                                <div class="hamburger-line"></div>
-                            </div>
-                            <div class="engineering-dropdown" id="${engineeringDropdownId}">
-                                ${engineeringDropdown}
-                            </div>
+                            ${engineeringTags}
                         </div>
                         <div class="project-card-status"></div>
                     </div>
