@@ -1773,6 +1773,113 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* 建築物水位效果 */
+        .building-water-container {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(180deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
+            border: 3px solid var(--primary);
+            overflow: hidden;
+            box-shadow: 
+                inset 0 4px 8px rgba(0,0,0,0.1),
+                inset 0 -4px 8px rgba(0,0,0,0.05),
+                0 2px 12px rgba(132, 199, 208, 0.3);
+        }
+        
+        .building-water-level {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            background: linear-gradient(180deg, 
+                rgba(132, 199, 208, 0.9) 0%, 
+                rgba(107, 184, 195, 0.95) 50%, 
+                rgba(84, 199, 208, 1) 100%);
+            transition: height 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 0 50% 50%;
+        }
+        
+        .building-water-level::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg,
+                rgba(255, 255, 255, 0.6) 0%,
+                rgba(255, 255, 255, 0.9) 25%,
+                rgba(255, 255, 255, 0.6) 50%,
+                rgba(255, 255, 255, 0.9) 75%,
+                rgba(255, 255, 255, 0.6) 100%);
+            border-radius: 0 0 4px 4px;
+            animation: wave 2s ease-in-out infinite;
+        }
+        
+        .building-water-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            width: 100%;
+        }
+        
+        .building-water-content .building-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 0.1rem;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        
+        .building-water-content .pie-chart-percentage {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: rgba(255, 255, 255, 1);
+            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            line-height: 1;
+            margin-bottom: 0.1rem;
+        }
+        
+        .building-water-content .building-progress {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 0.1rem;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+        
+        .building-water-content .building-teams {
+            font-size: 0.65rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 400;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            text-align: center;
+            line-height: 1.1;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* 低水位時的文字顏色調整 */
+        .building-water-container[data-percentage="0"] .building-water-content .pie-chart-percentage,
+        .building-water-container[data-percentage="0"] .building-water-content .building-progress,
+        .building-water-container[data-percentage="0"] .building-water-content .building-teams {
+            color: #64748b;
+            text-shadow: none;
+        }
+        
+        .building-water-container[data-low-water="true"] .building-water-content .pie-chart-percentage,
+        .building-water-container[data-low-water="true"] .building-water-content .building-progress,
+        .building-water-container[data-low-water="true"] .building-water-content .building-teams {
+            color: #475569;
+            text-shadow: none;
+        }
+
         /* 水波動畫效果 */
         @keyframes wave {
             0% { 
@@ -2760,57 +2867,61 @@
                 `;
                 countDisplay.textContent = `${completedCount}/${siteCount}`;
                 
-                // 水位效果容器
-                const waterContainer = document.createElement('div');
-                waterContainer.style.cssText = `
+                // 百分比顯示容器
+                const percentageDisplay = document.createElement('div');
+                percentageDisplay.className = 'percentage-display';
+                percentageDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+                
+                // 完成數量顯示
+                percentageDisplay.appendChild(countDisplay);
+                
+                // 進度條容器（匹配完美版本）
+                const progressContainer = document.createElement('div');
+                progressContainer.style.cssText = `
                     position: relative;
-                    width: 40px;
-                    height: 16px;
-                    background: linear-gradient(180deg, #ffffff 0%, #e5e7eb 100%);
+                    width: 55px;
+                    height: 22px;
+                    background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%);
                     border-radius: 8px;
-                    border: 1px solid rgba(255, 255, 255, 0.3);
-                    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
                     overflow: hidden;
+                    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset;
+                    border: 1px solid rgb(132, 199, 208);
                 `;
                 
-                // 橘色進度條
+                // 橘色進度條（匹配完美版本）
                 const progressBar = document.createElement('div');
                 progressBar.style.cssText = `
                     position: absolute;
-                    left: 0;
-                    top: 0;
-                    height: 100%;
-                    width: ${percentage}%;
-                    background: linear-gradient(90deg, #FF8C00 0%, #FFA500 100%);
+                    left: 1px;
+                    top: 1px;
+                    height: calc(100% - 2px);
+                    width: calc(${percentage}% - 2px);
+                    background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%);
                     border-radius: 7px;
                     transition: width 0.8s ease-in-out;
+                    box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;
                 `;
                 
-                // 百分比文字
+                // 百分比文字覆蓋
                 const percentageText = document.createElement('span');
                 percentageText.style.cssText = `
                     position: absolute;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    font-size: 0.65rem;
+                    font-size: 0.75rem;
                     font-weight: 600;
-                    color: ${percentage > 50 ? 'white' : '#333'};
+                    color: rgb(51, 51, 51);
                     z-index: 2;
-                    text-shadow: ${percentage <= 50 ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'};
+                    pointer-events: none;
                 `;
                 percentageText.textContent = `${percentage}%`;
                 
-                waterContainer.appendChild(progressBar);
-                waterContainer.appendChild(percentageText);
+                progressContainer.appendChild(progressBar);
+                progressContainer.appendChild(percentageText);
+                percentageDisplay.appendChild(progressContainer);
                 
-                // 百分比容器
-                const percentageDisplay = document.createElement('div');
-                percentageDisplay.className = 'percentage-display';
-                percentageDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
-                percentageDisplay.appendChild(countDisplay);
-                percentageDisplay.appendChild(waterContainer);
-                
+                // 組裝工班按鈕
                 teamButton.appendChild(teamNameSpan);
                 teamButton.appendChild(percentageDisplay);
                 teamsContainer.appendChild(teamButton);
@@ -5216,10 +5327,12 @@
                     container.appendChild(chartElement);
                 });
                 
-                // 觸發動畫
+                // 觸發水位動畫
                 setTimeout(() => {
-                    document.querySelectorAll('.pie-chart').forEach(chart => {
-                        chart.classList.add('animate');
+                    document.querySelectorAll('.building-water-level').forEach(waterLevel => {
+                        const container = waterLevel.closest('.building-water-container');
+                        const percentage = container.dataset.percentage;
+                        waterLevel.style.height = percentage + '%';
                     });
                 }, 100);
                 
@@ -5261,12 +5374,10 @@
             }
         }
         
-        // 創建個別建築物圓餅圖
+        // 創建個別建築物水位圖
         function createBuildingChart(buildingName, percentage, teams, completed, total) {
             const chartDiv = document.createElement('div');
             chartDiv.className = 'building-chart';
-            
-            const degrees = (percentage / 100) * 360;
             
             // 智能縮短工班名稱
             const shortTeams = teams ? teams.split(', ').map(team => getTeamAbbreviation(team)).join(', ') : '無';
@@ -5274,39 +5385,36 @@
             // 智能建築名稱處理：如果是單字母則加上"棟"
             const displayBuildingName = buildingName.length === 1 ? `${buildingName}棟` : buildingName;
             
+            // 判斷是否為低水位（用於文字顏色調整）
+            const isLowWater = percentage < 40;
+            const waterHeight = Math.max(percentage, 0);
+            
             chartDiv.innerHTML = `
-                <div class="pie-chart" style="background: conic-gradient(var(--completed) ${degrees}deg, var(--pending) ${degrees}deg); position: relative; overflow: hidden;">
-                    <div class="pie-chart-content" style="position: relative; z-index: 2;">
+                <div class="building-water-container" data-percentage="${percentage}" ${isLowWater ? 'data-low-water="true"' : ''}>
+                    <div class="building-water-level" style="height: ${waterHeight}%;"></div>
+                    <div class="building-water-content">
                         <div class="building-name">${displayBuildingName}</div>
                         <div class="pie-chart-percentage">${percentage}%</div>
                         <div class="building-progress">${completed}/${total}</div>
                         <div class="building-teams">${shortTeams}</div>
                     </div>
-                    <div class="water-level" style="
-                        position: absolute;
-                        bottom: 0;
-                        left: 0;
-                        width: 100%;
-                        height: ${percentage}%;
-                        background: linear-gradient(0deg, rgba(72, 187, 120, 0.8) 0%, rgba(72, 187, 120, 0.3) 100%);
-                        border-radius: inherit;
-                        z-index: 1;
-                    ">
-                        <div class="wave-animation" style="
-                            position: absolute;
-                            top: -10px;
-                            left: 0;
-                            width: 200%;
-                            height: 20px;
-                            background: linear-gradient(90deg, transparent, rgba(72, 187, 120, 0.6), transparent);
-                            border-radius: 50%;
-                            animation: wave 3s ease-in-out infinite;
-                        "></div>
-                    </div>
                 </div>
             `;
             
             return chartDiv;
+        }
+
+        // 數字動畫效果
+        function animatePercentage(element, targetValue) {
+            let currentValue = 0;
+            const increment = targetValue / 50;
+            const timer = setInterval(() => {
+                currentValue = Math.min(currentValue + increment, targetValue);
+                element.textContent = Math.round(currentValue) + '%';
+                if (currentValue >= targetValue) {
+                    clearInterval(timer);
+                }
+            }, 30);
         }
 
         // 檢查案場存取權限
