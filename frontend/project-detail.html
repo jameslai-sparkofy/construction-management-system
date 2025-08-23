@@ -2946,18 +2946,19 @@
                     border-radius: 8px;
                     overflow: hidden;
                     box-shadow: inset 0 3px 6px rgba(0,0,0,0.3), inset 0 1px 3px rgba(0,0,0,0.2);
+                    border: 1px solid #84C7D0;
                 `;
                 
                 // 進度條填充
                 const waterLevel = document.createElement('div');
                 waterLevel.style.cssText = `
                     position: absolute;
-                    left: 0;
-                    top: 0;
-                    height: 100%;
-                    width: ${percentage}%;
+                    left: 1px;
+                    top: 1px;
+                    height: calc(100% - 2px);
+                    width: calc(${percentage}% - 2px);
                     background: linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #FF7F00 100%);
-                    border-radius: 8px;
+                    border-radius: 7px;
                     transition: width 0.8s ease-in-out;
                     box-shadow: 0 1px 3px rgba(255,140,0,0.3);
                 `;
