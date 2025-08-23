@@ -1225,7 +1225,7 @@
         }
 
         .stat-card:nth-child(3) .stat-icon {
-            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            background: linear-gradient(135deg, #efefef 0%, #e5e5e5 100%);
         }
 
         .stat-card:nth-child(4) .stat-icon {
@@ -2837,7 +2837,7 @@
             filteredTeams.forEach(team => {
                 const teamButton = document.createElement('div');
                 teamButton.style.cssText = `
-                    padding: 0.5rem 0.75rem; 
+                    padding: 0.75rem 1rem; 
                     background: linear-gradient(135deg, #84C7D0 0%, #6BB8C3 100%); 
                     color: white; 
                     border: none;
@@ -2888,10 +2888,10 @@
                 const progressContainer = document.createElement('div');
                 progressContainer.style.cssText = `
                     position: relative;
-                    width: 55px;
-                    height: 22px;
+                    width: 75px;
+                    height: 28px;
                     background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%);
-                    border-radius: 8px;
+                    border-radius: 10px;
                     overflow: hidden;
                     box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset;
                     border: 1px solid rgb(132, 199, 208);
@@ -2906,7 +2906,7 @@
                     height: calc(100% - 2px);
                     width: calc(${percentage}% - 2px);
                     background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%);
-                    border-radius: 7px;
+                    border-radius: 9px;
                     transition: width 0.8s ease-in-out;
                     box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;
                 `;
