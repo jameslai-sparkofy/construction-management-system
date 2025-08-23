@@ -1641,47 +1641,6 @@
             border-radius: 2px;
         }
 
-        /* Carousel Navigation Controls */
-        .carousel-nav-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 32px;
-            height: 32px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid #e5e7eb;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            z-index: 10;
-            transition: all 0.2s ease;
-            font-size: 16px;
-            color: #6b7280;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .carousel-nav-btn:hover {
-            background: white;
-            border-color: var(--primary);
-            color: var(--primary);
-            transform: translateY(-50%) scale(1.05);
-        }
-
-        .carousel-nav-btn.disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .carousel-nav-left {
-            left: -16px;
-        }
-
-        .carousel-nav-right {
-            right: -16px;
-        }
 
         /* Teams Carousel */
         .teams-carousel-container {
@@ -2049,12 +2008,6 @@
 
         <!-- Building Completion Statistics -->
         <div class="building-stats-section">
-            <button class="carousel-nav-btn carousel-nav-left" id="buildingChartsNavLeft" onclick="scrollBuildingCharts(-1)">
-                ◀
-            </button>
-            <button class="carousel-nav-btn carousel-nav-right" id="buildingChartsNavRight" onclick="scrollBuildingCharts(1)">
-                ▶
-            </button>
             <div class="building-charts-carousel" id="buildingChartsContainer">
                 <div class="loading-placeholder">載入中...</div>
             </div>
@@ -2145,12 +2098,6 @@
             <!-- 工班顯示區塊 (重構版 - Carousel) -->
             <div id="teamsDisplaySection" style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <div class="teams-carousel-container">
-                    <button class="carousel-nav-btn carousel-nav-left" id="legendTeamsNavLeft" onclick="scrollLegendTeams(-1)">
-                        ◀
-                    </button>
-                    <button class="carousel-nav-btn carousel-nav-right" id="legendTeamsNavRight" onclick="scrollLegendTeams(1)">
-                        ▶
-                    </button>
                     <div class="teams-carousel" id="legendTeams">
                         <!-- 動態生成工班圖例 -->
                     </div>
@@ -3019,7 +2966,8 @@
             if (window.unassignedSitesCount && window.unassignedSitesCount > 0) {
                 const unassignedButton = document.createElement('button');
                 unassignedButton.style.cssText = `
-                    padding: 0.5rem 0.75rem;
+                    padding: 0rem 0.75rem;
+                    height: 24px;
                     background: #6b7280;
                     color: white;
                     border: none;
@@ -6934,125 +6882,6 @@
             }
         }
 
-        // Carousel navigation functions
-        function scrollBuildingCharts(direction) {
-            const container = document.getElementById('buildingChartsContainer');
-            const scrollAmount = 200; // Adjust based on your chart width
-            
-            if (container) {
-                container.scrollBy({
-                    left: direction * scrollAmount,
-                    behavior: 'smooth'
-                });
-                
-                // Update navigation buttons
-                setTimeout(() => updateBuildingChartsNavigation(), 100);
-            }
-        }
-
-        function scrollLegendTeams(direction) {
-            const container = document.getElementById('legendTeams');
-            const scrollAmount = 200; // Adjust based on your team button width
-            
-            if (container) {
-                container.scrollBy({
-                    left: direction * scrollAmount,
-                    behavior: 'smooth'
-                });
-                
-                // Update navigation buttons
-                setTimeout(() => updateLegendTeamsNavigation(), 100);
-            }
-        }
-
-        function updateBuildingChartsNavigation() {
-            const container = document.getElementById('buildingChartsContainer');
-            const leftBtn = document.getElementById('buildingChartsNavLeft');
-            const rightBtn = document.getElementById('buildingChartsNavRight');
-            
-            if (!container || !leftBtn || !rightBtn) return;
-            
-            const isAtStart = container.scrollLeft <= 0;
-            const isAtEnd = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 1);
-            
-            leftBtn.classList.toggle('disabled', isAtStart);
-            rightBtn.classList.toggle('disabled', isAtEnd);
-            
-            // Hide navigation if content doesn't overflow
-            const hasOverflow = container.scrollWidth > container.clientWidth;
-            leftBtn.style.display = hasOverflow ? 'flex' : 'none';
-            rightBtn.style.display = hasOverflow ? 'flex' : 'none';
-        }
-
-        function updateLegendTeamsNavigation() {
-            const container = document.getElementById('legendTeams');
-            const leftBtn = document.getElementById('legendTeamsNavLeft');
-            const rightBtn = document.getElementById('legendTeamsNavRight');
-            
-            if (!container || !leftBtn || !rightBtn) return;
-            
-            const isAtStart = container.scrollLeft <= 0;
-            const isAtEnd = container.scrollLeft >= (container.scrollWidth - container.clientWidth - 1);
-            
-            leftBtn.classList.toggle('disabled', isAtStart);
-            rightBtn.classList.toggle('disabled', isAtEnd);
-            
-            // Hide navigation if content doesn't overflow
-            const hasOverflow = container.scrollWidth > container.clientWidth;
-            leftBtn.style.display = hasOverflow ? 'flex' : 'none';
-            rightBtn.style.display = hasOverflow ? 'flex' : 'none';
-        }
-
-        // Initialize navigation on page load and when content updates
-        function initCarouselNavigation() {
-            // Update navigation buttons initially
-            setTimeout(() => {
-                updateBuildingChartsNavigation();
-                updateLegendTeamsNavigation();
-            }, 500);
-            
-            // Add scroll event listeners to update navigation buttons
-            const buildingContainer = document.getElementById('buildingChartsContainer');
-            const teamsContainer = document.getElementById('legendTeams');
-            
-            if (buildingContainer) {
-                buildingContainer.addEventListener('scroll', updateBuildingChartsNavigation);
-            }
-            
-            if (teamsContainer) {
-                teamsContainer.addEventListener('scroll', updateLegendTeamsNavigation);
-            }
-            
-            // Update navigation when window resizes
-            window.addEventListener('resize', () => {
-                setTimeout(() => {
-                    updateBuildingChartsNavigation();
-                    updateLegendTeamsNavigation();
-                }, 100);
-            });
-        }
-
-        // Call initCarouselNavigation after page load and data updates
-        document.addEventListener('DOMContentLoaded', initCarouselNavigation);
-
-        // Hook into data loading to update navigation
-        const originalDisplayTeams = window.displayTeams || displayTeams;
-        if (typeof originalDisplayTeams === 'function') {
-            displayTeams = function(...args) {
-                const result = originalDisplayTeams.apply(this, args);
-                setTimeout(updateLegendTeamsNavigation, 200);
-                return result;
-            };
-        }
-
-        const originalGenerateBuildingCompletionStats = window.generateBuildingCompletionStats || generateBuildingCompletionStats;
-        if (typeof originalGenerateBuildingCompletionStats === 'function') {
-            generateBuildingCompletionStats = function(...args) {
-                const result = originalGenerateBuildingCompletionStats.apply(this, args);
-                setTimeout(updateBuildingChartsNavigation, 200);
-                return result;
-            };
-        }
 
     </script>
 
