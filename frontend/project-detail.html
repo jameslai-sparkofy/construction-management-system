@@ -2949,17 +2949,17 @@
                         inset 0 3px 6px rgba(0,0,0,0.2),
                         inset 0 1px 3px rgba(0,0,0,0.15),
                         inset 0 -1px 0px rgba(255,255,255,0.8);
-                    border: 1px solid #C0C0C0;
+                    border: 2px solid #808080;
                 `;
                 
                 // 進度條填充
                 const waterLevel = document.createElement('div');
                 waterLevel.style.cssText = `
                     position: absolute;
-                    left: 1px;
-                    top: 1px;
-                    height: calc(100% - 2px);
-                    width: calc(${percentage}% - 2px);
+                    left: 2px;
+                    top: 2px;
+                    height: calc(100% - 4px);
+                    width: calc(${percentage}% - 4px);
                     background: linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #FF7F00 100%);
                     border-radius: 7px;
                     transition: width 0.8s ease-in-out;
