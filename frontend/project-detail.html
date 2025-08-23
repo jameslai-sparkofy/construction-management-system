@@ -4776,8 +4776,7 @@
             if (!currentProject) return;
             
             document.getElementById('projectName').textContent = currentProject.name || '未命名專案';
-            document.getElementById('projectDescription').textContent = 
-                currentProject.field_tOYE1__c || '暫無描述'; // 假設有描述欄位
+            // projectDescription element has been removed, so we skip setting it
         }
 
         // Load sites for the project
@@ -5270,11 +5269,16 @@
             // 生成建築物完成度統計
             generateBuildingCompletionStats();
             
-            // Update stat cards
-            document.getElementById('statTotalSites').textContent = totalSites;
-            document.getElementById('statCompleted').textContent = completedSites;
-            document.getElementById('statPending').textContent = pendingSites;
-            document.getElementById('statMaintenance').textContent = 0; // TODO: Get actual maintenance count
+            // Update stat cards with null checks
+            const statTotalSites = document.getElementById('statTotalSites');
+            const statCompleted = document.getElementById('statCompleted');
+            const statPending = document.getElementById('statPending');
+            const statMaintenance = document.getElementById('statMaintenance');
+            
+            if (statTotalSites) statTotalSites.textContent = totalSites;
+            if (statCompleted) statCompleted.textContent = completedSites;
+            if (statPending) statPending.textContent = pendingSites;
+            if (statMaintenance) statMaintenance.textContent = 0; // TODO: Get actual maintenance count
             
             // Store stats globally for later use
             window.projectStats = {
@@ -5570,16 +5574,29 @@
             // Store current site data globally for other functions to access
             window.currentSiteData = site;
             
-            // Basic info
-            document.getElementById('modalBuilding').textContent = 
-                (site[fieldMapping.building] || 'A') + '棟';
-            // Convert floor to integer for display
-            const floor = Math.floor(parseFloat(site[fieldMapping.floor] || '1'));
-            document.getElementById('modalFloor').textContent = floor + 'F';
-            document.getElementById('modalUnit').textContent = 
-                site[fieldMapping.unit] || '-';
-            document.getElementById('modalTeam').textContent = 
-                site[fieldMapping.team] || '-';
+            // Basic info with null checks
+            const modalBuilding = document.getElementById('modalBuilding');
+            const modalFloor = document.getElementById('modalFloor');
+            const modalUnit = document.getElementById('modalUnit');
+            const modalTeam = document.getElementById('modalTeam');
+            
+            if (modalBuilding) {
+                modalBuilding.textContent = (site[fieldMapping.building] || 'A') + '棟';
+            }
+            
+            if (modalFloor) {
+                // Convert floor to integer for display
+                const floor = Math.floor(parseFloat(site[fieldMapping.floor] || '1'));
+                modalFloor.textContent = floor + 'F';
+            }
+            
+            if (modalUnit) {
+                modalUnit.textContent = site[fieldMapping.unit] || '-';
+            }
+            
+            if (modalTeam) {
+                modalTeam.textContent = site[fieldMapping.team] || '-';
+            }
             
             // Notes
             const notes = site[fieldMapping.beforeNotes] || '';
@@ -5628,7 +5645,10 @@
                 completionPhotosRow.style.opacity = '1';
                 completionPhotosRow.style.pointerEvents = 'auto';
                 
-                document.getElementById('workerName').textContent = `- ${site[fieldMapping.worker] || ''}`;
+                const workerNameElement = document.getElementById('workerName');
+                if (workerNameElement) {
+                    workerNameElement.textContent = `- ${site[fieldMapping.worker] || ''}`;
+                }
             } else {
                 // 未完成時，預設填入今天日期、工地坪數和當前用戶
                 document.getElementById('areaInput').value = site[fieldMapping.siteArea] || '';
@@ -5650,7 +5670,10 @@
                 completionPhotosRow.style.opacity = '0.5';
                 completionPhotosRow.style.pointerEvents = 'none';
                 
-                document.getElementById('workerName').textContent = '';
+                const workerNameElement = document.getElementById('workerName');
+                if (workerNameElement) {
+                    workerNameElement.textContent = '';
+                }
             }
             
             // Load photos if any
@@ -6091,7 +6114,9 @@
                     workerInput.value = currentUser.name;
                     workerInput.setAttribute('value', currentUser.name);
                     // Show worker name in label
-                    workerName.textContent = `- ${currentUser.name}`;
+                    if (workerName) {
+                        workerName.textContent = `- ${currentUser.name}`;
+                    }
                 }
                 
                 // Vibration feedback
@@ -6114,7 +6139,9 @@
                 completionPhotosRow.style.opacity = '0.5';
                 completionPhotosRow.style.pointerEvents = 'none';
                 
-                workerName.textContent = '';
+                if (workerName) {
+                    workerName.textContent = '';
+                }
                 workerInput.value = '';
                 workerInput.removeAttribute('value');
             }
