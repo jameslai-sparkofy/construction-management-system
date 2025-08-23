@@ -1864,6 +1864,7 @@
             text-align: center;
             line-height: 1.1;
             max-width: 100px;
+            margin: 0 auto;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -5396,7 +5397,7 @@
             
             chartDiv.innerHTML = `
                 <div class="building-water-container" data-percentage="${percentage}" ${isLowWater ? 'data-low-water="true"' : ''}>
-                    <div class="building-water-level" style="height: ${waterHeight}%;"></div>
+                    <div class="building-water-level" style="height: 0%;"></div>
                     <div class="building-water-content">
                         <div class="building-name">${displayBuildingName}</div>
                         <div class="pie-chart-percentage">${percentage}%</div>
