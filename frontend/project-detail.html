@@ -2947,7 +2947,7 @@
                     overflow: hidden;
                 `;
                 
-                // 水位效果
+                // 進度條
                 const waterLevel = document.createElement('div');
                 waterLevel.style.cssText = `
                     position: absolute;
@@ -2955,13 +2955,9 @@
                     top: 0;
                     height: 100%;
                     width: ${percentage}%;
-                    background: linear-gradient(90deg, 
-                        #498AD4 0%, 
-                        #5FA0E5 50%, 
-                        #498AD4 100%);
+                    background: #498AD4;
                     border-radius: 7px;
                     transition: width 0.8s ease-in-out;
-                    animation: wave 2s ease-in-out infinite;
                 `;
                 
                 // 百分比文字
@@ -2973,9 +2969,8 @@
                     transform: translate(-50%, -50%);
                     font-size: 0.65rem;
                     font-weight: 600;
-                    color: ${percentage > 50 ? 'white' : '#498AD4'};
+                    color: #333;
                     z-index: 2;
-                    text-shadow: ${percentage > 50 ? '0 1px 2px rgba(0,0,0,0.3)' : 'none'};
                 `;
                 percentageText.textContent = `${percentage}%`;
                 
