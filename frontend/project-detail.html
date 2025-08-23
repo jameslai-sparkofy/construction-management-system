@@ -1657,17 +1657,12 @@
         }
 
         .teams-carousel::-webkit-scrollbar {
-            height: 4px;
+            display: none;
         }
 
-        .teams-carousel::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 2px;
-        }
-
-        .teams-carousel::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 2px;
+        .teams-carousel {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
 
         /* Team buttons in carousel should not wrap */
@@ -2096,7 +2091,7 @@
             </div>
             
             <!-- 工班顯示區塊 (重構版 - Carousel) -->
-            <div id="teamsDisplaySection" style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div id="teamsDisplaySection" style="margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <div class="teams-carousel-container">
                     <div class="teams-carousel" id="legendTeams">
                         <!-- 動態生成工班圖例 -->
@@ -2855,15 +2850,16 @@
                 return;
             }
             
-            // 統一使用 flex 布局，不區分行動版和桌面版
+            // 統一使用 carousel 布局
             const teamsContainer = document.createElement('div');
-            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
+            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; overflow-x: auto; align-items: center; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; padding: 0.5rem 0;';
             
             // 添加所有工班按鈕
             filteredTeams.forEach(team => {
                 const teamButton = document.createElement('div');
                 teamButton.style.cssText = `
-                    padding: 0.75rem 1rem; 
+                    padding: 0rem 0.75rem; 
+                    height: 40px;
                     background: linear-gradient(135deg, #84C7D0 0%, #6BB8C3 100%); 
                     color: white; 
                     border: none;
@@ -2915,9 +2911,9 @@
                 progressContainer.style.cssText = `
                     position: relative;
                     width: 75px;
-                    height: 28px;
+                    height: 22px;
                     background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%);
-                    border-radius: 10px;
+                    border-radius: 8px;
                     overflow: hidden;
                     box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset;
                     border: 1px solid rgb(132, 199, 208);
@@ -2932,7 +2928,7 @@
                     height: calc(100% - 2px);
                     width: calc(${percentage}% - 2px);
                     background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%);
-                    border-radius: 9px;
+                    border-radius: 7px;
                     transition: width 0.8s ease-in-out;
                     box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;
                 `;
@@ -2967,7 +2963,7 @@
                 const unassignedButton = document.createElement('button');
                 unassignedButton.style.cssText = `
                     padding: 0rem 0.75rem;
-                    height: 24px;
+                    height: 40px;
                     background: #6b7280;
                     color: white;
                     border: none;
@@ -2993,7 +2989,7 @@
                 countText.style.cssText = `
                     background: rgba(255, 255, 255, 0.2);
                     color: white;
-                    border-radius: 50%;
+                    border-radius: 12px;
                     min-width: 1.5rem;
                     height: 1.5rem;
                     display: flex;
