@@ -1805,8 +1805,8 @@
             content: '';
             position: absolute;
             top: -4px;
-            left: 0;
-            width: 100%;
+            left: -50%;
+            width: 200%;
             height: 8px;
             background: linear-gradient(90deg,
                 rgba(255, 255, 255, 0.6) 0%,
@@ -1815,7 +1815,7 @@
                 rgba(255, 255, 255, 0.9) 75%,
                 rgba(255, 255, 255, 0.6) 100%);
             border-radius: 50%;
-            animation: buildingWave 3s ease-in-out infinite;
+            animation: buildingWave 4s ease-in-out infinite;
         }
         
         .building-water-content {
@@ -1829,8 +1829,8 @@
         }
         
         .building-water-content .building-name {
-            font-size: 0.85rem;
-            font-weight: 700;
+            font-size: 1.4rem;
+            font-weight: 900;
             color: rgba(255, 255, 255, 0.95);
             margin-bottom: 0.1rem;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
@@ -1838,17 +1838,18 @@
         }
         
         .building-water-content .pie-chart-percentage {
-            font-size: 1.5rem;
+            font-size: 2.0rem;
             font-weight: 800;
             color: rgba(255, 255, 255, 1);
             text-shadow: 0 1px 3px rgba(0,0,0,0.4);
             line-height: 1;
             margin-bottom: 0.1rem;
             text-align: center;
+            letter-spacing: 0.05em;
         }
         
         .building-water-content .building-progress {
-            font-size: 1rem;
+            font-size: 1.3rem;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 0.1rem;
@@ -1888,13 +1889,25 @@
 
         /* 水波動畫效果 */
         @keyframes buildingWave {
-            0%, 100% { 
-                transform: translateX(-25%);
-                opacity: 0.8;
+            0% { 
+                transform: translateX(-75%) scaleY(0.8);
+                opacity: 0.7;
+            }
+            25% {
+                transform: translateX(-25%) scaleY(1.2);
+                opacity: 0.9;
             }
             50% { 
-                transform: translateX(25%);
+                transform: translateX(75%) scaleY(0.6);
                 opacity: 1;
+            }
+            75% {
+                transform: translateX(25%) scaleY(1.4);
+                opacity: 0.8;
+            }
+            100% { 
+                transform: translateX(-75%) scaleY(0.8);
+                opacity: 0.7;
             }
         }
     </style>
@@ -5390,7 +5403,7 @@
                     <div class="building-water-level" style="height: 0%;"></div>
                     <div class="building-water-content">
                         <div class="building-name">${displayBuildingName}</div>
-                        <div class="pie-chart-percentage">${percentage}%</div>
+                        <div class="pie-chart-percentage">${percentage} %</div>
                         <div class="building-progress">${completed}/${total}</div>
                     </div>
                 </div>
