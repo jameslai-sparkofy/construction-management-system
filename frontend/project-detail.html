@@ -2772,9 +2772,9 @@
                     overflow: hidden;
                 `;
                 
-                // 水位效果
-                const waterLevel = document.createElement('div');
-                waterLevel.style.cssText = `
+                // 橘色進度條
+                const progressBar = document.createElement('div');
+                progressBar.style.cssText = `
                     position: absolute;
                     left: 0;
                     top: 0;
@@ -2783,7 +2783,6 @@
                     background: linear-gradient(90deg, #FF8C00 0%, #FFA500 100%);
                     border-radius: 7px;
                     transition: width 0.8s ease-in-out;
-                    animation: wave 2s ease-in-out infinite;
                 `;
                 
                 // 百分比文字
@@ -2801,7 +2800,7 @@
                 `;
                 percentageText.textContent = `${percentage}%`;
                 
-                waterContainer.appendChild(waterLevel);
+                waterContainer.appendChild(progressBar);
                 waterContainer.appendChild(percentageText);
                 
                 // 百分比容器
@@ -5275,12 +5274,33 @@
             const displayBuildingName = buildingName.length === 1 ? `${buildingName}棟` : buildingName;
             
             chartDiv.innerHTML = `
-                <div class="pie-chart" style="background: conic-gradient(var(--completed) ${degrees}deg, var(--pending) ${degrees}deg);">
-                    <div class="pie-chart-content">
+                <div class="pie-chart" style="background: conic-gradient(var(--completed) ${degrees}deg, var(--pending) ${degrees}deg); position: relative; overflow: hidden;">
+                    <div class="pie-chart-content" style="position: relative; z-index: 2;">
                         <div class="building-name">${displayBuildingName}</div>
                         <div class="pie-chart-percentage">${percentage}%</div>
                         <div class="building-progress">${completed}/${total}</div>
                         <div class="building-teams">${shortTeams}</div>
+                    </div>
+                    <div class="water-level" style="
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        width: 100%;
+                        height: ${percentage}%;
+                        background: linear-gradient(0deg, rgba(72, 187, 120, 0.8) 0%, rgba(72, 187, 120, 0.3) 100%);
+                        border-radius: inherit;
+                        z-index: 1;
+                    ">
+                        <div class="wave-animation" style="
+                            position: absolute;
+                            top: -10px;
+                            left: 0;
+                            width: 200%;
+                            height: 20px;
+                            background: linear-gradient(90deg, transparent, rgba(72, 187, 120, 0.6), transparent);
+                            border-radius: 50%;
+                            animation: wave 3s ease-in-out infinite;
+                        "></div>
                     </div>
                 </div>
             `;
