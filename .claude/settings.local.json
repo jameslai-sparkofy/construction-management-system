@@ -296,7 +296,10 @@
       "Read(//mnt/c/Users/laija/Desktop/**)",
       "Read(//mnt/c/Users/laija/Desktop/**)",
       "Read(//mnt/c/Users/laija/Desktop/**)",
-      "Read(//mnt/c/Users/laija/Desktop/**)"
+      "Read(//mnt/c/Users/laija/Desktop/**)",
+      "WebFetch(domain:codepen.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
