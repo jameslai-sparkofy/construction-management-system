@@ -1834,6 +1834,7 @@
             color: rgba(255, 255, 255, 0.95);
             margin-bottom: 0.1rem;
             text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            text-align: center;
         }
         
         .building-water-content .pie-chart-percentage {
@@ -1843,6 +1844,7 @@
             text-shadow: 0 1px 3px rgba(0,0,0,0.4);
             line-height: 1;
             margin-bottom: 0.1rem;
+            text-align: center;
         }
         
         .building-water-content .building-progress {
@@ -1851,6 +1853,7 @@
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 0.1rem;
             text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+            text-align: center;
         }
         
         .building-water-content .building-teams {
@@ -1866,18 +1869,20 @@
         }
         
         /* 低水位時的文字顏色調整 */
+        .building-water-container[data-percentage="0"] .building-water-content .building-name,
         .building-water-container[data-percentage="0"] .building-water-content .pie-chart-percentage,
         .building-water-container[data-percentage="0"] .building-water-content .building-progress,
         .building-water-container[data-percentage="0"] .building-water-content .building-teams {
-            color: #64748b;
-            text-shadow: none;
+            color: #64748b !important;
+            text-shadow: none !important;
         }
         
+        .building-water-container[data-low-water="true"] .building-water-content .building-name,
         .building-water-container[data-low-water="true"] .building-water-content .pie-chart-percentage,
         .building-water-container[data-low-water="true"] .building-water-content .building-progress,
         .building-water-container[data-low-water="true"] .building-water-content .building-teams {
-            color: #475569;
-            text-shadow: none;
+            color: #475569 !important;
+            text-shadow: none !important;
         }
 
         /* 水波動畫效果 */
