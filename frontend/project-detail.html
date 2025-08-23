@@ -85,6 +85,135 @@
             background: var(--background);
         }
 
+        /* Mobile Hamburger Menu */
+        .mobile-hamburger {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-hamburger:hover {
+            background: var(--background);
+        }
+
+        .hamburger-line {
+            width: 20px;
+            height: 2px;
+            background: var(--body-text);
+            border-radius: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-hamburger.active .hamburger-line:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-hamburger.active .hamburger-line:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-hamburger.active .hamburger-line:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -6px);
+        }
+
+        .mobile-menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+        }
+
+        .mobile-menu-overlay.active {
+            display: block;
+        }
+
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: var(--surface);
+            box-shadow: -4px 0 12px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .mobile-menu.active {
+            right: 0;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 1rem;
+        }
+
+        .mobile-menu-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--heading);
+        }
+
+        .mobile-menu-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--body-text);
+            font-size: 1.25rem;
+        }
+
+        .mobile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            color: var(--body-text);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .mobile-menu-item:hover {
+            background: var(--background);
+            color: var(--primary);
+        }
+
+        .mobile-menu-item span:first-child {
+            font-size: 1.125rem;
+        }
+
         .project-info {
             flex: 1;
         }
@@ -1296,6 +1425,16 @@
             .header-actions button span:last-child {
                 display: none; /* Hide text labels on mobile, keep icons */
             }
+
+            /* Show mobile hamburger menu on mobile */
+            .mobile-hamburger {
+                display: flex;
+            }
+
+            /* Hide desktop header actions on mobile */
+            .header-actions {
+                display: none;
+            }
             
             .stats-section {
                 grid-template-columns: repeat(2, 1fr);
@@ -1638,6 +1777,40 @@
             border-radius: 2px;
         }
 
+        /* Teams Carousel */
+        .teams-carousel-container {
+            position: relative;
+        }
+
+        .teams-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .teams-carousel::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        .teams-carousel::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 2px;
+        }
+
+        .teams-carousel::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 2px;
+        }
+
+        /* Team buttons in carousel should not wrap */
+        .teams-carousel .team-button {
+            flex-shrink: 0;
+            min-width: fit-content;
+        }
+
         .building-chart {
             flex: 0 0 auto;
             display: flex;
@@ -1949,10 +2122,8 @@
         <!-- Header -->
         <div class="header">
             <div class="header-content">
-                <button class="back-btn" onclick="goBack()">←</button>
                 <div class="project-info">
                     <h1 id="projectName">載入中...</h1>
-                    <p id="projectDescription">正在載入專案資料...</p>
                 </div>
                 <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
                     <!-- 用戶管理按鈕 (管理員和領班可見) -->
@@ -1961,7 +2132,6 @@
                         <span>用戶管理</span>
                     </button>
                     
-
                     <button class="btn-report">
                         <span>📊</span>
                         <span>報表</span>
@@ -1979,6 +2149,13 @@
                         <span>刪除</span>
                     </button>
                 </div>
+                
+                <!-- Mobile hamburger menu button -->
+                <button class="mobile-hamburger" onclick="toggleMobileMenu()">
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                    <div class="hamburger-line"></div>
+                </button>
             </div>
         </div>
 
@@ -2071,10 +2248,12 @@
                 </div>
             </div>
             
-            <!-- 工班顯示區塊 (重構版) -->
+            <!-- 工班顯示區塊 (重構版 - Carousel) -->
             <div id="teamsDisplaySection" style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <div id="legendTeams">
-                    <!-- 動態生成工班圖例 -->
+                <div class="teams-carousel-container">
+                    <div class="teams-carousel" id="legendTeams">
+                        <!-- 動態生成工班圖例 -->
+                    </div>
                 </div>
             </div>
             
@@ -6856,6 +7035,91 @@
             }
         }
 
+    </script>
+
+    <!-- Mobile Menu Overlay and Menu -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="mobile-menu-header">
+            <span class="mobile-menu-title">選單</span>
+            <button class="mobile-menu-close" onclick="closeMobileMenu()">×</button>
+        </div>
+        
+        <!-- Mobile menu items will be populated by JavaScript -->
+        <div id="mobileMenuItems">
+            <!-- Items added dynamically -->
+        </div>
+    </div>
+
+    <script>
+        // Mobile menu functionality
+        function toggleMobileMenu() {
+            const hamburger = document.querySelector('.mobile-hamburger');
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const menu = document.getElementById('mobileMenu');
+            
+            hamburger.classList.toggle('active');
+            overlay.classList.toggle('active');
+            menu.classList.toggle('active');
+            
+            if (menu.classList.contains('active')) {
+                populateMobileMenu();
+            }
+        }
+
+        function closeMobileMenu() {
+            const hamburger = document.querySelector('.mobile-hamburger');
+            const overlay = document.getElementById('mobileMenuOverlay');
+            const menu = document.getElementById('mobileMenu');
+            
+            hamburger.classList.remove('active');
+            overlay.classList.remove('active');
+            menu.classList.remove('active');
+        }
+
+        function populateMobileMenu() {
+            const menuItems = document.getElementById('mobileMenuItems');
+            menuItems.innerHTML = '';
+            
+            // Get all visible desktop header action buttons
+            const desktopButtons = document.querySelectorAll('.header-actions button:not([style*="display: none"])');
+            
+            desktopButtons.forEach(button => {
+                const iconSpan = button.querySelector('span:first-child');
+                const textSpan = button.querySelector('span:last-child');
+                
+                if (iconSpan && textSpan) {
+                    const menuItem = document.createElement('button');
+                    menuItem.className = 'mobile-menu-item';
+                    menuItem.innerHTML = `
+                        <span>${iconSpan.textContent}</span>
+                        <span>${textSpan.textContent}</span>
+                    `;
+                    
+                    // Copy the onclick behavior
+                    if (button.onclick) {
+                        menuItem.onclick = () => {
+                            closeMobileMenu();
+                            button.onclick();
+                        };
+                    }
+                    
+                    // Copy any special click handlers for specific buttons
+                    if (button.classList.contains('btn-report') || 
+                        button.classList.contains('btn-settings') ||
+                        button.classList.contains('btn-export') ||
+                        button.classList.contains('btn-delete') ||
+                        button.id === 'userManagementBtn') {
+                        menuItem.onclick = () => {
+                            closeMobileMenu();
+                            button.click();
+                        };
+                    }
+                    
+                    menuItems.appendChild(menuItem);
+                }
+            });
+        }
     </script>
 </body>
 </html>
