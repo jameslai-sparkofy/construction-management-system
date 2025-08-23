@@ -2936,18 +2936,20 @@
                 `;
                 countDisplay.textContent = `${completedCount}/${siteCount}`;
                 
-                // 水位效果容器
+                // 進度條容器 - 做出凹進效果
                 const waterContainer = document.createElement('div');
                 waterContainer.style.cssText = `
                     position: relative;
-                    width: 40px;
-                    height: 16px;
+                    width: 55px;
+                    height: 22px;
                     background: rgba(255, 255, 255, 0.9);
-                    border-radius: 8px;
+                    border-radius: 4px;
                     overflow: hidden;
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1), inset 0 1px 2px rgba(0,0,0,0.1);
+                    border: 1px solid rgba(0,0,0,0.1);
                 `;
                 
-                // 進度條
+                // 進度條填充
                 const waterLevel = document.createElement('div');
                 waterLevel.style.cssText = `
                     position: absolute;
@@ -2956,7 +2958,7 @@
                     height: 100%;
                     width: ${percentage}%;
                     background: linear-gradient(90deg, #FF8C00 0%, #FFA500 100%);
-                    border-radius: 7px;
+                    border-radius: 3px;
                     transition: width 0.8s ease-in-out;
                 `;
                 
@@ -2967,7 +2969,7 @@
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
-                    font-size: 0.65rem;
+                    font-size: 0.75rem;
                     font-weight: 600;
                     color: #333;
                     z-index: 2;
