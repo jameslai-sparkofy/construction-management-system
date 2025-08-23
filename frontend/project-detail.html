@@ -2666,6 +2666,7 @@
                 console.log(`顯示 ${combinedTeams.length} 個有案場的工班，${window.unassignedSitesCount || 0} 個未分配案場`);
                 
                 displayTeams(combinedTeams);
+                displayTeamsNew(combinedTeams);
                 window.projectTeams = combinedTeams;
                 isTeamsReady = true;
                 console.log('[DEBUG] Teams loaded and ready:', combinedTeams.length);
@@ -2692,6 +2693,7 @@
                 });
             });
             displayTeams(teams);
+            displayTeamsNew(teams);
             window.projectTeams = teams;
         }
         
@@ -3073,6 +3075,141 @@
             legendTeams.appendChild(teamsContainer);
         }
         
+        // 新的簡潔工班顯示區塊
+        function displayTeamsNew(teams) {
+            const legendSection = document.getElementById('legend');
+            
+            // 創建新的工班顯示容器
+            let newTeamsContainer = document.getElementById('newTeamsContainer');
+            if (newTeamsContainer) {
+                newTeamsContainer.remove();
+            }
+            
+            newTeamsContainer = document.createElement('div');
+            newTeamsContainer.id = 'newTeamsContainer';
+            newTeamsContainer.style.cssText = `
+                margin-top: 1rem;
+                padding: 1rem;
+                background: #f8fafc;
+                border-radius: 8px;
+                border: 1px solid #e2e8f0;
+            `;
+            
+            const title = document.createElement('h3');
+            title.textContent = '工班概覽 (新版)';
+            title.style.cssText = `
+                margin: 0 0 1rem 0;
+                font-size: 1rem;
+                color: #334155;
+                font-weight: 600;
+            `;
+            newTeamsContainer.appendChild(title);
+            
+            // 創建工班列表容器
+            const teamsGrid = document.createElement('div');
+            teamsGrid.style.cssText = `
+                display: flex;
+                gap: 0.75rem;
+                flex-wrap: wrap;
+            `;
+            
+            if (!teams || teams.length === 0) {
+                teamsGrid.innerHTML = '<div style="color: #64748b; font-size: 0.875rem;">暫無工班資料</div>';
+            } else {
+                teams.forEach(team => {
+                    const teamCard = document.createElement('div');
+                    teamCard.style.cssText = `
+                        background: white;
+                        border: 1px solid #e2e8f0;
+                        border-radius: 8px;
+                        padding: 0.75rem;
+                        min-width: 140px;
+                        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    `;
+                    
+                    // 工班名稱
+                    const teamName = document.createElement('div');
+                    teamName.textContent = team.abbreviation || team.name || `工班 ${team.id}`;
+                    teamName.style.cssText = `
+                        font-weight: 600;
+                        font-size: 0.875rem;
+                        color: #334155;
+                        margin-bottom: 0.5rem;
+                    `;
+                    
+                    // 統計資訊
+                    const siteCount = team.siteCount || 0;
+                    const completedCount = team.completedCount || 0;
+                    const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
+                    
+                    const statsDiv = document.createElement('div');
+                    statsDiv.style.cssText = `
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                        font-size: 0.75rem;
+                        color: #64748b;
+                    `;
+                    
+                    // 進度條
+                    const progressContainer = document.createElement('div');
+                    progressContainer.style.cssText = `
+                        position: relative;
+                        width: 50px;
+                        height: 20px;
+                        background: linear-gradient(180deg, #e2e8f0 0%, #ffffff 50%, #e2e8f0 100%);
+                        border-radius: 6px;
+                        overflow: hidden;
+                        box-shadow: 
+                            inset 0 1px 3px rgba(0,0,0,0.1),
+                            inset 0 -1px 3px rgba(0,0,0,0.1);
+                        border: 1px solid #cbd5e1;
+                    `;
+                    
+                    const progressFill = document.createElement('div');
+                    progressFill.style.cssText = `
+                        position: absolute;
+                        left: 1px;
+                        top: 1px;
+                        height: calc(100% - 2px);
+                        width: calc(${percentage}% - 2px);
+                        background: linear-gradient(180deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+                        border-radius: 5px;
+                        transition: width 0.3s ease;
+                    `;
+                    
+                    const percentageText = document.createElement('span');
+                    percentageText.textContent = `${percentage}%`;
+                    percentageText.style.cssText = `
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        font-size: 0.625rem;
+                        font-weight: 600;
+                        color: #374151;
+                        z-index: 2;
+                    `;
+                    
+                    progressContainer.appendChild(progressFill);
+                    progressContainer.appendChild(percentageText);
+                    
+                    const countText = document.createElement('span');
+                    countText.textContent = `${completedCount}/${siteCount}`;
+                    
+                    statsDiv.appendChild(progressContainer);
+                    statsDiv.appendChild(countText);
+                    
+                    teamCard.appendChild(teamName);
+                    teamCard.appendChild(statsDiv);
+                    teamsGrid.appendChild(teamCard);
+                });
+            }
+            
+            newTeamsContainer.appendChild(teamsGrid);
+            legendSection.appendChild(newTeamsContainer);
+        }
+        
         // Handle window resize
         let resizeTimeout;
         window.addEventListener('resize', () => {
@@ -3081,6 +3218,7 @@
                 // Re-render teams display on resize
                 if (window.projectTeams && window.projectTeams.length > 0) {
                     displayTeams(window.projectTeams);
+                    displayTeamsNew(window.projectTeams);
                 }
             }, 250);
         });
