@@ -7035,20 +7035,24 @@
         // Call initCarouselNavigation after page load and data updates
         document.addEventListener('DOMContentLoaded', initCarouselNavigation);
 
-        // Also call it when teams and buildings are loaded
-        const originalDisplayTeamLegend = displayTeamLegend;
-        displayTeamLegend = function(...args) {
-            const result = originalDisplayTeamLegend.apply(this, args);
-            setTimeout(updateLegendTeamsNavigation, 100);
-            return result;
-        };
+        // Hook into data loading to update navigation
+        const originalDisplayTeams = window.displayTeams || displayTeams;
+        if (typeof originalDisplayTeams === 'function') {
+            displayTeams = function(...args) {
+                const result = originalDisplayTeams.apply(this, args);
+                setTimeout(updateLegendTeamsNavigation, 200);
+                return result;
+            };
+        }
 
-        const originalGenerateBuildingStats = generateBuildingStats;
-        generateBuildingStats = function(...args) {
-            const result = originalGenerateBuildingStats.apply(this, args);
-            setTimeout(updateBuildingChartsNavigation, 100);
-            return result;
-        };
+        const originalGenerateBuildingCompletionStats = window.generateBuildingCompletionStats || generateBuildingCompletionStats;
+        if (typeof originalGenerateBuildingCompletionStats === 'function') {
+            generateBuildingCompletionStats = function(...args) {
+                const result = originalGenerateBuildingCompletionStats.apply(this, args);
+                setTimeout(updateBuildingChartsNavigation, 200);
+                return result;
+            };
+        }
 
     </script>
 
