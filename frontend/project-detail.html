@@ -2689,7 +2689,7 @@
             window.projectTeams = teams;
         }
         
-        // Display team icons
+        // Display team icons (simplified version without carousel)
         function displayTeams(teams) {
             const legendTeams = document.getElementById('legendTeams');
             if (!legendTeams) return;
@@ -2713,183 +2713,13 @@
                 return;
             }
             
-            // Check if mobile
-            const isMobile = window.innerWidth <= 768;
+            // 統一使用 flex 布局，不區分行動版和桌面版
+            const teamsContainer = document.createElement('div');
+            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
             
-            // Create wrapper for carousel on mobile
-            if (isMobile) {
-                const carouselWrapper = document.createElement('div');
-                carouselWrapper.style.cssText = 'position: relative; overflow: hidden;';
-                
-                // Create carousel controls
-                const prevBtn = document.createElement('button');
-                prevBtn.innerHTML = '◀';
-                prevBtn.style.cssText = `
-                    position: absolute;
-                    left: 0;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    background: rgba(255, 255, 255, 0.95);
-                    border: 1px solid #e5e7eb;
-                    border-radius: 50%;
-                    width: 32px;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    z-index: 10;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                `;
-                
-                const nextBtn = document.createElement('button');
-                nextBtn.innerHTML = '▶';
-                nextBtn.style.cssText = `
-                    position: absolute;
-                    right: 0;
-                    top: 50%;
-                    transform: translateY(-50%);
-                    background: rgba(255, 255, 255, 0.95);
-                    border: 1px solid #e5e7eb;
-                    border-radius: 50%;
-                    width: 32px;
-                    height: 32px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    z-index: 10;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                `;
-                
-                // Create scrollable container
-                const scrollContainer = document.createElement('div');
-                scrollContainer.style.cssText = `
-                    overflow-x: auto;
-                    overflow-y: hidden;
-                    scroll-behavior: smooth;
-                    padding: 5px 40px;
-                    -webkit-overflow-scrolling: touch;
-                    scrollbar-width: none;
-                    -ms-overflow-style: none;
-                `;
-                
-                // Add CSS to hide scrollbar
-                const style = document.createElement('style');
-                style.textContent = `
-                    #legendTeams ::-webkit-scrollbar {
-                        display: none;
-                    }
-                    #legendTeams {
-                        -ms-overflow-style: none;
-                        scrollbar-width: none;
-                    }
-                `;
-                if (!document.querySelector('style[data-carousel-style]')) {
-                    style.setAttribute('data-carousel-style', 'true');
-                    document.head.appendChild(style);
-                }
-                
-                const teamsContainer = document.createElement('div');
-                teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: nowrap; align-items: center;';
-                teamsContainer.id = 'teamsCarousel';
-                
-                // Add scroll event handlers
-                prevBtn.onclick = () => {
-                    scrollContainer.scrollBy({ left: -200, behavior: 'smooth' });
-                };
-                
-                nextBtn.onclick = () => {
-                    scrollContainer.scrollBy({ left: 200, behavior: 'smooth' });
-                };
-                
-                // Update button states based on scroll position
-                const updateScrollButtons = () => {
-                    const scrollLeft = scrollContainer.scrollLeft;
-                    const scrollWidth = scrollContainer.scrollWidth;
-                    const clientWidth = scrollContainer.clientWidth;
-                    
-                    prevBtn.style.opacity = scrollLeft <= 0 ? '0.3' : '1';
-                    prevBtn.style.cursor = scrollLeft <= 0 ? 'not-allowed' : 'pointer';
-                    
-                    nextBtn.style.opacity = scrollLeft >= scrollWidth - clientWidth - 10 ? '0.3' : '1';
-                    nextBtn.style.cursor = scrollLeft >= scrollWidth - clientWidth - 10 ? 'not-allowed' : 'pointer';
-                };
-                
-                scrollContainer.addEventListener('scroll', updateScrollButtons);
-                
-                // Build carousel structure
-                scrollContainer.appendChild(teamsContainer);
-                carouselWrapper.appendChild(prevBtn);
-                carouselWrapper.appendChild(nextBtn);
-                carouselWrapper.appendChild(scrollContainer);
-                
-                legendTeams.appendChild(carouselWrapper);
-                
-                // Add scroll indicator
-                const scrollIndicator = document.createElement('div');
-                scrollIndicator.style.cssText = `
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    margin-top: 10px;
-                    gap: 4px;
-                `;
-                
-                // Calculate number of pages
-                const updateScrollIndicator = () => {
-                    const scrollWidth = scrollContainer.scrollWidth;
-                    const clientWidth = scrollContainer.clientWidth;
-                    const scrollLeft = scrollContainer.scrollLeft;
-                    const numPages = Math.ceil(scrollWidth / clientWidth);
-                    const currentPage = Math.floor((scrollLeft + clientWidth / 2) / clientWidth);
-                    
-                    scrollIndicator.innerHTML = '';
-                    for (let i = 0; i < numPages; i++) {
-                        const dot = document.createElement('span');
-                        dot.style.cssText = `
-                            width: ${i === currentPage ? '20px' : '6px'};
-                            height: 6px;
-                            border-radius: 3px;
-                            background: ${i === currentPage ? '#84C7D0' : '#d1d5db'};
-                            transition: all 0.3s;
-                            cursor: pointer;
-                        `;
-                        dot.onclick = () => {
-                            scrollContainer.scrollTo({ left: i * clientWidth, behavior: 'smooth' });
-                        };
-                        scrollIndicator.appendChild(dot);
-                    }
-                };
-                
-                scrollContainer.addEventListener('scroll', () => {
-                    updateScrollButtons();
-                    updateScrollIndicator();
-                });
-                
-                legendTeams.appendChild(scrollIndicator);
-                
-                // Initial states
-                setTimeout(() => {
-                    updateScrollButtons();
-                    updateScrollIndicator();
-                }, 100);
-            } else {
-                // Desktop layout
-                const teamsContainer = document.createElement('div');
-                teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
-                legendTeams.appendChild(teamsContainer);
-            }
-            
-            // Get the container to add teams to
-            const teamsContainer = isMobile ? 
-                document.getElementById('teamsCarousel') : 
-                legendTeams.querySelector('div');
-            
-            // 先添加所有工班按鈕
+            // 添加所有工班按鈕
             filteredTeams.forEach(team => {
                 const teamButton = document.createElement('div');
-                const buttonWidth = isMobile ? '160px' : '140px';
                 teamButton.style.cssText = `
                     padding: 0.5rem 0.75rem; 
                     background: linear-gradient(135deg, #84C7D0 0%, #6BB8C3 100%); 
@@ -2901,7 +2731,7 @@
                     display: flex; 
                     align-items: center; 
                     gap: 0.5rem; 
-                    min-width: ${buttonWidth};
+                    min-width: 140px;
                     box-shadow: 0 2px 8px rgba(132, 199, 208, 0.3);
                     border: 1px solid rgba(255, 255, 255, 0.2);
                     flex-shrink: 0;
@@ -2930,7 +2760,7 @@
                 `;
                 countDisplay.textContent = `${completedCount}/${siteCount}`;
                 
-                // 進度條容器 - 做出強烈凹進效果
+                // 進度條容器
                 const waterContainer = document.createElement('div');
                 waterContainer.style.cssText = `
                     position: relative;
@@ -2972,75 +2802,67 @@
                     font-weight: 600;
                     color: #333;
                     z-index: 2;
+                    pointer-events: none;
                 `;
                 percentageText.textContent = `${percentage}%`;
                 
                 waterContainer.appendChild(waterLevel);
                 waterContainer.appendChild(percentageText);
                 
+                // 百分比容器
+                const percentageDisplay = document.createElement('div');
+                percentageDisplay.className = 'percentage-display';
+                percentageDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+                percentageDisplay.appendChild(countDisplay);
+                percentageDisplay.appendChild(waterContainer);
+                
                 teamButton.appendChild(teamNameSpan);
-                teamButton.appendChild(countDisplay);
-                teamButton.appendChild(waterContainer);
-                
-                // Tooltip shows both site count and member count
-                const siteText = team.siteCount ? `${team.siteCount} 個案場` : '無案場';
-                const memberText = team.memberCount ? `${team.memberCount} 位成員` : '無成員';
-                teamButton.title = `${team.name}\n${siteText}\n${memberText}`;
-                
-                // 移除 hover 效果，工班按鈕僅供顯示
-                
-                // 移除點擊功能，工班按鈕僅供顯示
-                
+                teamButton.appendChild(percentageDisplay);
                 teamsContainer.appendChild(teamButton);
             });
             
-            // 最後添加「未分配」按鈕（如果有未分配的案場）
-            console.log('[DEBUG] 檢查未分配按鈕顯示條件: window.unassignedSitesCount =', window.unassignedSitesCount);
-            if (window.unassignedSitesCount > 0) {
-                console.log('[DEBUG] 創建未分配按鈕，數量:', window.unassignedSitesCount);
+            // 添加 "未分配" 按鈕 (如果有未分配案場)
+            if (window.unassignedSitesCount && window.unassignedSitesCount > 0) {
                 const unassignedButton = document.createElement('button');
-                const buttonWidth = isMobile ? '160px' : '100px';
                 unassignedButton.style.cssText = `
-                    cursor: pointer; 
-                    padding: 0.625rem 1rem; 
-                    background: #6b7280; 
-                    color: white; 
+                    padding: 0.5rem 0.75rem;
+                    background: #6b7280;
+                    color: white;
                     border: none;
-                    border-radius: 20px; 
-                    font-weight: 600; 
+                    border-radius: 12px;
+                    font-weight: 500;
                     font-size: 0.875rem;
-                    display: inline-flex; 
-                    align-items: center; 
-                    gap: 0.5rem; 
-                    transition: all 0.2s;
-                    min-width: ${buttonWidth};
-                    white-space: nowrap;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    min-width: 100px;
+                    transition: all 0.2s ease;
                     flex-shrink: 0;
                 `;
                 
-                // 未分配文字
-                const unassignedSpan = document.createElement('span');
-                unassignedSpan.textContent = '未分配';
+                // 創建文字元素
+                const labelText = document.createElement('span');
+                labelText.textContent = '未分配';
+                labelText.style.fontWeight = '600';
                 
-                // 數量標籤
-                const countBadge = document.createElement('span');
-                countBadge.style.cssText = `
-                    background: #dc2626; 
-                    color: white; 
-                    border-radius: 12px; 
-                    padding: 2px 8px; 
-                    font-size: 0.75rem; 
-                    min-width: 24px; 
-                    text-align: center; 
-                    display: inline-block;
-                    font-weight: bold;
+                const countText = document.createElement('span');
+                countText.textContent = window.unassignedSitesCount.toString();
+                countText.style.cssText = `
+                    background: rgba(255, 255, 255, 0.2);
+                    color: white;
+                    border-radius: 50%;
+                    min-width: 1.5rem;
+                    height: 1.5rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 0.75rem;
+                    font-weight: 700;
                 `;
-                countBadge.textContent = window.unassignedSitesCount;
                 
-                unassignedButton.appendChild(unassignedSpan);
-                unassignedButton.appendChild(countBadge);
-                
-                unassignedButton.title = `${window.unassignedSitesCount} 個案場尚未分配工班`;
+                unassignedButton.appendChild(labelText);
+                unassignedButton.appendChild(countText);
                 
                 // 添加懸停效果
                 unassignedButton.onmouseenter = () => {
@@ -3066,7 +2888,7 @@
             
             legendTeams.appendChild(teamsContainer);
         }
-        
+    }
         // Handle window resize
         let resizeTimeout;
         window.addEventListener('resize', () => {
