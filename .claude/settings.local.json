@@ -300,7 +300,8 @@
       "WebFetch(domain:codepen.io)",
       "WebFetch(domain:github.com)",
       "Bash(git revert:*)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)",
+      "mcp__playwright__browser_resize"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
