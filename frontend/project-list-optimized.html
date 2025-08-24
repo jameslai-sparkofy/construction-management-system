@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>專案列表 - 元心建材工程管理系統</title>
+    
+    <!-- 優化版本標記 -->
+    <meta name="version" content="2.1-optimized">
+    <meta name="description" content="元心建材工程管理系統 - 優化載入速度版本">
+    
+    <!-- 預載入關鍵資源 -->
+    <link rel="preload" href="css/project-list-optimized.css" as="style">
+    <link rel="preload" href="js/project-list-optimized.js" as="script">
+    <link rel="preload" href="config.js" as="script">
+    
+    <!-- 關鍵 CSS 內聯 -->
+    <style>
+        /* 關鍵渲染路徑 - 最小化 CSS */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif;
+            background: #f9fafb;
+            min-height: 100vh;
+        }
+        .loading { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            min-height: 60vh; 
+        }
+        .spinner { 
+            border: 3px solid #e5e7eb; 
+            border-top: 3px solid #84C7D0; 
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            animation: spin 1s linear infinite; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .header { 
+            background: white; 
+            padding: 1.5rem 2rem; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08); 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+        }
+    </style>
+    
+    <!-- 延遲載入完整樣式 -->
+    <link rel="stylesheet" href="css/project-list-optimized.css" media="print" onload="this.media='all'">
+    <noscript><link rel="stylesheet" href="css/project-list-optimized.css"></noscript>
+    
+    <!-- 版本管理 -->
+    <script src="js/version-manager.js" async></script>
+</head>
+<body>
+    <!-- 快速載入的基本結構 -->
+    <div class="header">
+        <div class="header-content">
+            <h1>
+                <span class="desktop-title">元心工程專案</span>
+                <span class="mobile-title">元心工程專案</span>
+                <span class="version" style="font-size: 0.6em; color: #84C7D0;">v2.1</span>
+            </h1>
+            <div class="header-right-section" style="display: flex; align-items: center; gap: 0.75rem;">
+                <!-- 管理功能選單 -->
+                <div class="admin-menu" id="adminMenu" style="display: none;">
+                    <button class="admin-btn" onclick="toggleAdminDropdown()" id="adminBtn">
+                        🔧 管理功能
+                    </button>
+                    <div class="admin-dropdown" id="adminDropdown">
+                        <a href="global-user-management.html" class="admin-dropdown-item">👤 用戶管理</a>
+                        <a href="global-project-user-management.html" class="admin-dropdown-item">🏗️ 專案用戶管理</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要內容容器 -->
+    <div class="container">
+        <!-- 統計卡片 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalProjects">⏳</div>
+                <div class="stat-label">總專案數</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="notStartedProjects">⏳</div>
+                <div class="stat-label">尚未開始</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="inProgressProjects">⏳</div>
+                <div class="stat-label">施工中</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedProjects">⏳</div>
+                <div class="stat-label">已完工</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="maintenanceProjects">⏳</div>
+                <div class="stat-label">維修中</div>
+            </div>
+        </div>
+
+        <!-- 狀態標籤 -->
+        <div class="status-tabs">
+            <button class="tab-btn" data-status="all">全部專案</button>
+            <button class="tab-btn" data-status="not_started">尚未開始</button>
+            <button class="tab-btn active" data-status="in_progress">施工中</button>
+            <button class="tab-btn" data-status="maintenance">維修中</button>
+            <button class="tab-btn" data-status="completed">已完工</button>
+        </div>
+
+        <!-- 搜尋和操作 -->
+        <div class="controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="搜尋專案名稱或公司..." id="searchInput">
+            </div>
+            <button class="btn-primary" onclick="window.location.href='project-create-simple.html'">
+                <span>➕</span> 建立新專案
+            </button>
+        </div>
+
+        <!-- 載入狀態 -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <div class="loading-text">載入專案中...</div>
+        </div>
+
+        <!-- 專案容器 -->
+        <div class="projects-container" id="projectsContainer" style="display: none;">
+            <div class="projects-grid" id="projectsGrid">
+                <!-- 動態載入專案卡片 -->
+            </div>
+        </div>
+
+        <!-- 空狀態 -->
+        <div class="empty-state" id="emptyState" style="display: none;">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">尚無專案</div>
+            <div class="empty-desc">目前沒有任何專案，點擊上方按鈕建立新專案</div>
+            <button class="btn-primary" onclick="window.location.href='project-create-simple.html'">
+                建立第一個專案
+            </button>
+        </div>
+    </div>
+
+    <!-- 關鍵腳本 - 按優先順序載入 -->
+    <script>
+        // 內聯關鍵配置以避免阻塞
+        window.CONFIG = window.CONFIG || {};
+        
+        // 載入進度指示器
+        let loadedScripts = 0;
+        const totalScripts = 5;
+        
+        function updateLoadProgress() {
+            loadedScripts++;
+            const progress = (loadedScripts / totalScripts) * 100;
+            console.log(`載入進度: ${progress.toFixed(0)}%`);
+        }
+        
+        // 腳本載入錯誤處理
+        function handleScriptError(scriptName) {
+            console.error(`腳本載入失敗: ${scriptName}`);
+            
+            // 顯示錯誤訊息
+            const loading = document.getElementById('loading');
+            if (loading) {
+                loading.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                        <div style="font-size: 1.2rem; color: #dc2626; margin-bottom: 1rem;">載入失敗</div>
+                        <div style="color: #6b7280; margin-bottom: 2rem;">無法載入必要資源，請檢查網路連線</div>
+                        <button onclick="location.reload()" style="padding: 0.75rem 1.5rem; background: #84C7D0; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            重新載入
+                        </button>
+                    </div>
+                `;
+            }
+        }
+    </script>
+
+    <!-- 按順序載入腳本 -->
+    <script src="config.js" 
+            onload="updateLoadProgress()" 
+            onerror="handleScriptError('config.js')"></script>
+    
+    <script src="js/unified-auth.js" 
+            onload="updateLoadProgress()" 
+            onerror="handleScriptError('unified-auth.js')" async></script>
+    
+    <script src="js/unified-permissions.js" 
+            onload="updateLoadProgress()" 
+            onerror="handleScriptError('unified-permissions.js')" async></script>
+    
+    <script src="js/project-status.js" 
+            onload="updateLoadProgress()" 
+            onerror="handleScriptError('project-status.js')" async></script>
+    
+    <script src="js/user-profile-component.js" 
+            onload="updateLoadProgress()" 
+            onerror="handleScriptError('user-profile-component.js')" async></script>
+
+    <!-- 主要應用程式腳本 - 延遲載入 -->
+    <script src="js/project-list-optimized.js" 
+            onload="updateLoadProgress()" 
+            onerror="handleScriptError('project-list-optimized.js')" 
+            defer></script>
+
+    <!-- 管理功能腳本 - 內聯以減少請求 -->
+    <script>
+        // 管理功能切換
+        function toggleAdminDropdown() {
+            const dropdown = document.getElementById('adminDropdown');
+            const adminBtn = document.getElementById('adminBtn');
+            
+            if (dropdown && adminBtn) {
+                dropdown.classList.toggle('show');
+                adminBtn.classList.toggle('active');
+            }
+        }
+
+        // 全域點擊關閉下拉選單
+        document.addEventListener('click', function(event) {
+            const adminMenu = document.getElementById('adminMenu');
+            const adminDropdown = document.getElementById('adminDropdown');
+            const adminBtn = document.getElementById('adminBtn');
+            
+            if (adminMenu && adminDropdown && adminBtn && !adminMenu.contains(event.target)) {
+                adminDropdown.classList.remove('show');
+                adminBtn.classList.remove('active');
+            }
+        });
+
+        // 登出功能
+        function logout() {
+            if (confirm('確定要登出嗎？')) {
+                if (window.AuthUtils) {
+                    window.AuthUtils.logout();
+                } else {
+                    localStorage.clear();
+                }
+                window.location.href = 'login-simple.html';
+            }
+        }
+
+        // 性能監控
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (typeof performance !== 'undefined' && performance.timing) {
+                    const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                    console.log(`完整載入時間: ${loadTime}ms`);
+                    
+                    // 記錄性能指標
+                    if (loadTime > 3000) {
+                        console.warn('載入時間過長，建議進一步優化');
+                    }
+                }
+            }, 0);
+        });
+    </script>
+
+    <!-- Service Worker 支援（可選） -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('ServiceWorker 註冊成功');
+                    })
+                    .catch(function(error) {
+                        console.log('ServiceWorker 註冊失敗:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
