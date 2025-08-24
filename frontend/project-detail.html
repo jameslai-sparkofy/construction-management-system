@@ -2609,7 +2609,11 @@
         
         // Helper function to get team name from ID
         function getTeamNameFromId(teamId) {
-            return teamIdToNameMap[teamId] || teamId;
+            const teamInfo = teamIdToNameMap[teamId];
+            if (typeof teamInfo === 'object' && teamInfo) {
+                return teamInfo.name || teamId;
+            }
+            return teamInfo || teamId;
         }
         
         // Initialize
@@ -2803,6 +2807,7 @@
                 teams.push({
                     id: teamId,  // Use team ID
                     name: teamInfo.name,  // Use the name stored in teamInfo
+                    abbreviation: teamInfo.abbreviation,
                     siteCount: teamInfo.siteCount,
                     sites: teamInfo.sites,
                     members: [],
