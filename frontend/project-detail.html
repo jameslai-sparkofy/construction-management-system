@@ -2634,6 +2634,10 @@
                 container: headerActions
             });
             
+            // Initialize permissions early to prevent undefined errors
+            window.isAdmin = window.isAdmin || false;
+            window.userTeams = window.userTeams || new Set(); // 用戶負責的工班
+            
             // IMPORTANT: Load team mappings FIRST before any other data
             console.log('載入工班映射...');
             await loadTeamMappings();
