@@ -266,6 +266,19 @@
             max-height: 80vh;
         }
 
+        /* Pinch Zoom Component for Mobile */
+        .table-pinch-zoom {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .table-pinch-zoom {
+                touch-action: none; /* 讓 pinch-zoom 處理所有觸控手勢 */
+            }
+        }
+
         .floor-grid {
             width: 100%;
             border-collapse: collapse;
@@ -2092,9 +2105,11 @@
             </div>
             
             <div class="floor-grid-container">
-                <div id="gridContent" class="loading">
-                    載入中...
-                </div>
+                <pinch-zoom id="tableZoom" class="table-pinch-zoom">
+                    <div id="gridContent" class="loading">
+                        載入中...
+                    </div>
+                </pinch-zoom>
             </div>
         </div>
     </div>
@@ -6569,6 +6584,25 @@
             }
         });
 
+        // Initialize Pinch Zoom for mobile table interaction
+        window.addEventListener('DOMContentLoaded', () => {
+            // 等待表格內容載入後再初始化
+            setTimeout(() => {
+                const tableZoom = document.getElementById('tableZoom');
+                if (tableZoom && window.innerWidth <= 768) {
+                    // 設定初始縮放參數（可選）
+                    tableZoom.setTransform({
+                        scale: 1,
+                        x: 0,
+                        y: 0,
+                        allowChangeEvent: false
+                    });
+                    
+                    console.log('Pinch-zoom initialized for mobile table interaction');
+                }
+            }, 1000); // 等待表格載入
+        });
+
         // Handle tab switching
         function handleTabSwitch(tabName) {
             const gridWrapper = document.querySelector('.building-grid-wrapper');
@@ -6872,6 +6906,9 @@
 
 
     </script>
+
+    <!-- Pinch Zoom Web Component for Mobile Table Interaction -->
+    <script src="https://cdn.jsdelivr.net/npm/pinch-zoom-element@1.1.1/dist/pinch-zoom-element.min.js"></script>
 
 </body>
 </html>
