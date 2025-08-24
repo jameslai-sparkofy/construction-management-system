@@ -38,19 +38,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
-          # Try to deploy, if project doesn't exist it will be created automatically
+          # Deploy to new Cloudflare Pages project (will be created automatically if it doesn't exist)
           npx wrangler pages deploy frontend \
             --project-name construction-management-new-test \
-            --commit-dirty=true \
-            --compatibility-date 2024-11-06 || {
-            echo "First deployment attempt failed, project might not exist yet"
-            echo "Wrangler should have created the project, trying again..."
-            sleep 10
-            npx wrangler pages deploy frontend \
-              --project-name construction-management-new-test \
-              --commit-dirty=true \
-              --compatibility-date 2024-11-06
-          }
+            --commit-dirty=true
 
       - name: Get Deployment URL
         id: deployment
