@@ -4762,8 +4762,13 @@
                     
                     // 建立工班映射表
                     teamNameToIdMap = {};
+                    teamIdToNameMap = {};
                     Object.entries(result.teamMappings || {}).forEach(([name, team]) => {
                         teamNameToIdMap[name] = team.id;
+                        teamIdToNameMap[team.id] = {
+                            name: name,
+                            abbreviation: team.abbreviation
+                        };
                     });
                     
                     console.log('✅ [OPTIMIZED] All data loaded:', {
