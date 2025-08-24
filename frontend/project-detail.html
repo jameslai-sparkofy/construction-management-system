@@ -240,7 +240,7 @@
             transition: all 0.3s ease;
             font-weight: 600;
             font-size: 0.95rem;
-            min-width: 100px;
+            min-width: 120px;
             text-align: center;
         }
 
@@ -264,7 +264,6 @@
             overflow: auto;
             position: relative;
             max-height: 80vh;
-            touch-action: none; /* 允許 Panzoom 處理觸控手勢 */
         }
 
         .floor-grid {
@@ -314,7 +313,7 @@
             transition: all 0.3s ease;
             position: relative;
             background: var(--pending);
-            min-width: 100px;
+            min-width: 120px;
             height: 60px;
         }
 
@@ -6570,31 +6569,6 @@
             }
         });
 
-        // Initialize Panzoom for mobile table interaction
-        window.addEventListener('DOMContentLoaded', () => {
-            if (window.innerWidth <= 768 && typeof Panzoom !== 'undefined') {
-                const container = document.querySelector('.floor-grid-container');
-                if (container) {
-                    const panzoom = Panzoom(container, {
-                        minScale: 0.5,
-                        maxScale: 2,
-                        startScale: 1,
-                        cursor: 'grab',
-                        canvas: true,
-                        exclude: ['.building-btn', '.grid-cell', 'button', 'a', 'input'],
-                        disablePan: false,
-                        disableZoom: false,
-                        animate: true
-                    });
-                    
-                    // Enable wheel zoom for testing on desktop
-                    container.addEventListener('wheel', panzoom.zoomWithWheel);
-                    
-                    console.log('Panzoom initialized for mobile table interaction');
-                }
-            }
-        });
-
         // Handle tab switching
         function handleTabSwitch(tabName) {
             const gridWrapper = document.querySelector('.building-grid-wrapper');
@@ -6898,9 +6872,6 @@
 
 
     </script>
-
-    <!-- Panzoom Library for Touch Gestures -->
-    <script src="https://unpkg.com/@panzoom/panzoom@4.5.1/dist/panzoom.min.js"></script>
 
 </body>
 </html>
