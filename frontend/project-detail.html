@@ -6586,19 +6586,13 @@
 
         // Initialize Pinch Zoom for mobile table interaction
         window.addEventListener('DOMContentLoaded', () => {
-            // 等待表格內容載入後再初始化
+            // 等待表格內容載入後再檢查
             setTimeout(() => {
                 const tableZoom = document.getElementById('tableZoom');
                 if (tableZoom && window.innerWidth <= 768) {
-                    // 設定初始縮放參數（可選）
-                    tableZoom.setTransform({
-                        scale: 1,
-                        x: 0,
-                        y: 0,
-                        allowChangeEvent: false
-                    });
-                    
-                    console.log('Pinch-zoom initialized for mobile table interaction');
+                    // pinch-zoom-element 是 Web Component，會自動處理觸控手勢
+                    // 不需要手動初始化 setTransform
+                    console.log('Pinch-zoom element ready for mobile table interaction');
                 }
             }, 1000); // 等待表格載入
         });
