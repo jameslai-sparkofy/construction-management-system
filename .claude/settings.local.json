@@ -291,7 +291,17 @@
       "Bash(export PATH=\"$HOME/.local/bin:$PATH\")",
       "Bash($HOME/.local/bin/uvx:*)",
       "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" timeout 60 npx wrangler deploy --config workers/wrangler.dev.toml)",
-      "WebFetch(domain:cm-prod.pages.dev)"
+      "WebFetch(domain:cm-prod.pages.dev)",
+      "Bash(sniffly:*)",
+      "Read(//mnt/c/Users/laija/Desktop/**)",
+      "Read(//mnt/c/Users/laija/Desktop/**)",
+      "Read(//mnt/c/Users/laija/Desktop/**)",
+      "Read(//mnt/c/Users/laija/Desktop/**)",
+      "WebFetch(domain:codepen.io)",
+      "WebFetch(domain:github.com)",
+      "Bash(git revert:*)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages deployment list --project-name construction-management-frontend-dev)",
+      "mcp__playwright__browser_resize"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -75,6 +75,27 @@
 - 包含成功的 FX CRM API 創建方法
 - 本地 UUID + 延遲綁定架構
 
+### Playwright 快速開發流程
+
+**重要經驗**：對於小幅 CSS/HTML 修改，可採用快速驗證流程：
+
+1. **快速診斷**：用 Playwright 打開線上頁面，用 `browser_evaluate` 直接修改 CSS/HTML
+2. **即時驗證**：在瀏覽器中立即看到修改效果，確認解決方案可行
+3. **確認後實施**：驗證成功後再修改源碼並推送
+
+**適用場景**：
+- CSS 樣式調整
+- 布局問題修復
+- 透明度/間距問題
+- Sticky 定位問題
+
+**實際案例**：表格容器空隙問題
+- 問題：`floor-grid-container` 和 `gridContent` 間有 8px 空隙
+- 診斷：用 Playwright 檢查發現是 container padding 造成
+- 快速測試：`container.style.padding = '0'` 立即驗證效果
+- 確認修復：空隙消除，sticky headers 正常工作
+- 實施：修改源碼 `padding: 1.5rem` → `padding: 0`
+
 ### 下次需要處理的項目
 
 1. 修復案場更新同步功能
@@ -84,4 +105,5 @@
 
 ## 最後更新
 
+2025-08-23: 建立 Playwright 快速開發流程，用於小幅 UI 修改的快速驗證。
 2025-08-21: 完成統一系統架構重整，所有部署改為 GitHub Actions 自動化。

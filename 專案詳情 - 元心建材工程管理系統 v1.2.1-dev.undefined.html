@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
+<!-- saved from url=(0091)https://construction-management-frontend-dev.pages.dev/project-detail?id=proj_1755866388969 -->
+<html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>專案詳情 - 元心建材工程管理系統 v1.2.1</title>
-    <script src="js/version-manager.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined</title>
+    <script src="./專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined_files/version-manager.js.下載"></script>
+    <script src="./專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined_files/saved_resource"></script>
     <style>
         * {
             margin: 0;
@@ -85,13 +85,12 @@
             background: var(--background);
         }
 
-
         .project-info {
             flex: 1;
         }
 
         .project-info h1 {
-            font-size: 1.25rem;
+            font-size: 1.5rem;
             font-weight: 600;
             color: var(--heading);
             margin-bottom: 0.125rem;
@@ -260,10 +259,12 @@
 
         /* Floor Grid Table */
         .floor-grid-container {
-            padding: 0;
+            padding: 1.5rem;
             overflow: auto;
             position: relative;
             max-height: 80vh;
+            z-index: 1;
+            background-color: #ffffff;
         }
 
         .floor-grid {
@@ -276,11 +277,11 @@
             text-align: center;
             font-weight: 600;
             color: var(--heading);
-            background: var(--background);
+            background: #ffffff;
             border: 1px solid var(--border);
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 100;
             box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -289,11 +290,11 @@
             text-align: center;
             font-weight: 600;
             color: var(--heading);
-            background: var(--background);
+            background: #ffffff;
             border: 1px solid var(--border);
             position: sticky;
             left: 0;
-            z-index: 5;
+            z-index: 50;
             box-shadow: 2px 0 2px -1px rgba(0, 0, 0, 0.1);
         }
 
@@ -301,8 +302,8 @@
         .floor-grid thead th:first-child {
             position: sticky;
             left: 0;
-            z-index: 15;
-            background: var(--background);
+            z-index: 150;
+            background: #ffffff;
         }
 
         .grid-cell {
@@ -987,15 +988,62 @@
                 font-size: 0.875rem;
                 min-width: 100px;
             }
-
-            /* Project stats and floor grid */
+        }
+        
+        @media (max-width: 640px) {
+            .nav-tabs {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding: 0;
+                margin-bottom: 1rem;
+            }
+            
+            .nav-tab {
+                flex-shrink: 0;
+                padding: 0.75rem 1rem;
+                font-size: 0.875rem;
+                white-space: nowrap;
+                min-width: fit-content;
+            }
+            
+            .building-grid-wrapper {
+                margin: 0.5rem;
+            }
+            
+            .building-tabs {
+                padding: 0.5rem;
+                gap: 0.375rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin: 0.5rem;
+            }
+            
+            .building-btn {
+                flex-shrink: 0;
+                padding: 0.75rem 2rem;
+                font-size: 0.8125rem;
+                min-width: 90px;
+                border-width: 1.5px;
+            }
+            
+            .floor-grid-container {
+                padding: 0.5rem;
+                overflow: auto;
+                -webkit-overflow-scrolling: touch;
+                max-height: 70vh;
+            }
+            
+        }
+        
+        /* 手機優化 */
+        @media (max-width: 768px) {
             .project-stats {
                 flex-direction: column;
                 gap: 1rem;
             }
 
             .floor-grid-container {
-                padding: 0;
+                padding: 0.5rem;
                 max-height: 65vh;
             }
             
@@ -1076,20 +1124,20 @@
             }
 
             .all-media-compact {
-                padding: 0.5rem 0.5rem;
+                gap: 0.25rem;
                 padding: 0 0.75rem;
                 margin-bottom: 0.75rem;
             }
             
             .all-media-compact .media-container {
-                flex: 0 0 auto;
+                flex: 1;
                 min-width: 0;
                 max-width: 33.333%;
             }
             
             .media-header {
-                padding: 0.375rem;
-                font-size: 0.875rem;
+                padding: 0.375rem 0.5rem;
+                background: #f3f4f6;
                 margin-bottom: 0.375rem;
                 border-radius: 4px;
             }
@@ -1136,92 +1184,7 @@
                 background: rgba(0, 0, 0, 0.7);
                 border-radius: 3px;
             }
-
-            /* Legend container */
-            .legend-container {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            .legend-group {
-                flex-wrap: wrap;
-            }
-
-            /* Building chart */
-            .building-chart {
-                min-width: 140px;
-            }
-
-            .pie-chart {
-                width: 130px;
-                height: 130px;
-            }
-
-            .pie-chart::before {
-                width: 100px;
-                height: 100px;
-            }
-
-            .pie-chart-content {
-                width: 100px;
-            }
-
-            .building-name {
-                font-size: 0.8rem;
-            }
-
-            .pie-chart-percentage {
-                font-size: 1.2rem;
-            }
-
-            .building-progress {
-                font-size: 0.9rem;
-            }
-
-            .building-teams {
-                font-size: 0.6rem;
-                max-width: 80px;
-            }
         }
-        
-        @media (max-width: 640px) {
-            .nav-tabs {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                padding: 0;
-                margin-bottom: 1rem;
-            }
-            
-            .nav-tab {
-                flex-shrink: 0;
-                padding: 0.75rem 1rem;
-                font-size: 0.875rem;
-                white-space: nowrap;
-                min-width: fit-content;
-            }
-            
-            .building-grid-wrapper {
-                margin: 0.5rem;
-            }
-            
-            .building-tabs {
-                padding: 0.5rem;
-                gap: 0.375rem;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin: 0.5rem;
-            }
-            
-            .building-btn {
-                flex-shrink: 0;
-                padding: 0.75rem 2rem;
-                font-size: 0.8125rem;
-                min-width: 90px;
-                border-width: 1.5px;
-            }
-            
-        }
-        
         /* Statistics Cards */
         .stats-section {
             display: grid;
@@ -1249,7 +1212,7 @@
         .stat-icon {
             width: 48px;
             height: 48px;
-            background: linear-gradient(135deg, #D999B9 0%, #c285a3 100%);
+            background: linear-gradient(135deg, #84C7D0 0%, #6eb5c0 100%);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -1260,15 +1223,15 @@
         }
 
         .stat-card:nth-child(2) .stat-icon {
-            background: linear-gradient(135deg, #84c7d0 0%, #6eb5c0 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
         .stat-card:nth-child(3) .stat-icon {
-            background: linear-gradient(135deg, #efefef 0%, #e5e5e5 100%);
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
         }
 
         .stat-card:nth-child(4) .stat-icon {
-            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
         }
 
         .stat-content {
@@ -1305,7 +1268,16 @@
             }
             
             .header-content {
+                flex-direction: column;
+                align-items: flex-start;
                 gap: 0.75rem;
+            }
+            
+            .header-top {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+                width: 100%;
             }
             
             .back-btn {
@@ -1315,16 +1287,15 @@
             }
             
             .project-info h1 {
-                font-size: 1.25rem;
-            }
-            
-            .project-info p {
-                font-size: 0.75rem;
+                font-size: 1.375rem;
             }
             
             .header-actions {
                 flex-direction: row;
                 gap: 0.5rem;
+                width: 100%;
+                justify-content: flex-start;
+                flex-wrap: wrap;
             }
             
             .header-actions button {
@@ -1335,7 +1306,6 @@
             .header-actions button span:last-child {
                 display: none; /* Hide text labels on mobile, keep icons */
             }
-
             
             .stats-section {
                 grid-template-columns: repeat(2, 1fr);
@@ -1612,6 +1582,16 @@
         }
         
         /* Responsive Legend */
+        @media (max-width: 768px) {
+            .legend-container {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .legend-group {
+                flex-wrap: wrap;
+            }
+        }
         
         @media (max-width: 640px) {
             .legend-container {
@@ -1643,7 +1623,6 @@
             margin-bottom: 1rem;
             border-radius: 8px;
             box-shadow: var(--shadow-sm);
-            position: relative;
         }
 
         .building-charts-carousel {
@@ -1669,42 +1648,94 @@
             border-radius: 2px;
         }
 
-
-        /* Teams Carousel */
-        .teams-carousel-container {
-            position: relative;
-        }
-
-        .teams-carousel {
-            display: flex;
-            overflow-x: auto;
-            gap: 0.75rem;
-            padding: 0.5rem 0;
-            scroll-behavior: smooth;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .teams-carousel::-webkit-scrollbar {
-            display: none;
-        }
-
-        .teams-carousel {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-
-        /* Team buttons in carousel should not wrap */
-        .teams-carousel .team-button {
-            flex-shrink: 0;
-            min-width: fit-content;
-        }
-
         .building-chart {
             flex: 0 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-width: 160px;
+        }
+
+        /* Carousel 控制樣式 */
+        .carousel-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 1px solid #e5e5e5;
+            color: #666;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .carousel-btn:hover {
+            background: #f8f9fa;
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .carousel-btn-prev {
+            left: -20px;
+        }
+
+        .carousel-btn-next {
+            right: -20px;
+        }
+
+        .carousel-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .carousel-indicators {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .carousel-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e5e5e5;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .carousel-indicator.active {
+            background: var(--primary);
+        }
+
+        /* 工班 Carousel 樣式 */
+        .teams-carousel {
+            display: flex;
+            overflow: hidden;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        .teams-carousel > div {
+            display: flex;
+            gap: 0.75rem;
+            transition: transform 0.3s ease;
         }
 
         .pie-chart {
@@ -1762,7 +1793,7 @@
         }
 
         .building-progress {
-            font-size: 1rem;
+            font-size: 0.75rem;
             font-weight: 600;
             color: var(--heading);
             margin-bottom: 0.1rem;
@@ -1791,11 +1822,69 @@
         }
 
         /* Mobile responsive */
+        @media (max-width: 768px) {
+            .building-chart {
+                min-width: 140px;
+            }
+
+            .pie-chart {
+                width: 130px;
+                height: 130px;
+            }
+
+            .pie-chart::before {
+                width: 100px;
+                height: 100px;
+            }
+
+            .pie-chart-content {
+                width: 100px;
+            }
+
+            .building-name {
+                font-size: 0.8rem;
+            }
+
+            .pie-chart-percentage {
+                font-size: 1.2rem;
+            }
+
+            .building-progress {
+                font-size: 0.7rem;
+            }
+
+            .building-teams {
+                font-size: 0.6rem;
+                max-width: 80px;
+            }
+        }
 
         /* Loading spinner animation */
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        /* 水波動畫效果 */
+        @keyframes wave {
+            0% { 
+                background: linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.8) 0%, 
+                    rgba(255, 255, 255, 0.9) 50%, 
+                    rgba(255, 255, 255, 0.8) 100%);
+            }
+            50% { 
+                background: linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.9) 0%, 
+                    rgba(255, 255, 255, 1) 50%, 
+                    rgba(255, 255, 255, 0.9) 100%);
+            }
+            100% { 
+                background: linear-gradient(90deg, 
+                    rgba(255, 255, 255, 0.8) 0%, 
+                    rgba(255, 255, 255, 0.9) 50%, 
+                    rgba(255, 255, 255, 0.8) 100%);
+            }
         }
 
         /* 建築物水位效果 */
@@ -1830,8 +1919,8 @@
             content: '';
             position: absolute;
             top: -4px;
-            left: -50%;
-            width: 200%;
+            left: 0;
+            width: 100%;
             height: 8px;
             background: linear-gradient(90deg,
                 rgba(255, 255, 255, 0.6) 0%,
@@ -1840,7 +1929,18 @@
                 rgba(255, 255, 255, 0.9) 75%,
                 rgba(255, 255, 255, 0.6) 100%);
             border-radius: 50%;
-            animation: buildingWave 4s ease-in-out infinite;
+            animation: buildingWave 3s ease-in-out infinite;
+        }
+        
+        @keyframes buildingWave {
+            0%, 100% { 
+                transform: translateX(-25%);
+                opacity: 0.8;
+            }
+            50% { 
+                transform: translateX(25%);
+                opacity: 1;
+            }
         }
         
         .building-water-content {
@@ -1849,97 +1949,56 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            z-index: 10;
-            width: 100%;
+            z-index: 1;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
         }
         
         .building-water-content .building-name {
-            font-size: 1.4rem;
-            font-weight: 900;
-            color: rgba(255, 255, 255, 0.95);
-            margin-bottom: 0.1rem;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
-            text-align: center;
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            color: #2d3748;
+            text-shadow: none;
         }
         
         .building-water-content .pie-chart-percentage {
-            font-size: 2.0rem;
-            font-weight: 800;
-            color: rgba(255, 255, 255, 1);
-            text-shadow: 0 1px 3px rgba(0,0,0,0.4);
-            line-height: 1;
-            margin-bottom: 0.1rem;
-            text-align: center;
-            letter-spacing: 0.05em;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.15rem;
+            color: white;
         }
         
         .building-water-content .building-progress {
-            font-size: 1.3rem;
-            font-weight: 600;
+            font-size: 0.75rem;
             color: rgba(255, 255, 255, 0.9);
             margin-bottom: 0.1rem;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-            text-align: center;
         }
         
         .building-water-content .building-teams {
             font-size: 0.65rem;
             color: rgba(255, 255, 255, 0.8);
-            font-weight: 400;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-            text-align: center;
-            line-height: 1.1;
-            max-width: 100px;
-            margin: 0 auto;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
         
         /* 低水位時的文字顏色調整 */
-        .building-water-container[data-percentage="0"] .building-water-content .building-name,
         .building-water-container[data-percentage="0"] .building-water-content .pie-chart-percentage,
         .building-water-container[data-percentage="0"] .building-water-content .building-progress,
         .building-water-container[data-percentage="0"] .building-water-content .building-teams {
-            color: #64748b !important;
-            text-shadow: none !important;
+            color: #64748b;
+            text-shadow: none;
         }
         
-        .building-water-container[data-low-water="true"] .building-water-content .building-name,
         .building-water-container[data-low-water="true"] .building-water-content .pie-chart-percentage,
         .building-water-container[data-low-water="true"] .building-water-content .building-progress,
         .building-water-container[data-low-water="true"] .building-water-content .building-teams {
-            color: #475569 !important;
-            text-shadow: none !important;
-        }
-
-        /* 水波動畫效果 */
-        @keyframes buildingWave {
-            0% { 
-                transform: translateX(-75%) scaleY(0.8);
-                opacity: 0.7;
-            }
-            25% {
-                transform: translateX(-25%) scaleY(1.2);
-                opacity: 0.9;
-            }
-            50% { 
-                transform: translateX(75%) scaleY(0.6);
-                opacity: 1;
-            }
-            75% {
-                transform: translateX(25%) scaleY(1.4);
-                opacity: 0.8;
-            }
-            100% { 
-                transform: translateX(-75%) scaleY(0.8);
-                opacity: 0.7;
-            }
+            color: #475569;
+            text-shadow: none;
         }
     </style>
-    <script src="config.js"></script>
-    <script src="js/unified-auth.js"></script>
-    <script src="js/unified-permissions.js"></script>
-    <script src="js/user-profile-component.js"></script>
+    <script src="./專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined_files/config.js.下載"></script>
+    <script src="./專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined_files/unified-auth.js.下載"></script>
+    <script src="./專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined_files/unified-permissions.js.下載"></script>
+    <script src="./專案詳情 - 元心建材工程管理系統 v1.2.1-dev.undefined_files/user-profile-component.js.下載"></script>
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         
@@ -1967,60 +2026,259 @@
         // Initialize on load
         window.addEventListener('DOMContentLoaded', getCurrentSupabaseUser);
     </script>
-</head>
-<body>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width: 640px){.container{max-width:640px}}@media (min-width: 768px){.container{max-width:768px}}@media (min-width: 1024px){.container{max-width:1024px}}@media (min-width: 1280px){.container{max-width:1280px}}@media (min-width: 1536px){.container{max-width:1536px}}.absolute{position:absolute}.relative{position:relative}.right-0{right:0px}.z-50{z-index:50}.my-1{margin-top:0.25rem;margin-bottom:0.25rem}.mr-2{margin-right:0.5rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.block{display:block}.flex{display:flex}.hidden{display:none}.w-64{width:16rem}.items-center{align-items:center}.gap-2{gap:0.5rem}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-medium{font-weight:500}.text-blue-600{--tw-text-opacity:1;color:rgb(37 99 235 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition-all{transition-property:all;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.hover\:bg-gray-100:hover{--tw-bg-opacity:1;background-color:rgb(243 244 246 / var(--tw-bg-opacity, 1))}.hover\:bg-gray-50:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251 / var(--tw-bg-opacity, 1))}.hover\:bg-red-50:hover{--tw-bg-opacity:1;background-color:rgb(254 242 242 / var(--tw-bg-opacity, 1))}.hover\:shadow-xl:hover{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}</style><input type="hidden" id="_o_dbjbempljhcmhlfpfacalomonjpalpko" data-inspect-config="7"><script type="text/javascript" src="chrome-extension://dbjbempljhcmhlfpfacalomonjpalpko/scripts/inspector.js"></script><style>
+  .imageye-selected {
+    outline: 2px solid black !important;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5) !important;
+  }
+</style><style id="bt-default-injected-css">
+   
+[bt-global-status="dual"] [bt-translate-status]:not([bt-translate-status="translated"]) .bt-copied-node-wrapper {
+  display: none !important;
+}
+
+.bt-global-loading {
+    display: inline-block !important;
+    width: 12px !important;
+    height: 12px !important;
+    border: 2px solid #f3f3f3;
+    border-top: 1px solid #aaa;
+    border-radius: 50%;
+    animation: bt-global-spin 1s linear infinite;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+@keyframes bt-global-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.bt-error-wrapper {    
+    position: relative;
+    display: inline-flex;
+    padding: 6px;
+    margin: 0 8px;
+    white-space: nowrap;
+    font-size: 16px;
+    align-items: center;
+    color: #00AAB5;
+    vertical-align: middle;   
+}
+
+.bt-error-wrapper font {
+  display: flex;
+  align-items: center;
+  margin: 0 4px;
+  cursor: pointer;
+}
+
+.bt-error-wrapper svg {
+  width: 0.8em;
+  height: 0.8em;
+  margin:  0 4px;
+}
+
+.bt-global-retry svg:hover {
+    animation: bt-global-spin 1s ease infinite;
+}
+
+.bt-block-wrapper {
+    margin: 8px 0 !important;
+    display: inline-block;
+}
+
+.bt-inline-wrapper {
+    margin: 0 8px !important;
+}
+
+.bt-max-height-unset {
+    max-height: unset !important;
+}
+
+.bt-webkit-line-clamp-unset {
+    -webkit-line-clamp: unset !important;
+}
+
+
+:root{
+    --font--dash--border:#59c1bd;
+    --font--underLine-border:#72ece9;
+    --font-marker--bg:0,0,0;
+    --font--blockquote--left--bg:#FF0000;
+    --font--spit--line--border: #000000;
+}
+
+.translatedTextContainer{
+    margin: 8px 0 !important;
+    display: inline-block;
+}
+
+.fontFamilyDashRest{
+    background: linear-gradient(to right, var(--font--dash--border) 0%, var(--font--dash--border) 50%, transparent 50%, transparent 100%) repeat-x left bottom;
+    background-size: 8px 2px;
+    padding-bottom: 2px;
+}
+
+.fontFamilyUnderlineRest{
+    border-bottom: 1px solid var(--font--underLine-border) !important;
+}
+
+.fontFamilyMaskRest{
+    filter: blur(5px) !important;
+    transition: filter 0.3s ease !important;
+    border-radius: 10px;
+    display: inline-block;
+}
+
+.fontFamilyMaskRest:hover{
+    filter: none !important;
+}
+
+.fontFamilySpitLineRest{
+    color: #f50a0a;
+}
+
+.fontFamilySpitLineRest::before{
+    content: "";
+    display: block;
+    max-width: 80px;
+    width: 10%;
+    border-top: 1px dashed var(--font--spit--line--border);
+    padding-top: 8px;
+}
+
+.poppins-semibold {
+  font-family: "Poppins", sans-serif;
+  font-weight: 600;
+  font-style: normal;
+}
+.fontFamilyMarkerReset{
+    background:
+            linear-gradient(to right, rgba(var(--font-marker--bg), 0.1), rgba(var(--font-marker--bg), 0.9) 3%, rgba(var(--font-marker--bg), 0.9) 35%, rgba(var(--font-marker--bg), 0.9) 70%, rgba(var(--font-marker--bg), 0.8) 95%, rgba(var(--font-marker--bg), 0.3));
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+
+.fontFamilyBlockQuoteReset{
+    border-left: 4px solid var(--font--blockquote--left--bg) !important;
+    padding-left: 12px !important;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+  </style></head>
+<body style="padding-top: 28px;"><div id="env-indicator" style="position: fixed; top: 0px; left: 0px; right: 0px; background: linear-gradient(90deg, rgb(255, 152, 0), rgb(245, 124, 0)); color: white; text-align: center; padding: 4px 8px; font-size: 12px; font-weight: bold; z-index: 10000; box-shadow: rgba(0, 0, 0, 0.1) 0px 2px 4px;">🔧 開發環境 (v1.2.1-dev.undefined)</div>
 
     <div class="container">
         <!-- Header -->
         <div class="header">
             <div class="header-content">
-                <div class="project-info">
-                    <h1 id="projectName">載入中...</h1>
+                <div class="header-top">
+                    <button class="back-btn" onclick="goBack()">←</button>
+                    <div class="project-info">
+                        <h1 id="projectName">勝發-僑興段-2023</h1>
+                    </div>
                 </div>
                 <div class="header-actions" style="display: flex; align-items: center; gap: 0.75rem;">
                     <!-- 用戶管理按鈕 (管理員和領班可見) -->
-                    <button id="userManagementBtn" onclick="goToUserManagement()" style="display: none;">
+                    <button id="userManagementBtn" onclick="goToUserManagement()" style="display: flex;">
                         <span>👥</span>
                         <span>用戶管理</span>
                     </button>
                     
-                    <button class="btn-delete" style="background: #fee2e2; color: #dc2626; display: none;">
+
+                    <button class="btn-report">
+                        <span>📊</span>
+                        <span>報表</span>
+                    </button>
+                    <button class="btn-settings">
+                        <span>⚙️</span>
+                        <span>編輯</span>
+                    </button>
+                    <button class="btn-export">
+                        <span>📥</span>
+                        <span>匯出</span>
+                    </button>
+                    <button class="btn-delete" style="background: rgb(254, 226, 226); color: rgb(220, 38, 38); display: flex;">
                         <span>🗑️</span>
                         <span>刪除</span>
                     </button>
-                </div>
+                <div id="user-profile-component" class="user-profile-container" style="display: flex; align-items: center; gap: 0.75rem;">
+            <!-- 個人設定下拉選單 - 按鈕樣式 -->
+            <div class="relative">
+                <button id="profile-menu-button" class="bg-white hover:bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 shadow-lg transition-all duration-200 hover:shadow-xl flex items-center gap-2">
+                    <span class="text-lg">👤</span>
+                    <span class="text-sm font-medium text-gray-700" id="profile-button-name">賴俊穎</span>
+                </button>
                 
+                <!-- 下拉選單 -->
+                <div id="profile-dropdown" class="hidden absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                    <div class="px-4 py-3 border-b border-gray-200">
+                        <p class="text-sm font-medium text-gray-900" id="user-name">賴俊穎</p>
+                        <p class="text-xs text-blue-600 mt-1" id="user-role-detail">超級管理員</p>
+                        <p class="text-sm text-gray-500" id="user-phone">0963922033</p>
+                    </div>
+                    <div class="py-1">
+                        <a href="https://construction-management-frontend-dev.pages.dev/project-detail?id=proj_1755866388969#" id="personal-settings-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <span class="mr-2">⚙️</span>個人設定
+                        </a>
+                        <a href="https://construction-management-frontend-dev.pages.dev/project-detail?id=proj_1755866388969#" id="change-password-link" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
+                            <span class="mr-2">🔐</span>修改密碼
+                        </a>
+                        <div class="border-t border-gray-200 my-1"></div>
+                        <a href="https://construction-management-frontend-dev.pages.dev/project-detail?id=proj_1755866388969#" id="logout-link" class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                            <span class="mr-2">🚪</span>登出
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div></div>
             </div>
         </div>
 
         <!-- Building Completion Statistics -->
         <div class="building-stats-section">
-            <div class="building-charts-carousel" id="buildingChartsContainer">
-                <div class="loading-placeholder">載入中...</div>
-            </div>
+            <div class="building-charts-carousel" id="buildingChartsContainer"><div class="building-chart">
+                <div class="building-water-container" data-percentage="82">
+                    <div class="building-water-level" style="height: 82%;"></div>
+                    <div class="building-water-content">
+                        <div class="building-name">A棟</div>
+                        <div class="pie-chart-percentage">82%</div>
+                        <div class="building-progress">56/68</div>
+                        <div class="building-teams">匠王, 優美</div>
+                    </div>
+                </div>
+            </div></div>
         </div>
 
         <!-- Statistics Cards -->
-        <button class="section-toggle" onclick="toggleSection('statsSection')">統計資訊</button>
+        <button class="section-toggle" onclick="toggleSection(&#39;statsSection&#39;)">統計資訊</button>
         <div class="stats-section" id="statsSection">
             <div class="stat-card">
                 <div class="stat-icon">🏢</div>
                 <div class="stat-content">
-                    <div class="stat-value" id="statTotalSites">0</div>
+                    <div class="stat-value" id="statTotalSites">68</div>
                     <div class="stat-label">總案場數</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">✓</div>
                 <div class="stat-content">
-                    <div class="stat-value" id="statCompleted">0</div>
+                    <div class="stat-value" id="statCompleted">56</div>
                     <div class="stat-label">已完工</div>
                 </div>
             </div>
             <div class="stat-card">
                 <div class="stat-icon">⏳</div>
                 <div class="stat-content">
-                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-value" id="statPending">12</div>
                     <div class="stat-label">待施工</div>
                 </div>
             </div>
@@ -2044,8 +2302,10 @@
         <!-- Building Grid -->
         <div class="building-grid-wrapper">
             <div class="building-tabs" id="buildingTabs">
-                <!-- 動態生成建築物標籤 -->
-            </div>
+                    <button class="building-btn active" data-building="A" style="padding: 0.75rem 1.25rem;">
+                        <span>A棟 | 匠王, 優</span>
+                    </button>
+                </div>
             
             <!-- Legend -->
             <div id="gridLegend" class="legend-container">
@@ -2082,19 +2342,470 @@
                 </div>
             </div>
             
-            <!-- 工班顯示區塊 (重構版 - Carousel) -->
-            <div id="teamsDisplaySection" style="margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-                <div class="teams-carousel-container">
-                    <div class="teams-carousel" id="legendTeams">
-                        <!-- 動態生成工班圖例 -->
-                    </div>
-                </div>
+            <!-- 工班顯示區塊 (重構版) -->
+            <div id="teamsDisplaySection" style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div id="legendTeams" class="teams-carousel"><div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;"><div style="padding: 0.5rem 0.75rem; background: linear-gradient(135deg, rgb(132, 199, 208) 0%, rgb(107, 184, 195) 100%); color: white; border-radius: 12px; font-weight: 500; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; min-width: 140px; box-shadow: rgba(132, 199, 208, 0.3) 0px 2px 8px; border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0;"><span style="font-weight: 600; font-size: 0.875rem; flex-shrink: 0;">匠王</span><div class="percentage-display" style="display: flex; align-items: center; gap: 0.25rem;"><span style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.9); margin-right: 0.25rem;">1/1</span><div style="position: relative; width: 55px; height: 22px; background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%); border-radius: 8px; overflow: hidden; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset; border: 1px solid rgb(132, 199, 208);"><div style="position: absolute; left: 1px; top: 1px; height: calc(100% - 2px); width: calc(100% - 2px); background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%); border-radius: 7px; transition: width 0.8s ease-in-out; box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;"></div><span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.75rem; font-weight: 600; color: rgb(51, 51, 51); z-index: 2; pointer-events: none;">100%</span></div></div></div><div style="padding: 0.5rem 0.75rem; background: linear-gradient(135deg, rgb(132, 199, 208) 0%, rgb(107, 184, 195) 100%); color: white; border-radius: 12px; font-weight: 500; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem; min-width: 140px; box-shadow: rgba(132, 199, 208, 0.3) 0px 2px 8px; border: 1px solid rgba(255, 255, 255, 0.2); flex-shrink: 0;"><span style="font-weight: 600; font-size: 0.875rem; flex-shrink: 0;">優</span><div class="percentage-display" style="display: flex; align-items: center; gap: 0.25rem;"><span style="font-size: 0.75rem; color: rgba(255, 255, 255, 0.9); margin-right: 0.25rem;">54/54</span><div style="position: relative; width: 55px; height: 22px; background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%); border-radius: 8px; overflow: hidden; box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset; border: 1px solid rgb(132, 199, 208);"><div style="position: absolute; left: 1px; top: 1px; height: calc(100% - 2px); width: calc(100% - 2px); background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%); border-radius: 7px; transition: width 0.8s ease-in-out; box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;"></div><span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 0.75rem; font-weight: 600; color: rgb(51, 51, 51); z-index: 2; pointer-events: none;">100%</span></div></div></div><button style="padding: 0.5rem 0.75rem; background: rgb(107, 114, 128); color: white; border: none; border-radius: 12px; font-weight: 500; font-size: 0.875rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; min-width: 100px; transition: 0.2s; flex-shrink: 0; transform: scale(1); box-shadow: none;"><span style="font-weight: 600;">未分配</span><span style="background: rgba(255, 255, 255, 0.2); color: white; border-radius: 50%; min-width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">13</span></button></div></div>
             </div>
             
             <div class="floor-grid-container">
-                <div id="gridContent" class="loading">
-                    載入中...
-                </div>
+                <div id="gridContent" class="" style="opacity: 1; pointer-events: auto;"><table class="floor-grid"><thead><tr><th></th><th>A</th><th>AS1</th><th>B</th><th>BS2</th><th>C</th><th>CS3</th><th>D</th><th>DS5</th><th>S6</th><th>S7</th></tr></thead><tbody><tr><th>15F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6285&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">19.72坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6286&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">8/23 | 穎</div>
+                                         <div class="cell-line2">19.69坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6287&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">25.8坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>14F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6281&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6282&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6283&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6284&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>13F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc627d&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc627e&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc627f&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6280&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>12F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6279&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc627a&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc627b&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc627c&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>11F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6021&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6022&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6277&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf38293090001dc6278&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>10F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc601d&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc601e&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc601f&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6020&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>9F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6019&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc601a&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc601b&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc601c&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>8F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6015&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6016&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6017&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6018&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>7F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6011&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6012&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6013&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6014&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>6F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc600d&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc600e&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc600f&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6010&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>5F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6009&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc600a&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc600b&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc600c&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>4F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6005&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6006&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6007&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6008&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>3F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6001&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.33坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6002&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.33坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6003&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.87坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6004&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.67坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>2F</th>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc5ffd&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc5ffe&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">18.9坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc5fff&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell completed" onclick="openSiteModal(&#39;6760cbf28293090001dc6000&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1"></div>
+                                         <div class="cell-line2">23.5坪<span class="cell-team"> 優</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td><td class="grid-cell no-unit"></td></tr><tr><th>1F</th><td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760d7a57f855e00014ca851&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">4.23坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760d7a57f855e00014ca852&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">4.31坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760d7a57f855e00014ca853&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">4.36坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760d7a57f855e00014ca854&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">4.29坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760d7a57f855e00014ca855&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">5.26坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760d7a57f855e00014ca856&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">5.4坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        </tr><tr><th>1F</th><td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760cbf28293090001dc5ff7&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">13.09坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760cbf28293090001dc5ff8&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">13坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760cbf28293090001dc5ff9&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">13.09坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        <td class="grid-cell no-unit"></td>
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760cbf28293090001dc5ffa&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">13.24坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760cbf28293090001dc5ffb&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">16.67坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        
+                            <td class="grid-cell " onclick="openSiteModal(&#39;6760cbf28293090001dc5ffc&#39;)">
+                                <div class="cell-content">
+                                    <div class="cell-line1">17.1坪<span class="cell-team"> -</span></div>
+                                </div>
+                            </td>
+                        </tr></tbody></table></div>
             </div>
         </div>
     </div>
@@ -2144,7 +2855,7 @@
                             <span class="section-title">平面圖</span>
                         </div>
                         <div class="photos-wrapper" id="floorPlanPhotos">
-                            <div class="photo-box add-photo" onclick="uploadPhoto('floorPlan')">
+                            <div class="photo-box add-photo" onclick="uploadPhoto(&#39;floorPlan&#39;)">
                                 <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
                             </div>
                         </div>
@@ -2157,7 +2868,7 @@
                             <span class="section-title">施工前照片</span>
                         </div>
                         <div class="photos-wrapper" id="beforePhotos">
-                            <div class="photo-box add-photo" onclick="uploadPhoto('before')">
+                            <div class="photo-box add-photo" onclick="uploadPhoto(&#39;before&#39;)">
                                 <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
                             </div>
                         </div>
@@ -2194,7 +2905,7 @@
                         </div>
                         <div class="field-group">
                             <label class="field-label">師傅</label>
-                            <input type="text" class="field-input" id="workerInput" readonly style="background: #f3f4f6;">
+                            <input type="text" class="field-input" id="workerInput" readonly="" style="background: #f3f4f6;">
                         </div>
                     </div>
                     <div class="completion-fields" id="completionFields2" style="margin-top: 0.75rem;">
@@ -2218,7 +2929,7 @@
                         <div class="field-group" id="completionPhotos">
                             <label class="field-label">完工照片</label>
                             <div class="photos-wrapper" id="afterPhotos" style="border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 100px; background: white;">
-                                <div class="photo-box add-photo" onclick="uploadPhoto('after')">
+                                <div class="photo-box add-photo" onclick="uploadPhoto(&#39;after&#39;)">
                                     <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
                                 </div>
                             </div>
@@ -2228,7 +2939,7 @@
                         <div class="field-group" id="completionDifficultyPhotos">
                             <label class="field-label">工地狀況照片(施工後)</label>
                             <div class="photos-wrapper" id="difficultyPhotos" style="border: 1px solid #e5e7eb; border-radius: 0.375rem; padding: 0.5rem; min-height: 100px; background: white;">
-                                <div class="photo-box add-photo" onclick="uploadPhoto('difficulty')">
+                                <div class="photo-box add-photo" onclick="uploadPhoto(&#39;difficulty&#39;)">
                                     <div style="font-size: 1.5rem; color: #9ca3af;">+</div>
                                 </div>
                             </div>
@@ -2299,26 +3010,21 @@
                     <div style="display: grid; grid-template-columns: 2fr 2fr 1fr 1fr auto; gap: 0.5rem; align-items: end;">
                         <div>
                             <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">姓名</label>
-                            <input type="text" id="quickAddName" placeholder="輸入姓名" 
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <input type="text" id="quickAddName" placeholder="輸入姓名" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                         </div>
                         <div>
                             <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">電話</label>
-                            <input type="tel" id="quickAddPhone" placeholder="請輸入手機號碼" 
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <input type="tel" id="quickAddPhone" placeholder="請輸入手機號碼" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                         </div>
                         <div>
                             <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">簡稱</label>
-                            <input type="text" id="quickAddAbbr" placeholder="自動" maxlength="2"
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <input type="text" id="quickAddAbbr" placeholder="自動" maxlength="2" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                         </div>
                         <div>
                             <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; color: #6b7280;">密碼</label>
-                            <input type="text" id="quickAddPassword" placeholder="自動" 
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                            <input type="text" id="quickAddPassword" placeholder="自動" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                         </div>
-                        <button onclick="quickAddMember()" 
-                                style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
+                        <button onclick="quickAddMember()" style="padding: 0.5rem 1rem; background: linear-gradient(135deg, #3b82f6, #10b981); color: white; border: none; border-radius: 4px; cursor: pointer; white-space: nowrap;">
                             新增
                         </button>
                     </div>
@@ -2347,12 +3053,10 @@
                 
                 <!-- Tab selection for existing/new member -->
                 <div id="memberModalContent" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb;">
-                    <button id="existingMemberTab" onclick="switchMemberTab('existing')" 
-                            style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid #3b82f6; color: #3b82f6; cursor: pointer; font-weight: 600;">
+                    <button id="existingMemberTab" onclick="switchMemberTab(&#39;existing&#39;)" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid #3b82f6; color: #3b82f6; cursor: pointer; font-weight: 600;">
                         選擇現有師傅
                     </button>
-                    <button id="newMemberTab" onclick="switchMemberTab('new')" 
-                            style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: #6b7280; cursor: pointer; font-weight: 600;">
+                    <button id="newMemberTab" onclick="switchMemberTab(&#39;new&#39;)" style="padding: 0.75rem 1.5rem; background: none; border: none; border-bottom: 3px solid transparent; color: #6b7280; cursor: pointer; font-weight: 600;">
                         建立新師傅
                     </button>
                 </div>
@@ -2361,9 +3065,7 @@
                     <div id="existingMemberSection">
                         <div style="margin-bottom: 1rem;">
                             <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">搜尋師傅</label>
-                            <input type="text" id="workerSearchInput" placeholder="輸入姓名或電話搜尋..." 
-                                   style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;"
-                                   onkeyup="searchWorkers()">
+                            <input type="text" id="workerSearchInput" placeholder="輸入姓名或電話搜尋..." style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;" onkeyup="searchWorkers()">
                         </div>
                         <div id="workersList" style="max-height: 350px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.5rem;">
                             <div style="text-align: center; color: #9ca3af; padding: 2rem;">載入中...</div>
@@ -2377,18 +3079,14 @@
                             <div style="background: #f9fafb; padding: 1rem; border-radius: 8px;">
                                 <label style="display: block; margin-bottom: 0.75rem; font-weight: 600; color: #374151;">設定角色</label>
                                 <div style="display: flex; gap: 1rem;">
-                                    <label style="flex: 1; display: flex; align-items: center; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;" 
-                                           id="memberRoleLabel"
-                                           onclick="selectRole('team_member')">
-                                        <input type="radio" id="roleMember" name="memberRole" value="team_member" checked style="margin-right: 0.5rem;">
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;" id="memberRoleLabel" onclick="selectRole(&#39;team_member&#39;)">
+                                        <input type="radio" id="roleMember" name="memberRole" value="team_member" checked="" style="margin-right: 0.5rem;">
                                         <span style="flex: 1;">
                                             <strong style="color: #1f2937;">一般成員</strong>
                                             <div style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem;">可查看及更新案場資料</div>
                                         </span>
                                     </label>
-                                    <label style="flex: 1; display: flex; align-items: center; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;"
-                                           id="leaderRoleLabel"
-                                           onclick="selectRole('team_leader')">
+                                    <label style="flex: 1; display: flex; align-items: center; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; cursor: pointer; transition: all 0.2s;" id="leaderRoleLabel" onclick="selectRole(&#39;team_leader&#39;)">
                                         <input type="radio" id="roleLeader" name="memberRole" value="team_leader" style="margin-right: 0.5rem;">
                                         <span style="flex: 1;">
                                             <strong style="color: #1f2937;">負責人</strong>
@@ -2401,29 +3099,22 @@
                             <div style="display: flex; gap: 1rem;">
                                 <div style="flex: 2;">
                                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">電話/帳號 <span style="color: red;">*</span></label>
-                                    <input type="tel" id="newMemberPhone" placeholder="輸入手機號碼" 
-                                           onblur="checkDuplicatePhone()"
-                                           oninput="updatePasswordDisplay()"
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <input type="tel" id="newMemberPhone" placeholder="輸入手機號碼" onblur="checkDuplicatePhone()" oninput="updatePasswordDisplay()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                                 </div>
                                 <div style="flex: 1;">
                                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">密碼</label>
-                                    <input type="text" id="memberPassword" readonly 
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; background: #f3f4f6;">
+                                    <input type="text" id="memberPassword" readonly="" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px; background: #f3f4f6;">
                                 </div>
                             </div>
                             <!-- 姓名 和 簡稱 在同一行 -->
                             <div style="display: flex; gap: 1rem;">
                                 <div style="flex: 2;">
                                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">姓名 <span style="color: red;">*</span></label>
-                                    <input type="text" id="newMemberName" placeholder="輸入師傅姓名" 
-                                           oninput="updateAbbreviation()"
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <input type="text" id="newMemberName" placeholder="輸入師傅姓名" oninput="updateAbbreviation()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                                 </div>
                                 <div style="flex: 1;">
                                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">簡稱 <span style="color: red;">*</span></label>
-                                    <input type="text" id="newMemberAbbreviation" placeholder="自動填入" maxlength="2"
-                                           style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+                                    <input type="text" id="newMemberAbbreviation" placeholder="自動填入" maxlength="2" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
                                 </div>
                             </div>
                             <!-- 重複提示區域 -->
@@ -2449,12 +3140,12 @@
                     
                     <div style="margin-top: 1.5rem; text-align: right;">
                         <button onclick="closeAddMemberModal()" style="padding: 0.5rem 1rem; margin-right: 0.5rem; background: #e5e7eb; border: none; border-radius: 4px; cursor: pointer;">取消</button>
-                        <button id="confirmAddMemberBtn" onclick="confirmAddMember()" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled>確認新增</button>
+                        <button id="confirmAddMemberBtn" onclick="confirmAddMember()" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" disabled="">確認新增</button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    
 
     <script>
         // API Configuration
@@ -2634,8 +3325,10 @@
                 container: headerActions
             });
             
-            // 跳過個別載入工班映射，將在批次載入中一起獲取
-            console.log('⚡ 使用批次載入，跳過單獨的工班映射載入...');
+            // IMPORTANT: Load team mappings FIRST before any other data
+            console.log('載入工班映射...');
+            await loadTeamMappings();
+            console.log('工班映射載入完成:', Object.keys(teamNameToIdMap).length, '個工班');
 
             
             // Update user management button visibility
@@ -2647,7 +3340,9 @@
             // Load project data (this will also load sites)
             await loadProject(projectId);
             
-            // ⚡ 工班和案場資料已在批次載入中獲取，無需額外調用
+            // Load teams data after sites are loaded
+            // This will be called after sites are processed
+            // await loadProjectTeams(projectId); // Will be called from loadSites
             
             // If site_id is provided, open the modal
             if (siteId) {
@@ -2838,16 +3533,15 @@
                 return;
             }
             
-            // 統一使用 carousel 布局
+            // 統一使用 flex 布局，不區分行動版和桌面版
             const teamsContainer = document.createElement('div');
-            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; overflow-x: auto; align-items: center; scroll-behavior: smooth; -webkit-overflow-scrolling: touch; padding: 0.5rem 0;';
+            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center;';
             
             // 添加所有工班按鈕
             filteredTeams.forEach(team => {
                 const teamButton = document.createElement('div');
                 teamButton.style.cssText = `
-                    padding: 0rem 0.75rem; 
-                    height: 40px;
+                    padding: 0.5rem 0.75rem; 
                     background: linear-gradient(135deg, #84C7D0 0%, #6BB8C3 100%); 
                     color: white; 
                     border: none;
@@ -2886,42 +3580,38 @@
                 `;
                 countDisplay.textContent = `${completedCount}/${siteCount}`;
                 
-                // 百分比顯示容器
-                const percentageDisplay = document.createElement('div');
-                percentageDisplay.className = 'percentage-display';
-                percentageDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
-                
-                // 完成數量顯示
-                percentageDisplay.appendChild(countDisplay);
-                
-                // 進度條容器（匹配完美版本）
-                const progressContainer = document.createElement('div');
-                progressContainer.style.cssText = `
+                // 進度條容器
+                const waterContainer = document.createElement('div');
+                waterContainer.style.cssText = `
                     position: relative;
-                    width: 75px;
+                    width: 55px;
                     height: 22px;
-                    background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%);
+                    background: linear-gradient(180deg, #E0E0E0 0%, #FFFFFF 50%, #E0E0E0 100%);
                     border-radius: 8px;
                     overflow: hidden;
-                    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset;
-                    border: 1px solid rgb(132, 199, 208);
+                    box-shadow: 
+                        inset 0 2px 4px rgba(0,0,0,0.2),
+                        inset 0 -2px 4px rgba(0,0,0,0.2),
+                        inset 2px 0 4px rgba(0,0,0,0.15),
+                        inset -2px 0 4px rgba(0,0,0,0.15);
+                    border: 1px solid #84C7D0;
                 `;
                 
-                // 橘色進度條（匹配完美版本）
-                const progressBar = document.createElement('div');
-                progressBar.style.cssText = `
+                // 進度條填充
+                const waterLevel = document.createElement('div');
+                waterLevel.style.cssText = `
                     position: absolute;
                     left: 1px;
                     top: 1px;
                     height: calc(100% - 2px);
                     width: calc(${percentage}% - 2px);
-                    background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%);
+                    background: linear-gradient(180deg, #FFA500 0%, #FF8C00 50%, #FF7F00 100%);
                     border-radius: 7px;
                     transition: width 0.8s ease-in-out;
-                    box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;
+                    box-shadow: 0 1px 3px rgba(255,140,0,0.3);
                 `;
                 
-                // 百分比文字覆蓋
+                // 百分比文字
                 const percentageText = document.createElement('span');
                 percentageText.style.cssText = `
                     position: absolute;
@@ -2930,17 +3620,22 @@
                     transform: translate(-50%, -50%);
                     font-size: 0.75rem;
                     font-weight: 600;
-                    color: rgb(51, 51, 51);
+                    color: #333;
                     z-index: 2;
                     pointer-events: none;
                 `;
                 percentageText.textContent = `${percentage}%`;
                 
-                progressContainer.appendChild(progressBar);
-                progressContainer.appendChild(percentageText);
-                percentageDisplay.appendChild(progressContainer);
+                waterContainer.appendChild(waterLevel);
+                waterContainer.appendChild(percentageText);
                 
-                // 組裝工班按鈕
+                // 百分比容器
+                const percentageDisplay = document.createElement('div');
+                percentageDisplay.className = 'percentage-display';
+                percentageDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+                percentageDisplay.appendChild(countDisplay);
+                percentageDisplay.appendChild(waterContainer);
+                
                 teamButton.appendChild(teamNameSpan);
                 teamButton.appendChild(percentageDisplay);
                 teamsContainer.appendChild(teamButton);
@@ -2950,8 +3645,7 @@
             if (window.unassignedSitesCount && window.unassignedSitesCount > 0) {
                 const unassignedButton = document.createElement('button');
                 unassignedButton.style.cssText = `
-                    padding: 0rem 0.75rem;
-                    height: 40px;
+                    padding: 0.5rem 0.75rem;
                     background: #6b7280;
                     color: white;
                     border: none;
@@ -2977,7 +3671,7 @@
                 countText.style.cssText = `
                     background: rgba(255, 255, 255, 0.2);
                     color: white;
-                    border-radius: 12px;
+                    border-radius: 50%;
                     min-width: 1.5rem;
                     height: 1.5rem;
                     display: flex;
@@ -3013,6 +3707,7 @@
             }
             
             legendTeams.appendChild(teamsContainer);
+            
         }
         // Handle window resize
         let resizeTimeout;
@@ -4717,115 +5412,44 @@
             // TODO: Implement edit member form
         }
 
-        // 批次載入專案完整資料 - 性能優化版本
+        // Load project data
         async function loadProject(projectId) {
             try {
                 isDataLoading = true;
-                console.log('🚀 [OPTIMIZED] Starting batch project load:', projectId);
-                
-                const startTime = performance.now();
-                
-                // 使用新的 /full 端點一次性載入所有資料
+                console.log('[DEBUG] Starting project load:', projectId);
+                // Fetch project data from engineering management API
                 const response = await fetch(
-                    `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}/full`,
+                    `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}`,
                     {
                         headers: {
                             'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dev-token-for-testing'}`
+                            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                         }
                     }
                 );
 
                 if (!response.ok) {
-                    // 如果新端點失敗，回退到舊的載入方式
-                    console.warn('Full endpoint failed, falling back to legacy loading');
-                    return await loadProjectLegacy(projectId);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
                 const result = await response.json();
-                const loadTime = performance.now() - startTime;
+                console.log('[DEBUG] Project API response:', result);
                 
-                console.log(`⚡ [OPTIMIZED] Project data loaded in ${loadTime.toFixed(2)}ms`, result);
-                
-                if (result.success) {
-                    // 設置全域變數
+                if (result.success && result.project) {
                     currentProject = result.project;
-                    window.currentProject = result.project;
-                    currentSites = result.sites || [];
-                    window.projectTeams = result.teams || [];
-                    window.teamMappings = result.teamMappings || {};
-                    
-                    // 建立工班映射表
-                    teamNameToIdMap = {};
-                    Object.entries(result.teamMappings || {}).forEach(([name, team]) => {
-                        teamNameToIdMap[name] = team.id;
-                    });
-                    
-                    console.log('✅ [OPTIMIZED] All data loaded:', {
-                        project: result.project.name,
-                        sites: result.sites.length,
-                        teams: result.teams.length,
-                        users: result.userStats.total_users,
-                        teamMappings: Object.keys(teamNameToIdMap).length,
-                        loadTime: loadTime.toFixed(2) + 'ms'
-                    });
-
-                    // 更新 UI (不需要額外的 API 調用)
+                    window.currentProject = result.project; // Save globally for team functions
+                    console.log('[DEBUG] Project loaded successfully:', window.currentProject);
                     updateProjectInfo();
-                    processSitesData(); // 使用已載入的資料
-                    renderBuildingTabs();
-                    renderFloorGrid();
-                    updateStatistics();
-                    generateBuildingCompletionStats(); // 使用已載入的資料
-
-                    // 清除載入狀態
-                    const gridContent = document.getElementById('gridContent');
-                    if (gridContent) gridContent.classList.remove('loading');
-                    
-                    // 設置建築統計資料 (已經在 API 中計算好)
-                    if (result.sitesStats?.buildingStats) {
-                        window.buildingStats = result.sitesStats.buildingStats;
-                    }
-                    
+                    await loadSites();
                 } else {
-                    throw new Error(result.error || '專案不存在');
+                    showError('專案不存在');
                 }
             } catch (error) {
-                console.error('❌ [OPTIMIZED] Error loading project:', error);
+                console.error('Error loading project:', error);
                 showError('載入專案失敗: ' + error.message);
             } finally {
                 isDataLoading = false;
-                console.log('🏁 [OPTIMIZED] Project loading complete');
-            }
-        }
-
-        // 舊版載入方式 (備用)
-        async function loadProjectLegacy(projectId) {
-            console.log('🔄 [LEGACY] Using legacy project loading');
-            // 保持原有的邏輯作為備用
-            const response = await fetch(
-                `${CONFIG.API.WORKER_API_URL}/api/v1/projects/${projectId}`,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('auth_token') || 'dev-token-for-testing'}`
-                    }
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            
-            if (result.success && result.project) {
-                currentProject = result.project;
-                window.currentProject = result.project;
-                updateProjectInfo();
-                await loadSites();
-            } else {
-                throw new Error('專案不存在');
+                console.log('[DEBUG] Project loading complete. isDataLoading:', isDataLoading);
             }
         }
 
@@ -4834,20 +5458,11 @@
             if (!currentProject) return;
             
             document.getElementById('projectName').textContent = currentProject.name || '未命名專案';
-            // projectDescription element has been removed, so we skip setting it
         }
 
-        // Load sites for the project (現在主要用於舊版備用)
+        // Load sites for the project
         async function loadSites() {
             try {
-                // ⚡ 檢查是否已透過批次載入獲取資料
-                if (currentSites && currentSites.length > 0) {
-                    console.log('⚡ [OPTIMIZED] Sites already loaded via batch, skipping individual API call');
-                    return;
-                }
-                
-                console.log('🔄 [LEGACY] Loading sites via individual API call');
-                
                 // Ensure team mappings are loaded first
                 if (Object.keys(teamNameToIdMap).length === 0) {
                     console.log('工班映射尚未載入，先載入映射...');
@@ -4868,7 +5483,7 @@
                 
                 // Show loading state
                 const gridContent = document.getElementById('gridContent');
-                if (gridContent) gridContent.innerHTML = '<div class="loading">載入案場資料中...</div>';
+                gridContent.innerHTML = '<div class="loading">載入案場資料中...</div>';
                 
                 // Fetch sites data
                 const response = await fetch(
@@ -5002,8 +5617,11 @@
             // 更新工班圖例（傳遞包含案場數的工班資訊）
             updateTeamLegend(teamsMap);
             
-            // ⚡ 工班成員資料已在批次載入中獲取
-            console.log('✅ 工班資料已載入，跳過額外的 loadProjectTeams 調用');
+            // Now load team members from users table
+            const projectId = new URLSearchParams(window.location.search).get('id');
+            if (projectId) {
+                loadProjectTeams(projectId);
+            }
         }
         
         // Update team legend
@@ -5332,16 +5950,11 @@
             // 生成建築物完成度統計
             generateBuildingCompletionStats();
             
-            // Update stat cards with null checks
-            const statTotalSites = document.getElementById('statTotalSites');
-            const statCompleted = document.getElementById('statCompleted');
-            const statPending = document.getElementById('statPending');
-            const statMaintenance = document.getElementById('statMaintenance');
-            
-            if (statTotalSites) statTotalSites.textContent = totalSites;
-            if (statCompleted) statCompleted.textContent = completedSites;
-            if (statPending) statPending.textContent = pendingSites;
-            if (statMaintenance) statMaintenance.textContent = 0; // TODO: Get actual maintenance count
+            // Update stat cards
+            document.getElementById('statTotalSites').textContent = totalSites;
+            document.getElementById('statCompleted').textContent = completedSites;
+            document.getElementById('statPending').textContent = pendingSites;
+            document.getElementById('statMaintenance').textContent = 0; // TODO: Get actual maintenance count
             
             // Store stats globally for later use
             window.projectStats = {
@@ -5436,11 +6049,173 @@
                     });
                 }, 100);
                 
+                
             } catch (error) {
                 console.error('Error generating building stats:', error);
                 document.getElementById('buildingChartsContainer').innerHTML = 
                     '<div class="loading-placeholder">載入統計資料失敗</div>';
             }
+        }
+        
+        // 建築物 Carousel 初始化
+        function initBuildingCarousel() {
+            const container = document.getElementById('buildingChartsContainer');
+            const prevBtn = document.getElementById('buildingPrevBtn');
+            const nextBtn = document.getElementById('buildingNextBtn');
+            const indicators = document.getElementById('buildingIndicators');
+            
+            if (!container || !prevBtn || !nextBtn || !indicators) return;
+            
+            const items = container.querySelectorAll('.building-chart');
+            let currentIndex = 0;
+            const itemsPerPage = window.innerWidth <= 768 ? 1 : 3; // 手機版顯示1個，桌面版顯示3個
+            const maxIndex = Math.max(0, items.length - itemsPerPage);
+            
+            // 生成指示器
+            indicators.innerHTML = '';
+            for (let i = 0; i <= maxIndex; i++) {
+                const indicator = document.createElement('div');
+                indicator.className = `carousel-indicator ${i === 0 ? 'active' : ''}`;
+                indicator.addEventListener('click', () => goToSlide(i));
+                indicators.appendChild(indicator);
+            }
+            
+            // 更新顯示
+            function updateCarousel() {
+                const itemWidth = items[0]?.offsetWidth + 16 || 176; // 160px + 16px gap
+                container.scrollTo({
+                    left: currentIndex * itemWidth,
+                    behavior: 'smooth'
+                });
+                
+                // 更新指示器
+                indicators.querySelectorAll('.carousel-indicator').forEach((indicator, index) => {
+                    indicator.classList.toggle('active', index === currentIndex);
+                });
+                
+                // 更新按鈕狀態
+                prevBtn.disabled = currentIndex === 0;
+                nextBtn.disabled = currentIndex >= maxIndex;
+            }
+            
+            // 前進
+            function next() {
+                if (currentIndex < maxIndex) {
+                    currentIndex++;
+                    updateCarousel();
+                }
+            }
+            
+            // 後退
+            function prev() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateCarousel();
+                }
+            }
+            
+            // 跳轉到指定頁
+            function goToSlide(index) {
+                currentIndex = Math.max(0, Math.min(index, maxIndex));
+                updateCarousel();
+            }
+            
+            // 綁定事件
+            nextBtn.addEventListener('click', next);
+            prevBtn.addEventListener('click', prev);
+            
+            // 初始化顯示
+            updateCarousel();
+            
+            // 響應式調整
+            window.addEventListener('resize', () => {
+                const newItemsPerPage = window.innerWidth <= 768 ? 1 : 3;
+                if (newItemsPerPage !== itemsPerPage) {
+                    initBuildingCarousel(); // 重新初始化
+                }
+            });
+        }
+        
+        // 工班 Carousel 初始化
+        function initTeamsCarousel() {
+            const container = document.getElementById('legendTeams');
+            const prevBtn = document.getElementById('teamsPrevBtn');
+            const nextBtn = document.getElementById('teamsNextBtn');
+            const indicators = document.getElementById('teamsIndicators');
+            
+            if (!container || !prevBtn || !nextBtn || !indicators) return;
+            
+            const teamsContainer = container.querySelector('div');
+            if (!teamsContainer) return;
+            
+            const items = teamsContainer.children;
+            let currentIndex = 0;
+            const itemsPerPage = window.innerWidth <= 768 ? 1 : 3; // 手機版顯示1個，桌面版顯示3個
+            const maxIndex = Math.max(0, items.length - itemsPerPage);
+            
+            // 生成指示器
+            indicators.innerHTML = '';
+            if (maxIndex > 0) {
+                for (let i = 0; i <= maxIndex; i++) {
+                    const indicator = document.createElement('div');
+                    indicator.className = `carousel-indicator ${i === 0 ? 'active' : ''}`;
+                    indicator.addEventListener('click', () => goToSlide(i));
+                    indicators.appendChild(indicator);
+                }
+            }
+            
+            // 更新顯示
+            function updateCarousel() {
+                if (items.length === 0) return;
+                
+                const itemWidth = items[0]?.offsetWidth + 12 || 152; // 140px + 12px gap
+                const translateX = -currentIndex * itemWidth;
+                teamsContainer.style.transform = `translateX(${translateX}px)`;
+                
+                // 更新指示器
+                indicators.querySelectorAll('.carousel-indicator').forEach((indicator, index) => {
+                    indicator.classList.toggle('active', index === currentIndex);
+                });
+                
+                // 更新按鈕狀態
+                prevBtn.disabled = currentIndex === 0;
+                nextBtn.disabled = currentIndex >= maxIndex;
+            }
+            
+            // 前進
+            function next() {
+                if (currentIndex < maxIndex) {
+                    currentIndex++;
+                    updateCarousel();
+                }
+            }
+            
+            // 後退  
+            function prev() {
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    updateCarousel();
+                }
+            }
+            
+            // 跳轉到指定頁
+            function goToSlide(index) {
+                currentIndex = Math.max(0, Math.min(index, maxIndex));
+                updateCarousel();
+            }
+            
+            // 綁定事件
+            nextBtn.addEventListener('click', next);
+            prevBtn.addEventListener('click', prev);
+            
+            // 初始化顯示
+            updateCarousel();
+            
+            // 隱藏/顯示carousel控制器
+            const showControls = items.length > itemsPerPage;
+            prevBtn.style.display = showControls ? 'flex' : 'none';
+            nextBtn.style.display = showControls ? 'flex' : 'none';
+            indicators.style.display = showControls ? 'flex' : 'none';
         }
         
         // 智能工班簡稱生成
@@ -5491,29 +6266,17 @@
             
             chartDiv.innerHTML = `
                 <div class="building-water-container" data-percentage="${percentage}" ${isLowWater ? 'data-low-water="true"' : ''}>
-                    <div class="building-water-level" style="height: 0%;"></div>
+                    <div class="building-water-level" style="height: ${waterHeight}%;"></div>
                     <div class="building-water-content">
                         <div class="building-name">${displayBuildingName}</div>
                         <div class="pie-chart-percentage">${percentage}%</div>
                         <div class="building-progress">${completed}/${total}</div>
+                        <div class="building-teams">${shortTeams}</div>
                     </div>
                 </div>
             `;
             
             return chartDiv;
-        }
-
-        // 數字動畫效果
-        function animatePercentage(element, targetValue) {
-            let currentValue = 0;
-            const increment = targetValue / 50;
-            const timer = setInterval(() => {
-                currentValue = Math.min(currentValue + increment, targetValue);
-                element.textContent = Math.round(currentValue) + '%';
-                if (currentValue >= targetValue) {
-                    clearInterval(timer);
-                }
-            }, 30);
         }
 
         // 檢查案場存取權限
@@ -5637,29 +6400,16 @@
             // Store current site data globally for other functions to access
             window.currentSiteData = site;
             
-            // Basic info with null checks
-            const modalBuilding = document.getElementById('modalBuilding');
-            const modalFloor = document.getElementById('modalFloor');
-            const modalUnit = document.getElementById('modalUnit');
-            const modalTeam = document.getElementById('modalTeam');
-            
-            if (modalBuilding) {
-                modalBuilding.textContent = (site[fieldMapping.building] || 'A') + '棟';
-            }
-            
-            if (modalFloor) {
-                // Convert floor to integer for display
-                const floor = Math.floor(parseFloat(site[fieldMapping.floor] || '1'));
-                modalFloor.textContent = floor + 'F';
-            }
-            
-            if (modalUnit) {
-                modalUnit.textContent = site[fieldMapping.unit] || '-';
-            }
-            
-            if (modalTeam) {
-                modalTeam.textContent = site[fieldMapping.team] || '-';
-            }
+            // Basic info
+            document.getElementById('modalBuilding').textContent = 
+                (site[fieldMapping.building] || 'A') + '棟';
+            // Convert floor to integer for display
+            const floor = Math.floor(parseFloat(site[fieldMapping.floor] || '1'));
+            document.getElementById('modalFloor').textContent = floor + 'F';
+            document.getElementById('modalUnit').textContent = 
+                site[fieldMapping.unit] || '-';
+            document.getElementById('modalTeam').textContent = 
+                site[fieldMapping.team] || '-';
             
             // Notes
             const notes = site[fieldMapping.beforeNotes] || '';
@@ -5708,10 +6458,7 @@
                 completionPhotosRow.style.opacity = '1';
                 completionPhotosRow.style.pointerEvents = 'auto';
                 
-                const workerNameElement = document.getElementById('workerName');
-                if (workerNameElement) {
-                    workerNameElement.textContent = `- ${site[fieldMapping.worker] || ''}`;
-                }
+                document.getElementById('workerName').textContent = `- ${site[fieldMapping.worker] || ''}`;
             } else {
                 // 未完成時，預設填入今天日期、工地坪數和當前用戶
                 document.getElementById('areaInput').value = site[fieldMapping.siteArea] || '';
@@ -5733,10 +6480,7 @@
                 completionPhotosRow.style.opacity = '0.5';
                 completionPhotosRow.style.pointerEvents = 'none';
                 
-                const workerNameElement = document.getElementById('workerName');
-                if (workerNameElement) {
-                    workerNameElement.textContent = '';
-                }
+                document.getElementById('workerName').textContent = '';
             }
             
             // Load photos if any
@@ -6177,9 +6921,7 @@
                     workerInput.value = currentUser.name;
                     workerInput.setAttribute('value', currentUser.name);
                     // Show worker name in label
-                    if (workerName) {
-                        workerName.textContent = `- ${currentUser.name}`;
-                    }
+                    workerName.textContent = `- ${currentUser.name}`;
                 }
                 
                 // Vibration feedback
@@ -6202,9 +6944,7 @@
                 completionPhotosRow.style.opacity = '0.5';
                 completionPhotosRow.style.pointerEvents = 'none';
                 
-                if (workerName) {
-                    workerName.textContent = '';
-                }
+                workerName.textContent = '';
                 workerInput.value = '';
                 workerInput.removeAttribute('value');
             }
@@ -6762,6 +7502,34 @@
                 }
             });
 
+            // Report button
+            const reportBtn = document.querySelector('.btn-report');
+            if (reportBtn) {
+                reportBtn.addEventListener('click', () => {
+                    showPermissionAlert('報表功能');
+                });
+            }
+
+            // Export button
+            const exportBtn = document.querySelector('.btn-export');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', () => {
+                    showPermissionAlert('匯出功能');
+                });
+            }
+
+            // Settings button (Edit)
+            const settingsBtn = document.querySelector('.btn-settings');
+            if (settingsBtn) {
+                settingsBtn.addEventListener('click', () => {
+                    // 直接導航到編輯頁面
+                    const projectId = new URLSearchParams(window.location.search).get('id');
+                    if (projectId) {
+                        // 使用標準的編輯模式 URL
+                        window.location.href = `project-create.html?id=${projectId}`;
+                    }
+                });
+            }
 
             // Delete button
             const deleteBtn = document.querySelector('.btn-delete');
@@ -6942,8 +7710,6 @@
             }
         }
 
-
     </script>
 
-</body>
-</html>
+</body></html>
