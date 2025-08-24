@@ -264,6 +264,10 @@
             overflow: auto;
             position: relative;
             max-height: 80vh;
+        }
+        
+        /* Panzoom target for mobile interaction */
+        #gridContent {
             touch-action: none; /* 允許 Panzoom 處理觸控手勢 */
         }
 
@@ -6573,25 +6577,31 @@
         // Initialize Panzoom for mobile table interaction
         window.addEventListener('DOMContentLoaded', () => {
             if (window.innerWidth <= 768 && typeof Panzoom !== 'undefined') {
-                const container = document.querySelector('.floor-grid-container');
-                if (container) {
-                    const panzoom = Panzoom(container, {
-                        minScale: 0.5,
-                        maxScale: 2,
-                        startScale: 1,
-                        cursor: 'grab',
-                        canvas: true,
-                        exclude: ['.building-btn', '.grid-cell', 'button', 'a', 'input'],
-                        disablePan: false,
-                        disableZoom: false,
-                        animate: true
-                    });
+                // Wait for grid content to be loaded
+                setTimeout(() => {
+                    const gridContent = document.querySelector('#gridContent');
+                    const floorGrid = gridContent ? gridContent.querySelector('.floor-grid') : null;
                     
-                    // Enable wheel zoom for testing on desktop
-                    container.addEventListener('wheel', panzoom.zoomWithWheel);
-                    
-                    console.log('Panzoom initialized for mobile table interaction');
-                }
+                    if (floorGrid) {
+                        const panzoom = Panzoom(floorGrid, {
+                            minScale: 0.5,
+                            maxScale: 2,
+                            startScale: 1,
+                            cursor: 'grab',
+                            canvas: true,
+                            contain: 'outside',
+                            exclude: ['.building-btn', '.grid-cell', 'button', 'a', 'input'],
+                            disablePan: false,
+                            disableZoom: false,
+                            animate: true
+                        });
+                        
+                        // Enable wheel zoom for testing on desktop
+                        gridContent.addEventListener('wheel', panzoom.zoomWithWheel);
+                        
+                        console.log('Panzoom initialized for table content only');
+                    }
+                }, 1000); // Wait 1 second for content to load
             }
         });
 
