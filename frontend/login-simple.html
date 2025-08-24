@@ -22,7 +22,9 @@
             <div class="mb-4">
                 <img src="元心建材logo.png" alt="元心建材" class="w-80 h-80 mx-auto object-contain">
             </div>
-            <!-- 生產環境不顯示文字標題 -->
+            <!-- 生產環境只顯示系統名稱 -->
+            <p class="text-2xl font-medium text-gray-800 mt-4" id="prod-title">工程管理系統</p>
+            <!-- 開發環境顯示完整標題 -->
             <div id="dev-titles" style="display: none;">
                 <h1 class="text-3xl font-bold text-gray-800">元心建材</h1>
                 <p class="text-gray-600 mt-2" id="system-title">工程管理系統</p>
@@ -120,23 +122,29 @@
                 hostname.includes('localhost') ||
                 hostname.includes('127.0.0.1')) {
                 // 開發環境 - 顯示標題和環境標識
+                const prodTitle = document.getElementById('prod-title');
                 systemTitle.textContent = '工程管理系統 開發版';
                 badge.textContent = '🔧 開發環境';
                 badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800';
                 devTitles.style.display = 'block';
+                if (prodTitle) prodTitle.style.display = 'none';
             } else if (hostname.includes('construction-management-frontend-prod') || 
                        hostname.includes('manage.yes-ceramics.com') ||
                        hostname.includes('cm-prod.pages.dev') ||
                        hostname === 'construction-management-new-main.pages.dev') {
-                // 生產環境 - 只顯示 logo，不顯示任何文字
+                // 生產環境 - 顯示 logo 和系統名稱
+                const prodTitle = document.getElementById('prod-title');
                 devTitles.style.display = 'none';
+                if (prodTitle) prodTitle.style.display = 'block';
                 isProduction = true;
             } else {
                 // 預設為開發環境
+                const prodTitle = document.getElementById('prod-title');
                 systemTitle.textContent = '工程管理系統 開發版';
                 badge.textContent = '🔧 開發環境';
                 badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800';
                 devTitles.style.display = 'block';
+                if (prodTitle) prodTitle.style.display = 'none';
             }
         }
 
