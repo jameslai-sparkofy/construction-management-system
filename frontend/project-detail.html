@@ -2634,6 +2634,10 @@
                 container: headerActions
             });
             
+            // Initialize permissions early to prevent undefined errors
+            window.isAdmin = window.isAdmin || false;
+            window.userTeams = window.userTeams || new Set(); // 用戶負責的工班
+            
             // 跳過個別載入工班映射，將在批次載入中一起獲取
             console.log('⚡ 使用批次載入，跳過單獨的工班映射載入...');
 
