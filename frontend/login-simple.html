@@ -20,7 +20,7 @@
     <div class="bg-white rounded-2xl card-shadow p-8 w-full max-w-md">
         <div class="text-center mb-8">
             <div class="text-6xl mb-4">🏗️</div>
-            <h1 class="text-3xl font-bold text-gray-800">元心建材</h1>
+            <h1 class="text-3xl font-bold text-gray-800">元心建材 <span id="version-span" style="font-size: 0.6em; color: #764ba2;">v1.0.0</span></h1>
             <p class="text-gray-600 mt-2" id="system-title">工程管理系統</p>
             <div id="environment-badge" class="mt-3" style="display: none;">
                 <span class="px-3 py-1 rounded-full text-sm font-medium"></span>
@@ -105,6 +105,7 @@
             const systemTitle = document.getElementById('system-title');
             const environmentBadge = document.getElementById('environment-badge');
             const badge = environmentBadge.querySelector('span');
+            const versionSpan = document.getElementById('version-span');
 
             let isProduction = false;
             
@@ -118,12 +119,23 @@
                 badge.textContent = '🔧 開發環境';
                 badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800';
                 environmentBadge.style.display = 'block';
+                if (versionSpan) {
+                    versionSpan.textContent = 'v1.0-dev';
+                    versionSpan.style.color = '#ff9800';
+                }
             } else if (hostname.includes('construction-management-frontend-prod') || 
                        hostname.includes('manage.yes-ceramics.com') ||
-                       hostname.includes('cm-prod.pages.dev')) {
-                // 生產環境 - 簡潔顯示，不顯示環境標識
+                       hostname.includes('cm-prod.pages.dev') ||
+                       hostname === 'construction-management-new-main.pages.dev') {
+                // 生產環境
                 systemTitle.textContent = '工程管理系統';
-                environmentBadge.style.display = 'none';
+                badge.textContent = '🚀 正式環境';
+                badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800';
+                environmentBadge.style.display = 'block';
+                if (versionSpan) {
+                    versionSpan.textContent = 'v1.0.0';
+                    versionSpan.style.color = '#764ba2';
+                }
                 isProduction = true;
             } else {
                 // 預設為開發環境
@@ -131,6 +143,10 @@
                 badge.textContent = '🔧 開發環境';
                 badge.className = 'px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800';
                 environmentBadge.style.display = 'block';
+                if (versionSpan) {
+                    versionSpan.textContent = 'v1.0-dev';
+                    versionSpan.style.color = '#ff9800';
+                }
             }
         }
 

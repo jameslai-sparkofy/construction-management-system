@@ -31,7 +31,8 @@ class VersionManager {
             return 'development';
         } else if (hostname.includes('construction-management-frontend-prod') || 
                    hostname.includes('manage.yes-ceramics.com') ||
-                   hostname.includes('cm-prod.pages.dev')) {
+                   hostname.includes('cm-prod.pages.dev') ||
+                   hostname === 'construction-management-new-main.pages.dev') {
             return 'production';
         } else {
             return 'development'; // 預設為開發環境

@@ -8,9 +8,14 @@ function detectEnvironment() {
   const hostname = window.location.hostname;
   
   // 生產環境檢測
+  if (hostname === 'construction-management-new-main.pages.dev') {
+    return 'production';
+  }
+  
+  // 舊生產環境 (保持向後兼容)
   if (hostname.includes('frontend-prod.pages.dev') || 
       hostname === 'cm-prod.pages.dev') {
-    return 'production';
+    return 'production_legacy';
   }
   
   // 開發環境檢測  
@@ -29,6 +34,8 @@ function getApiUrl(environment) {
   switch (environment) {
     case 'production':
       return 'https://construction-management-api-prod.lai-jameslai.workers.dev';
+    case 'production_legacy':
+      return 'https://construction-management-api-prod.lai-jameslai.workers.dev';
     case 'development':
     default:
       return 'https://construction-management-api-dev.lai-jameslai.workers.dev';
@@ -37,7 +44,7 @@ function getApiUrl(environment) {
 
 // 統一配置
 const ENVIRONMENT = detectEnvironment();
-const IS_PRODUCTION = ENVIRONMENT === 'production';
+const IS_PRODUCTION = ENVIRONMENT === 'production' || ENVIRONMENT === 'production_legacy';
 
 const CONFIG = {
   // API 配置

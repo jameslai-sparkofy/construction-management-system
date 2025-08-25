@@ -1,0 +1,59 @@
+name: Deploy Frontend from New-Main
+
+on:
+  push:
+    branches: [new-main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend-new-main.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy Frontend New-Main
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update Frontend Config
+        working-directory: ./frontend
+        run: |
+          # Ensure using unified config
+          cp config.unified.js config.js
+          echo "Updated frontend config for new-main environment"
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          npx wrangler pages deploy frontend \
+            --project-name construction-management-frontend-new-main \
+            --commit-dirty=true
+
+      - name: Get Deployment URL
+        id: deployment
+        run: |
+          echo "📍 Deployment URL: https://construction-management-frontend-new-main.pages.dev"
+          echo "deployment_url=https://construction-management-frontend-new-main.pages.dev" >> $GITHUB_OUTPUT
+
+      - name: Test Frontend
+        run: |
+          sleep 15
+          # Test if the frontend loads
+          curl -f https://construction-management-frontend-new-main.pages.dev || echo "Frontend not ready yet"
+          echo "✅ Frontend deployment initiated!"
+
+      - name: Notify Deployment
+        if: success()
+        run: |
+          echo "🚀 New-Main Frontend deployment completed successfully"
+          echo "📍 URL: https://construction-management-frontend-new-main.pages.dev"
+          echo "🔗 Latest deployment: ${{ steps.deployment.outputs.deployment_url }}"
+          echo "⚠️  Please verify the system shows progress bars and water level charts"

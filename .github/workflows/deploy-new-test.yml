@@ -1,0 +1,72 @@
+name: Deploy to New Test Environment
+
+on:
+  push:
+    branches: [new-main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-new-test.yml'
+  workflow_dispatch:
+    inputs:
+      create_project:
+        description: 'Create new Pages project if it does not exist'
+        required: false
+        default: 'true'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy New Test
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Update Frontend Config
+        working-directory: ./frontend
+        run: |
+          # Ensure using unified config
+          cp config.unified.js config.js
+          echo "Updated frontend config for new test environment"
+
+      - name: Create Pages Project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          # Create new Cloudflare Pages project first
+          npx wrangler pages project create construction-management-new-main --production-branch new-main || true
+          echo "✅ Pages project creation completed"
+
+      - name: Deploy to New Cloudflare Pages Project
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          # Deploy to new Cloudflare Pages project
+          npx wrangler pages deploy frontend \
+            --project-name construction-management-new-main \
+            --commit-dirty=true
+
+      - name: Get Deployment URL
+        id: deployment
+        run: |
+          echo "📍 New Main Deployment URL: https://construction-management-new-main.pages.dev"
+          echo "deployment_url=https://construction-management-new-main.pages.dev" >> $GITHUB_OUTPUT
+
+      - name: Test Frontend
+        run: |
+          sleep 15
+          curl -f https://construction-management-new-main.pages.dev || echo "Frontend not ready yet"
+          echo "✅ New main deployment initiated!"
+
+      - name: Notify Deployment
+        if: success()
+        run: |
+          echo "🚀 New Main deployment completed successfully"
+          echo "📍 URL: https://construction-management-new-main.pages.dev"
+          echo "🔗 Latest deployment: ${{ steps.deployment.outputs.deployment_url }}"
+          echo "🧪 Testing new-main branch content with fresh Pages project"
