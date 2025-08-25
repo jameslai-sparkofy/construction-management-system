@@ -7221,6 +7221,7 @@
             const gridContent = document.getElementById('gridContent');
             const legend = document.getElementById('gridLegend');
             const buildingTabs = document.getElementById('buildingTabs');
+            const teamsDisplaySection = document.getElementById('teamsDisplaySection');
             
             // Update URL with the new tab parameter
             const url = new URL(window.location);
@@ -7233,6 +7234,7 @@
                     gridWrapper.style.display = 'block';
                     buildingTabs.style.display = 'flex';
                     legend.style.display = 'flex';
+                    teamsDisplaySection.style.display = 'block';
                     renderFloorGrid();
                     break;
                     
@@ -7241,6 +7243,7 @@
                     gridWrapper.style.display = 'block';
                     buildingTabs.style.display = 'none';
                     legend.style.display = 'none';
+                    teamsDisplaySection.style.display = 'none';
                     gridContent.innerHTML = `
                         <div style="padding: 3rem; text-align: center;">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">🚫</div>
@@ -7255,6 +7258,7 @@
                     gridWrapper.style.display = 'block';
                     buildingTabs.style.display = 'none';
                     legend.style.display = 'none';
+                    teamsDisplaySection.style.display = 'none';
                     gridContent.innerHTML = `
                         <div style="padding: 2rem;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
@@ -7276,6 +7280,7 @@
                     gridWrapper.style.display = 'block';
                     buildingTabs.style.display = 'none';
                     legend.style.display = 'none';
+                    teamsDisplaySection.style.display = 'none';
                     loadProgressAnnouncements();
                     break;
                     
@@ -7284,6 +7289,7 @@
                     gridWrapper.style.display = 'block';
                     buildingTabs.style.display = 'none';
                     legend.style.display = 'none';
+                    teamsDisplaySection.style.display = 'none';
                     loadDailyWorkLogs();
                     break;
             }
