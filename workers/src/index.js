@@ -4059,11 +4059,12 @@ export default {
         const expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
 
         // 儲存分享記錄
+        const sharedBy = auth.user?.user_id || auth.user?.id || 'anonymous';
         await env.DB_ENGINEERING.prepare(`
           INSERT INTO daily_log_shares (
             id, summary_id, project_id, log_date, shared_by, share_token, expires_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).bind(shareId, logId, projectId, logDate, auth.user.user_id, shareToken, expiresAt.toISOString()).run();
+        `).bind(shareId, logId, projectId, logDate, sharedBy, shareToken, expiresAt.toISOString()).run();
 
         const shareUrl = `${env.FRONTEND_BASE_URL}/daily-log-share?token=${shareToken}`;
 
