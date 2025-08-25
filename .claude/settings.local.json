@@ -319,7 +319,10 @@
       "WebFetch(domain:construction-management-new-test.pages.dev)",
       "WebFetch(domain:construction-management-new-main.pages.dev)",
       "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages project list)",
-      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages deployment list --project-name construction-management-frontend-dev --limit 1)"
+      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages deployment list --project-name construction-management-frontend-dev --limit 1)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler pages deployment list --project-name construction-management-frontend-dev --limit 2)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"X5FRsrJA08Ib2c9633HN6He6WEClg9ml_KxTdzGh\" npx wrangler d1 execute engineering-management --file=workers/migrations/06_enhance_daily_work_logs.sql --remote)",
+      "Bash(CLOUDFLARE_API_TOKEN=\"MTDf9bw-tiMn6I7bOyGBcjvw5XhDC6j7ZOG1sAD6\" npx wrangler whoami)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

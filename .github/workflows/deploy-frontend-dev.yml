@@ -31,7 +31,7 @@ jobs:
 
       - name: Deploy to Cloudflare Pages
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_DEVELOPMENT }}
         run: |
           npx wrangler pages deploy frontend \
             --project-name construction-management-frontend-dev \
@@ -40,7 +40,7 @@ jobs:
       - name: Get Deployment URL
         id: deployment
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_DEVELOPMENT }}
         run: |
           # Get the latest deployment URL
           echo "📍 Deployment URL: https://construction-management-frontend-dev.pages.dev"
