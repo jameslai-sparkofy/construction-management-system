@@ -37,10 +37,15 @@ class OptimizedProjectList {
     async init() {
         console.time('ProjectList Init');
         
+        // 等待必要的依賴載入
+        await this.waitForDependencies();
+        
         // 檢查快取
-        const cachedData = this.getCachedData();
-        if (cachedData) {
-            this.displayCachedData(cachedData);
+        const cachedData = this.getCachedData('projects');
+        if (cachedData && cachedData.length > 0) {
+            this.allProjects = cachedData;
+            this.displayProjects(cachedData);
+            this.updateStatsFromLocal(cachedData);
         }
         
         // 並行載入所有數據
@@ -59,6 +64,34 @@ class OptimizedProjectList {
         
         this.setupEventListeners();
         this.filterByStatus('in_progress'); // 預設顯示施工中
+    }
+    
+    // 等待依賴載入
+    async waitForDependencies() {
+        const maxWait = 5000; // 最多等待5秒
+        const checkInterval = 100; // 每100ms檢查一次
+        let elapsed = 0;
+        
+        return new Promise((resolve) => {
+            const checkDependencies = () => {
+                if (typeof window.AuthUtils !== 'undefined' && 
+                    typeof window.ProjectStatus !== 'undefined') {
+                    resolve();
+                    return;
+                }
+                
+                elapsed += checkInterval;
+                if (elapsed >= maxWait) {
+                    console.warn('依賴載入超時，使用降級模式');
+                    resolve();
+                    return;
+                }
+                
+                setTimeout(checkDependencies, checkInterval);
+            };
+            
+            checkDependencies();
+        });
     }
     
     // 優化的專案載入
@@ -143,16 +176,21 @@ class OptimizedProjectList {
     
     // 優化的 API 呼叫
     async fetchProjects() {
+        // 檢查 AuthUtils 是否可用
+        const headers = typeof window.AuthUtils !== 'undefined' ? 
+            window.AuthUtils.getRequestHeaders() : 
+            { 'Content-Type': 'application/json' };
+            
         const response = await fetch(`${this.API_BASE_URL}/api/v1/projects`, {
-            headers: AuthUtils.getRequestHeaders(),
+            headers,
             signal: AbortSignal.timeout(10000) // 10秒超時
         });
         
         if (!response.ok) {
-            if (response.status === 401) {
-                AuthUtils.logout();
+            if (response.status === 401 && typeof window.AuthUtils !== 'undefined') {
+                window.AuthUtils.logout();
                 window.location.href = 'login-simple.html';
-                return;
+                return [];
             }
             throw new Error(`API 呼叫失敗: ${response.status}`);
         }
@@ -163,8 +201,14 @@ class OptimizedProjectList {
     
     async fetchProjectStats() {
         try {
+            // 檢查 ProjectStatus 是否可用
+            if (typeof window.ProjectStatus === 'undefined') {
+                console.warn('ProjectStatus 未載入，使用本地統計');
+                return null;
+            }
+            
             const stats = await Promise.race([
-                ProjectStatus.getProjectStats(),
+                window.ProjectStatus.getProjectStats(),
                 new Promise((_, reject) => 
                     setTimeout(() => reject(new Error('統計載入超時')), 3000)
                 )
@@ -228,7 +272,13 @@ class OptimizedProjectList {
             if (cached) return cached;
             
             // 計算專案狀態和進度
-            const processed = await ProjectStatus.calculateProjectStatus(project);
+            let processed = project;
+            if (typeof window.ProjectStatus !== 'undefined') {
+                processed = await window.ProjectStatus.calculateProjectStatus(project);
+            } else {
+                // 降級處理：使用原始數據
+                console.warn('ProjectStatus 未載入，使用原始專案數據');
+            }
             
             // 快取處理結果
             this.cacheData(cacheKey, processed);
@@ -446,9 +496,15 @@ class OptimizedProjectList {
     
     // 其他輔助方法...
     async loadUserInfo() {
-        if (!AuthUtils.requireAuth('login-simple.html')) return;
+        // 檢查 AuthUtils 是否可用
+        if (typeof window.AuthUtils === 'undefined') {
+            console.warn('AuthUtils 未載入，跳過用戶驗證');
+            return;
+        }
         
-        this.currentUser = AuthUtils.getUser();
+        if (!window.AuthUtils.requireAuth('login-simple.html')) return;
+        
+        this.currentUser = window.AuthUtils.getUser();
         await this.checkAdminPermissions();
         
         // 初始化用戶組件
