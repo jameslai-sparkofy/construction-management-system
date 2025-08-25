@@ -6,7 +6,7 @@
     <title>專案列表 - 元心建材工程管理系統</title>
     <!-- 更新時間: 2025-08-22 | 版本: 2.0 -->
     <script src="js/version-manager.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tailwind CDN removed for performance optimization -->
     <style>
         * {
             margin: 0;
@@ -365,20 +365,43 @@
             gap: 1rem;
         }
 
-        /* Project Card */
+        /* Project Card - Performance Optimized */
         .project-card {
             background: var(--surface);
             border-radius: 12px;
             box-shadow: var(--shadow-sm);
             padding: 1.5rem;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
             border-left: 4px solid var(--primary);
+            will-change: transform;
+            contain: layout style paint;
         }
 
         .project-card:hover {
             transform: translateY(-2px);
             box-shadow: var(--shadow-md);
+        }
+
+        /* Performance Optimization Styles */
+        .projects-container {
+            contain: layout;
+        }
+        
+        .search-box {
+            contain: layout;
+        }
+        
+        .progress-bar {
+            contain: layout style;
+        }
+        
+        .status-badge {
+            contain: layout style;
+        }
+
+        .stats-grid {
+            contain: layout;
         }
 
         .project-card-header {
@@ -1319,6 +1342,69 @@
         );
         const USE_V2_API = false; // 使用 V1 API (V2 尚未實作)
 
+        // Performance Optimization: API Cache System
+        window.ApiCache = {
+            cache: new Map(),
+            TTL: 5 * 60 * 1000, // 5分鐘快取
+            
+            set(key, data) {
+                this.cache.set(key, {
+                    data: data,
+                    timestamp: Date.now()
+                });
+                console.log('✓ API快取已存儲:', key);
+            },
+            
+            get(key) {
+                const item = this.cache.get(key);
+                if (!item) return null;
+                
+                if (Date.now() - item.timestamp > this.TTL) {
+                    this.cache.delete(key);
+                    return null;
+                }
+                
+                console.log('✓ 使用API快取:', key);
+                return item.data;
+            },
+            
+            clear() {
+                this.cache.clear();
+                console.log('✓ API快取已清空');
+            }
+        };
+
+        // Performance Optimization: DOM Batch Update System
+        window.DOMOptimizer = {
+            batchUpdates: [],
+            isScheduled: false,
+            
+            schedule(updateFn) {
+                this.batchUpdates.push(updateFn);
+                
+                if (!this.isScheduled) {
+                    this.isScheduled = true;
+                    requestAnimationFrame(() => {
+                        this.flush();
+                    });
+                }
+            },
+            
+            flush() {
+                const updates = this.batchUpdates.splice(0);
+                
+                // 批次執行所有更新
+                updates.forEach(updateFn => {
+                    if (typeof updateFn === 'function') {
+                        updateFn();
+                    }
+                });
+                
+                this.isScheduled = false;
+                console.log('✓ DOM批次更新完成:', updates.length);
+            }
+        };
+
         // User context
         let currentUser = null;
         let allProjects = [];
@@ -1474,7 +1560,7 @@
             }
         });
 
-        // Load projects
+        // Load projects with API caching
         async function loadProjects() {
             const loadingEl = document.getElementById('loading');
             const containerEl = document.getElementById('projectsContainer');
@@ -1485,29 +1571,41 @@
                 containerEl.style.display = 'none';
                 emptyEl.style.display = 'none';
 
-                // 使用 AuthUtils 獲取統一的請求 headers
-                const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {
-                    headers: AuthUtils.getRequestHeaders()
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    let rawProjects = data.projects || [];
-                    
-                    // 計算每個專案的真實狀態和進度
-                    console.log('計算專案狀態中...');
-                    allProjects = await ProjectStatus.calculateProjectsStatus(rawProjects);
-                    console.log('專案狀態計算完成:', allProjects);
-                } else if (response.status === 401) {
-                    // 未授權，清除無效 token 並重定向到登入頁
-                    console.error('Unauthorized - redirecting to login');
-                    AuthUtils.logout();
-                    window.location.href = 'login-simple.html';
-                    return;
+                const cacheKey = 'projects_list_v2';
+                
+                // 嘗試從快取取得資料
+                const cachedData = window.ApiCache.get(cacheKey);
+                if (cachedData) {
+                    allProjects = cachedData;
+                    console.log('使用快取資料載入專案');
                 } else {
-                    // 其他 API 失敗，顯示空列表
-                    console.error('Failed to fetch projects from API, status:', response.status);
-                    allProjects = [];
+                    // 使用 AuthUtils 獲取統一的請求 headers
+                    const response = await fetch(`${WORKER_API_URL}/api/v1/projects`, {
+                        headers: AuthUtils.getRequestHeaders()
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        let rawProjects = data.projects || [];
+                        
+                        // 計算每個專案的真實狀態和進度
+                        console.log('計算專案狀態中...');
+                        allProjects = await ProjectStatus.calculateProjectsStatus(rawProjects);
+                        console.log('專案狀態計算完成:', allProjects);
+                        
+                        // 儲存到快取
+                        window.ApiCache.set(cacheKey, allProjects);
+                    } else if (response.status === 401) {
+                        // 未授權，清除無效 token 並重定向到登入頁
+                        console.error('Unauthorized - redirecting to login');
+                        AuthUtils.logout();
+                        window.location.href = 'login-simple.html';
+                        return;
+                    } else {
+                        // 其他 API 失敗，顯示空列表
+                        console.error('Failed to fetch projects from API, status:', response.status);
+                        allProjects = [];
+                    }
                 }
                 
                 // 移除 localStorage 專案載入，避免重複顯示
@@ -1543,15 +1641,24 @@
 
 
 
-        // Display projects in cards
+        // Display projects in cards - Performance Optimized
         function displayProjects(projects) {
             const grid = document.getElementById('projectsGrid');
+            
+            // 使用 DocumentFragment 批次插入
+            const fragment = document.createDocumentFragment();
+            
+            // 清空現有內容
             grid.innerHTML = '';
 
             projects.forEach(project => {
                 const card = createProjectCard(project);
-                grid.appendChild(card);
+                fragment.appendChild(card);
             });
+            
+            // 一次性插入所有元素
+            grid.appendChild(fragment);
+            console.log('✓ 專案卡片批次渲染完成:', projects.length);
         }
 
         // Create project card
@@ -1700,13 +1807,30 @@
             document.getElementById('completedProjects').textContent = stats.completed;
         }
 
-        // Setup filters
+        // Setup filters with debounced search
         function setupFilters() {
             const searchInput = document.getElementById('searchInput');
             const statusFilter = document.getElementById('statusFilter');
+            
+            let searchTimeout;
 
-            searchInput.addEventListener('input', filterProjects);
-            statusFilter.addEventListener('change', filterProjects);
+            // 防抖動搜尋 (300ms)
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                
+                searchTimeout = setTimeout(() => {
+                    // 使用 DOM 批次更新優化
+                    window.DOMOptimizer.schedule(() => {
+                        filterProjects();
+                    });
+                }, 300);
+            });
+
+            if (statusFilter) {
+                statusFilter.addEventListener('change', filterProjects);
+            }
+            
+            console.log('✓ 搜尋功能已優化 (300ms debounce)');
         }
 
         // Filter projects
