@@ -4055,7 +4055,7 @@ export default {
 
         // 生成分享資訊
         const shareId = `share_${projectId}_${logDate.replace(/-/g, '')}_${Date.now()}`;
-        const shareToken = btoa(shareId + '_' + Math.random().toString(36).substr(2, 9));
+        const shareToken = shareId + '_' + Math.random().toString(36).substr(2, 15);
         const expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
 
         // 儲存分享記錄
