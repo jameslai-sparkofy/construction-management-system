@@ -270,6 +270,297 @@ class AuthUtils {
   }
 }
 
+// 自動生成每日工作日誌的定時任務
+async function handleScheduledEvent(event, env, ctx) {
+  console.log('[CRON] Daily log generation started at:', new Date().toISOString());
+  
+  try {
+    const today = new Date();
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+    const targetDate = yesterday.toISOString().split('T')[0];
+    
+    // 記錄任務開始
+    const scheduleId = `schedule_${targetDate.replace(/-/g, '')}`;
+    await env.DB_ENGINEERING.prepare(`
+      INSERT OR REPLACE INTO daily_log_schedules 
+      (schedule_date, execution_status, execution_time, metadata)
+      VALUES (?, 'running', datetime('now'), ?)
+    `).bind(targetDate, JSON.stringify({ started_at: new Date().toISOString() })).run();
+
+    // 獲取所有未完成的專案
+    const projectsResult = await env.DB_ENGINEERING.prepare(`
+      SELECT id, opportunity_id, name, status 
+      FROM projects 
+      WHERE status != 'completed' AND status != 'cancelled'
+    `).all();
+
+    const projects = projectsResult.results || [];
+    let processedCount = 0;
+    let generatedCount = 0;
+    let skippedCount = 0;
+    const errors = [];
+
+    console.log(`[CRON] Processing ${projects.length} active projects for date ${targetDate}`);
+
+    for (const project of projects) {
+      try {
+        processedCount++;
+        
+        // 檢查是否已經存在該日期的日誌
+        const existingLog = await env.DB_ENGINEERING.prepare(`
+          SELECT id FROM daily_work_summary 
+          WHERE project_id = ? AND log_date = ?
+        `).bind(project.id, targetDate).first();
+
+        if (existingLog) {
+          console.log(`[CRON] Log already exists for project ${project.id} on ${targetDate}, skipping`);
+          skippedCount++;
+          continue;
+        }
+
+        // 從 CRM 獲取案場資料
+        const crmResponse = await fetch(
+          `https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`,
+          {
+            headers: {
+              'Authorization': 'Bearer fx-crm-api-secret-2025'
+            }
+          }
+        );
+
+        if (!crmResponse.ok) {
+          console.warn(`[CRON] Failed to fetch sites for project ${project.id}`);
+          continue;
+        }
+
+        const sitesData = await crmResponse.json();
+        const allSites = sitesData.results || [];
+
+        // 檢查昨天是否有案場更新
+        const yesterdayCompletedSites = allSites.filter(site => {
+          const constructionDate = site.field_23pFq__c; // construction_date
+          if (!constructionDate) return false;
+          
+          const siteDate = new Date(constructionDate).toISOString().split('T')[0];
+          return siteDate === targetDate && 
+                 (site.construction_completed__c === true || 
+                  site.construction_completed__c === 1 || 
+                  site.construction_completed__c === '1');
+        });
+
+        // 如果沒有案場更新，跳過生成
+        if (yesterdayCompletedSites.length === 0) {
+          console.log(`[CRON] No site updates for project ${project.id} on ${targetDate}, skipping`);
+          skippedCount++;
+          continue;
+        }
+
+        // 生成日誌（使用現有的邏輯）
+        const result = await generateDailyLogForProject(project, targetDate, allSites, env, 'auto');
+        
+        if (result.success) {
+          generatedCount++;
+          console.log(`[CRON] Generated log for project ${project.id}: ${result.data.total_completed_today} completed`);
+        } else {
+          errors.push(`Project ${project.id}: ${result.error}`);
+        }
+
+      } catch (error) {
+        console.error(`[CRON] Error processing project ${project.id}:`, error);
+        errors.push(`Project ${project.id}: ${error.message}`);
+      }
+    }
+
+    // 更新任務完成狀態
+    const metadata = {
+      started_at: new Date().toISOString(),
+      completed_at: new Date().toISOString(),
+      errors: errors.length > 0 ? errors.slice(0, 10) : null // 只保存前10個錯誤
+    };
+
+    await env.DB_ENGINEERING.prepare(`
+      UPDATE daily_log_schedules 
+      SET projects_processed = ?, logs_generated = ?, logs_skipped = ?, 
+          execution_status = 'completed', metadata = ?
+      WHERE schedule_date = ?
+    `).bind(processedCount, generatedCount, skippedCount, JSON.stringify(metadata), targetDate).run();
+
+    console.log(`[CRON] Daily log generation completed: ${generatedCount} generated, ${skippedCount} skipped, ${errors.length} errors`);
+    
+  } catch (error) {
+    console.error('[CRON] Daily log generation failed:', error);
+    
+    // 記錄失敗狀態
+    const targetDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    await env.DB_ENGINEERING.prepare(`
+      UPDATE daily_log_schedules 
+      SET execution_status = 'failed', error_message = ?
+      WHERE schedule_date = ?
+    `).bind(error.message, targetDate).run();
+  }
+}
+
+// 單一專案日誌生成函數
+async function generateDailyLogForProject(project, targetDate, allSites, env, generationType = 'manual', userId = 'system') {
+  try {
+    // 篩選指定日期完成的案場
+    const completedTodaySites = allSites.filter(site => {
+      const constructionDate = site.field_23pFq__c; // construction_date
+      if (!constructionDate) return false;
+      
+      const siteDate = new Date(constructionDate).toISOString().split('T')[0];
+      return siteDate === targetDate && 
+             (site.construction_completed__c === true || 
+              site.construction_completed__c === 1 || 
+              site.construction_completed__c === '1');
+    });
+    
+    // 統計累計完成數量（到目標日期為止）
+    const cumulativeCompletedSites = allSites.filter(site => {
+      const constructionDate = site.field_23pFq__c;
+      if (!constructionDate) return false;
+      
+      const siteDate = new Date(constructionDate).toISOString().split('T')[0];
+      return siteDate <= targetDate && 
+             (site.construction_completed__c === true || 
+              site.construction_completed__c === 1 || 
+              site.construction_completed__c === '1');
+    });
+
+    // 按建物分組統計
+    const buildingStats = {};
+    const todayUnits = [];
+    
+    completedTodaySites.forEach(site => {
+      const buildingId = site.building_id || site.field_YK5A5__c || 'unknown';
+      const buildingName = site.building_name || site.field_pTkd0__c || '未知建物';
+      
+      if (!buildingStats[buildingId]) {
+        buildingStats[buildingId] = {
+          building_id: buildingId,
+          building_name: buildingName,
+          completed_units: [],
+          completed_count: 0,
+          total_units: 0,
+          progress_percentage: 0
+        };
+      }
+      
+      buildingStats[buildingId].completed_units.push({
+        unit_id: site.id,
+        unit_name: site.name || site.field_Xzh9z__c,
+        floor: site.floor || site.field_FMF8H__c,
+        unit_number: site.unit_number || site.field_Xzh9z__c
+      });
+      
+      buildingStats[buildingId].completed_count++;
+      
+      todayUnits.push({
+        unit_id: site.id,
+        unit_name: site.name || site.field_Xzh9z__c,
+        building_name: buildingName,
+        floor: site.floor || site.field_FMF8H__c
+      });
+    });
+    
+    // 計算各建物總戶數和進度
+    for (const [buildingId, stats] of Object.entries(buildingStats)) {
+      const buildingTotalSites = allSites.filter(site => 
+        (site.building_id || site.field_YK5A5__c || 'unknown') === buildingId
+      ).length;
+      
+      stats.total_units = buildingTotalSites;
+      
+      const buildingCompletedTotal = allSites.filter(site => 
+        (site.building_id || site.field_YK5A5__c || 'unknown') === buildingId &&
+        (site.construction_completed__c === true || 
+         site.construction_completed__c === 1 || 
+         site.construction_completed__c === '1')
+      ).length;
+      
+      stats.progress_percentage = buildingTotalSites > 0 ? 
+        Math.round((buildingCompletedTotal / buildingTotalSites) * 100) : 0;
+    }
+
+    const totalSites = allSites.length;
+    const overallProgress = totalSites > 0 ? 
+      Math.round((cumulativeCompletedSites.length / totalSites) * 100) : 0;
+
+    // 儲存到資料庫
+    const logId = `log_${project.id}_${targetDate.replace(/-/g, '')}`;
+    
+    // 儲存彙總資料
+    const summaryStmt = env.DB_ENGINEERING.prepare(`
+      INSERT OR REPLACE INTO daily_work_summary (
+        id, project_id, log_date, total_completed_today, 
+        total_completed_cumulative, total_units, overall_progress_percentage,
+        metadata, created_by, generation_type, can_delete, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, datetime('now'), datetime('now'))
+    `);
+    
+    const metadata = {
+      building_breakdown: Object.values(buildingStats),
+      completed_units: todayUnits
+    };
+    
+    await summaryStmt.bind(
+      logId,
+      project.id,
+      targetDate,
+      completedTodaySites.length,
+      cumulativeCompletedSites.length,
+      totalSites,
+      overallProgress,
+      JSON.stringify(metadata),
+      userId,
+      generationType
+    ).run();
+    
+    // 儲存建物別詳細資料
+    for (const [buildingId, stats] of Object.entries(buildingStats)) {
+      const buildingLogId = `log_${project.id}_${targetDate.replace(/-/g, '')}_${buildingId}`;
+      
+      const buildingStmt = env.DB_ENGINEERING.prepare(`
+        INSERT OR REPLACE INTO daily_work_logs (
+          id, project_id, log_date, building_id, building_name,
+          completed_units, completed_count, total_units, progress_percentage,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+      `);
+      
+      await buildingStmt.bind(
+        buildingLogId,
+        project.id,
+        targetDate,
+        buildingId,
+        stats.building_name,
+        JSON.stringify(stats.completed_units),
+        stats.completed_count,
+        stats.total_units,
+        stats.progress_percentage
+      ).run();
+    }
+
+    return {
+      success: true,
+      data: {
+        date: targetDate,
+        total_completed_today: completedTodaySites.length,
+        total_completed_cumulative: cumulativeCompletedSites.length,
+        overall_progress_percentage: overallProgress,
+        building_stats: Object.values(buildingStats)
+      }
+    };
+
+  } catch (error) {
+    console.error(`Error generating log for project ${project.id}:`, error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -3530,11 +3821,13 @@ export default {
 
         const projectId = generateDailyLogMatch[1];
         const data = await request.json();
-        const targetDate = data.date || new Date().toISOString().split('T')[0]; // 預設今天
+        const targetDate = data.date || new Date().toISOString().split('T')[0];
+        const notes = data.notes || '';
+        const notesImages = data.notes_images || [];
         
         // 獲取專案資訊
         const projectStmt = env.DB_ENGINEERING.prepare(`
-          SELECT opportunity_id FROM projects WHERE id = ?
+          SELECT * FROM projects WHERE id = ?
         `);
         const project = await projectStmt.bind(projectId).first();
         
@@ -3545,7 +3838,21 @@ export default {
           }), { status: 404, headers });
         }
 
-        // 從 CRM 獲取該日期完成的案場資料
+        // 檢查是否已存在該日期的日誌
+        const existingLog = await env.DB_ENGINEERING.prepare(`
+          SELECT id, generation_type, can_delete FROM daily_work_summary 
+          WHERE project_id = ? AND log_date = ?
+        `).bind(projectId, targetDate).first();
+
+        if (existingLog && !data.force) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Log already exists for this date. Use force=true to overwrite.',
+            existing_log: existingLog
+          }), { status: 409, headers });
+        }
+
+        // 從 CRM 獲取案場資料
         const crmResponse = await fetch(
           `https://d1.yes-ceramics.com/rest/object_8W9cb__c?field_1P96q__c=${project.opportunity_id}&limit=1000`,
           {
@@ -3561,152 +3868,35 @@ export default {
         
         const sitesData = await crmResponse.json();
         const allSites = sitesData.results || [];
-        
-        // 篩選今天完成的案場（基於 construction_date）
-        const completedTodaySites = allSites.filter(site => {
-          const constructionDate = site.field_23pFq__c; // construction_date
-          if (!constructionDate) return false;
-          
-          const siteDate = new Date(constructionDate).toISOString().split('T')[0];
-          return siteDate === targetDate && 
-                 (site.construction_completed__c === true || 
-                  site.construction_completed__c === 1 || 
-                  site.construction_completed__c === '1');
-        });
-        
-        // 統計累計完成數量（到目標日期為止）
-        const cumulativeCompletedSites = allSites.filter(site => {
-          const constructionDate = site.field_23pFq__c;
-          if (!constructionDate) return false;
-          
-          const siteDate = new Date(constructionDate).toISOString().split('T')[0];
-          return siteDate <= targetDate && 
-                 (site.construction_completed__c === true || 
-                  site.construction_completed__c === 1 || 
-                  site.construction_completed__c === '1');
-        });
 
-        // 按建物分組統計
-        const buildingStats = {};
-        const todayUnits = [];
+        // 使用統一的生成函數
+        const result = await generateDailyLogForProject(project, targetDate, allSites, env, 'manual', auth.user.user_id);
         
-        completedTodaySites.forEach(site => {
-          const buildingId = site.building_id || site.field_YK5A5__c || 'unknown';
-          const buildingName = site.building_name || site.field_pTkd0__c || '未知建物';
-          
-          if (!buildingStats[buildingId]) {
-            buildingStats[buildingId] = {
-              building_id: buildingId,
-              building_name: buildingName,
-              completed_units: [],
-              completed_count: 0,
-              total_units: 0,
-              progress_percentage: 0
-            };
-          }
-          
-          buildingStats[buildingId].completed_units.push({
-            unit_id: site.id,
-            unit_name: site.name || site.field_Xzh9z__c,
-            floor: site.floor || site.field_FMF8H__c,
-            unit_number: site.unit_number || site.field_Xzh9z__c
-          });
-          
-          buildingStats[buildingId].completed_count++;
-          
-          todayUnits.push({
-            unit_id: site.id,
-            unit_name: site.name || site.field_Xzh9z__c,
-            building_name: buildingName,
-            floor: site.floor || site.field_FMF8H__c
-          });
-        });
-        
-        // 計算各建物總戶數和進度
-        for (const [buildingId, stats] of Object.entries(buildingStats)) {
-          const buildingTotalSites = allSites.filter(site => 
-            (site.building_id || site.field_YK5A5__c || 'unknown') === buildingId
-          ).length;
-          
-          stats.total_units = buildingTotalSites;
-          
-          const buildingCompletedTotal = allSites.filter(site => 
-            (site.building_id || site.field_YK5A5__c || 'unknown') === buildingId &&
-            (site.construction_completed__c === true || 
-             site.construction_completed__c === 1 || 
-             site.construction_completed__c === '1')
-          ).length;
-          
-          stats.progress_percentage = buildingTotalSites > 0 ? 
-            Math.round((buildingCompletedTotal / buildingTotalSites) * 100) : 0;
+        if (!result.success) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: result.error
+          }), { status: 500, headers });
         }
 
-        const totalSites = allSites.length;
-        const overallProgress = totalSites > 0 ? 
-          Math.round((cumulativeCompletedSites.length / totalSites) * 100) : 0;
-
-        // 儲存到資料庫
-        const logId = `log_${projectId}_${targetDate.replace(/-/g, '')}`;
-        
-        // 儲存彙總資料
-        const summaryStmt = env.DB_ENGINEERING.prepare(`
-          INSERT OR REPLACE INTO daily_work_summary (
-            id, project_id, log_date, total_completed_today, 
-            total_completed_cumulative, total_units, overall_progress_percentage,
-            metadata, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-        `);
-        
-        const metadata = {
-          building_breakdown: Object.values(buildingStats),
-          completed_units: todayUnits
-        };
-        
-        await summaryStmt.bind(
-          logId,
-          projectId,
-          targetDate,
-          completedTodaySites.length,
-          cumulativeCompletedSites.length,
-          totalSites,
-          overallProgress,
-          JSON.stringify(metadata)
-        ).run();
-        
-        // 儲存建物別詳細資料
-        for (const [buildingId, stats] of Object.entries(buildingStats)) {
-          const buildingLogId = `log_${projectId}_${targetDate.replace(/-/g, '')}_${buildingId}`;
-          
-          const buildingStmt = env.DB_ENGINEERING.prepare(`
-            INSERT OR REPLACE INTO daily_work_logs (
-              id, project_id, log_date, building_id, building_name,
-              completed_units, completed_count, total_units, progress_percentage,
-              created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-          `);
-          
-          await buildingStmt.bind(
-            buildingLogId,
-            projectId,
-            targetDate,
-            buildingId,
-            stats.building_name,
-            JSON.stringify(stats.completed_units),
-            stats.completed_count,
-            stats.total_units,
-            stats.progress_percentage
-          ).run();
+        // 如果有備註，更新備註資訊
+        if (notes || notesImages.length > 0) {
+          const logId = `log_${projectId}_${targetDate.replace(/-/g, '')}`;
+          await env.DB_ENGINEERING.prepare(`
+            UPDATE daily_work_summary 
+            SET notes = ?, notes_images = ?, updated_at = datetime('now')
+            WHERE id = ?
+          `).bind(notes, JSON.stringify(notesImages), logId).run();
         }
 
         return new Response(JSON.stringify({
           success: true,
           message: 'Daily log generated successfully',
           data: {
-            date: targetDate,
-            total_completed_today: completedTodaySites.length,
-            total_completed_cumulative: cumulativeCompletedSites.length,
-            overall_progress_percentage: overallProgress,
-            building_stats: Object.values(buildingStats)
+            ...result.data,
+            notes: notes,
+            notes_images: notesImages,
+            generation_type: 'manual'
           }
         }), { headers });
 
@@ -3718,6 +3908,287 @@ export default {
         }), { status: 500, headers });
       }
     }
+
+    // PUT /api/v1/projects/:projectId/daily-logs/:date/notes - 更新日誌備註
+    const updateNotesMatch = path.match(/^\/api\/v1\/projects\/([^\/]+)\/daily-logs\/([^\/]+)\/notes$/);
+    if (updateNotesMatch && method === 'PUT') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const projectId = updateNotesMatch[1];
+        const logDate = updateNotesMatch[2];
+        const data = await request.json();
+        
+        const logId = `log_${projectId}_${logDate.replace(/-/g, '')}`;
+        const result = await env.DB_ENGINEERING.prepare(`
+          UPDATE daily_work_summary 
+          SET notes = ?, notes_images = ?, updated_at = datetime('now')
+          WHERE id = ? AND project_id = ?
+        `).bind(data.notes || '', JSON.stringify(data.notes_images || []), logId, projectId).run();
+
+        if (result.changes === 0) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Daily log not found'
+          }), { status: 404, headers });
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Notes updated successfully'
+        }), { headers });
+
+      } catch (error) {
+        console.error('Update notes API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to update notes'
+        }), { status: 500, headers });
+      }
+    }
+
+    // DELETE /api/v1/projects/:projectId/daily-logs/:date - 刪除日誌（3天內）
+    const deleteLogMatch = path.match(/^\/api\/v1\/projects\/([^\/]+)\/daily-logs\/([^\/]+)$/);
+    if (deleteLogMatch && method === 'DELETE') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const projectId = deleteLogMatch[1];
+        const logDate = deleteLogMatch[2];
+        const logId = `log_${projectId}_${logDate.replace(/-/g, '')}`;
+        
+        // 檢查是否可刪除（3天內 + can_delete 標記）
+        const summary = await env.DB_ENGINEERING.prepare(`
+          SELECT created_at, can_delete, generation_type
+          FROM daily_work_summary 
+          WHERE id = ? AND project_id = ?
+        `).bind(logId, projectId).first();
+
+        if (!summary) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Daily log not found'
+          }), { status: 404, headers });
+        }
+
+        // 檢查是否在3天內且可刪除
+        const createdAt = new Date(summary.created_at);
+        const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        
+        if (createdAt < threeDaysAgo || !summary.can_delete) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Cannot delete log: Either older than 3 days or deletion is disabled',
+            details: {
+              created_at: summary.created_at,
+              can_delete: summary.can_delete,
+              days_old: Math.ceil((Date.now() - createdAt.getTime()) / (24 * 60 * 60 * 1000))
+            }
+          }), { status: 403, headers });
+        }
+
+        // 刪除彙總和詳細記錄
+        await env.DB_ENGINEERING.prepare(`
+          DELETE FROM daily_work_summary WHERE id = ?
+        `).bind(logId).run();
+        
+        await env.DB_ENGINEERING.prepare(`
+          DELETE FROM daily_work_logs WHERE project_id = ? AND log_date = ?
+        `).bind(projectId, logDate).run();
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Daily log deleted successfully'
+        }), { headers });
+
+      } catch (error) {
+        console.error('Delete log API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to delete daily log'
+        }), { status: 500, headers });
+      }
+    }
+
+    // POST /api/v1/projects/:projectId/daily-logs/:date/share - 創建分享連結
+    const shareLogMatch = path.match(/^\/api\/v1\/projects\/([^\/]+)\/daily-logs\/([^\/]+)\/share$/);
+    if (shareLogMatch && method === 'POST') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Unauthorized'
+          }), { status: 401, headers });
+        }
+
+        const projectId = shareLogMatch[1];
+        const logDate = shareLogMatch[2];
+        const data = await request.json();
+        const expirationDays = data.expiration_days || 30;
+        
+        const logId = `log_${projectId}_${logDate.replace(/-/g, '')}`;
+        
+        // 檢查日誌是否存在
+        const summary = await env.DB_ENGINEERING.prepare(`
+          SELECT id FROM daily_work_summary WHERE id = ? AND project_id = ?
+        `).bind(logId, projectId).first();
+
+        if (!summary) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Daily log not found'
+          }), { status: 404, headers });
+        }
+
+        // 生成分享資訊
+        const shareId = `share_${projectId}_${logDate.replace(/-/g, '')}_${Date.now()}`;
+        const shareToken = btoa(shareId + '_' + Math.random().toString(36).substr(2, 9));
+        const expiresAt = new Date(Date.now() + expirationDays * 24 * 60 * 60 * 1000);
+
+        // 儲存分享記錄
+        await env.DB_ENGINEERING.prepare(`
+          INSERT INTO daily_log_shares (
+            id, summary_id, project_id, log_date, shared_by, share_token, expires_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).bind(shareId, logId, projectId, logDate, auth.user.user_id, shareToken, expiresAt.toISOString()).run();
+
+        const shareUrl = `${env.FRONTEND_BASE_URL}/daily-log-share?token=${shareToken}`;
+
+        return new Response(JSON.stringify({
+          success: true,
+          share_url: shareUrl,
+          share_token: shareToken,
+          expires_at: expiresAt.toISOString()
+        }), { headers });
+
+      } catch (error) {
+        console.error('Share log API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to create share link'
+        }), { status: 500, headers });
+      }
+    }
+
+    // GET /api/v1/daily-logs/shared/:token - 取得分享的日誌
+    const sharedLogMatch = path.match(/^\/api\/v1\/daily-logs\/shared\/([^\/]+)$/);
+    if (sharedLogMatch && method === 'GET') {
+      try {
+        const shareToken = sharedLogMatch[1];
+        
+        // 查找分享記錄
+        const share = await env.DB_ENGINEERING.prepare(`
+          SELECT * FROM daily_log_shares WHERE share_token = ?
+        `).bind(shareToken).first();
+
+        if (!share) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Share link not found'
+          }), { status: 404, headers });
+        }
+
+        // 檢查是否過期
+        if (new Date() > new Date(share.expires_at)) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Share link has expired'
+          }), { status: 410, headers });
+        }
+
+        // 更新查看次數
+        await env.DB_ENGINEERING.prepare(`
+          UPDATE daily_log_shares SET view_count = view_count + 1 WHERE id = ?
+        `).bind(share.id).run();
+
+        // 獲取日誌資料
+        const summary = await env.DB_ENGINEERING.prepare(`
+          SELECT * FROM daily_work_summary WHERE id = ?
+        `).bind(share.summary_id).first();
+
+        const details = await env.DB_ENGINEERING.prepare(`
+          SELECT * FROM daily_work_logs WHERE project_id = ? AND log_date = ?
+        `).bind(share.project_id, share.log_date).all();
+
+        const project = await env.DB_ENGINEERING.prepare(`
+          SELECT name FROM projects WHERE id = ?
+        `).bind(share.project_id).first();
+
+        const buildingDetails = details.results.map(detail => ({
+          ...detail,
+          completed_units: detail.completed_units ? JSON.parse(detail.completed_units) : []
+        }));
+
+        return new Response(JSON.stringify({
+          success: true,
+          data: {
+            project_name: project?.name || '未知專案',
+            summary: summary ? {
+              ...summary,
+              metadata: summary.metadata ? JSON.parse(summary.metadata) : {},
+              notes_images: summary.notes_images ? JSON.parse(summary.notes_images) : []
+            } : null,
+            building_details: buildingDetails,
+            share_info: {
+              shared_by: share.shared_by,
+              created_at: share.created_at,
+              view_count: share.view_count + 1
+            }
+          }
+        }), { headers });
+
+      } catch (error) {
+        console.error('Shared log API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to load shared log'
+        }), { status: 500, headers });
+      }
+    }
+
+    // GET /api/v1/cron/status - 查看定時任務狀態
+    const cronStatusMatch = path.match(/^\/api\/v1\/cron\/status$/);
+    if (cronStatusMatch && method === 'GET') {
+      try {
+        const auth = await checkAuth(request);
+        if (!auth.authenticated || !auth.user.isAdmin) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Admin access required'
+          }), { status: 403, headers });
+        }
+
+        const schedules = await env.DB_ENGINEERING.prepare(`
+          SELECT * FROM daily_log_schedules 
+          ORDER BY schedule_date DESC LIMIT 10
+        `).all();
+
+        return new Response(JSON.stringify({
+          success: true,
+          schedules: schedules.results || []
+        }), { headers });
+
+      } catch (error) {
+        console.error('Cron status API error:', error);
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Failed to get cron status'
+        }), { status: 500, headers });
+      }
+    }
     
     // Default 404
     return new Response(JSON.stringify({
@@ -3726,5 +4197,10 @@ export default {
       path: path,
       method: method
     }), { status: 404, headers });
+  },
+
+  // 處理定時任務
+  async scheduled(event, env, ctx) {
+    return await handleScheduledEvent(event, env, ctx);
   }
 };

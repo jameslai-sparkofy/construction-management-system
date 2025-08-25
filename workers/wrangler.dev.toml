@@ -55,6 +55,10 @@ binding = "CONSTRUCTION_PHOTOS"
 bucket_name = "construction-photos"
 preview_bucket_name = "construction-photos-preview"
 
+# Cron Jobs - 自動定時任務
+[triggers]
+crons = ["0 2 * * *"] # 每日凌晨 2 點自動生成工作日誌
+
 # D1 Databases
 # CRM 資料庫 (綠色區塊 - 從紛享銷客同步的資料)
 [[d1_databases]]
