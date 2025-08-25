@@ -6429,7 +6429,7 @@
                 
                 // Fetch announcements from API
                 const response = await fetch(
-                    `${API_BASE_URL}/rest/progress_management_announ__c?RFr42__c=${opportunityId}&limit=50`,
+                    `${API_BASE_URL}/rest/progress_management_announ__c?field_RFr42__c=${opportunityId}&limit=50`,
                     {
                         headers: {
                             'Authorization': `Bearer ${API_TOKEN}`
@@ -6442,7 +6442,7 @@
                 }
 
                 const result = await response.json();
-                const announcements = result.dataList || result.results || [];
+                const announcements = result.results || result.dataList || [];
                 
                 // Display announcements
                 if (announcements.length > 0) {
