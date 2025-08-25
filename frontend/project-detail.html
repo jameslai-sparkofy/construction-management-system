@@ -2039,6 +2039,7 @@
             <button class="nav-tab" data-tab="cabinet">浴櫃工程</button>
             <button class="nav-tab" data-tab="maintenance">維修單</button>
             <button class="nav-tab" data-tab="announcements">進度公告</button>
+            <button class="nav-tab" data-tab="daily-logs">工作日誌</button>
         </div>
 
         <!-- Building Grid -->
@@ -6533,6 +6534,271 @@
             alert('新增公告功能開發中...');
         }
 
+        // Load daily work logs
+        async function loadDailyWorkLogs() {
+            const gridContent = document.getElementById('gridContent');
+            
+            // Show loading
+            gridContent.innerHTML = `
+                <div style="padding: 2rem; text-align: center;">
+                    <div class="loading">載入工作日誌中...</div>
+                </div>
+            `;
+            
+            try {
+                const projectId = currentProject.id;
+                
+                if (!projectId) {
+                    console.warn('No project ID found');
+                    gridContent.innerHTML = `
+                        <div style="padding: 2rem;">
+                            <div style="background: #fee; color: #c00; padding: 1rem; border-radius: 8px;">
+                                無法載入工作日誌：缺少專案 ID
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                console.log('[DEBUG] Loading daily logs for project:', projectId);
+                
+                // Fetch daily logs from API
+                const response = await fetch(
+                    `${WORKER_API_URL}/api/v1/projects/${projectId}/daily-logs?limit=30`,
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load daily logs');
+                }
+
+                const result = await response.json();
+                const logs = result.logs || [];
+                
+                // Display daily logs
+                let html = `
+                    <div style="padding: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="color: var(--heading);">每日工作日誌</h2>
+                            <div style="display: flex; gap: 0.75rem;">
+                                <button onclick="generateDailyLog()" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                    生成今日日誌
+                                </button>
+                                <button onclick="refreshDailyLogs()" style="padding: 0.5rem 1rem; background: transparent; color: var(--primary); border: 1px solid var(--primary); border-radius: 6px; cursor: pointer;">
+                                    刷新
+                                </button>
+                            </div>
+                        </div>
+                `;
+                
+                if (logs.length > 0) {
+                    html += `<div style="display: flex; flex-direction: column; gap: 1rem;">`;
+                    
+                    logs.forEach(log => {
+                        const logDate = new Date(log.log_date).toLocaleDateString('zh-TW', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            weekday: 'short'
+                        });
+                        
+                        const completedToday = log.total_completed_today || 0;
+                        const completedCumulative = log.total_completed_cumulative || 0;
+                        const overallProgress = log.overall_progress_percentage || 0;
+                        const metadata = log.metadata || {};
+                        const buildingBreakdown = metadata.building_breakdown || [];
+                        const completedUnits = metadata.completed_units || [];
+                        
+                        html += `
+                            <div class="daily-log-card" style="background: var(--background); border: 1px solid #e5e7eb; border-radius: 12px; padding: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                                    <div>
+                                        <h3 style="color: var(--heading); margin: 0 0 0.25rem 0; font-size: 1.125rem;">
+                                            📅 ${logDate}
+                                        </h3>
+                                        <p style="color: var(--body-text); margin: 0; font-size: 0.875rem;">
+                                            工作日誌報告
+                                        </p>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="background: var(--primary); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.875rem; font-weight: 600;">
+                                            總進度 ${overallProgress}%
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                                    <div style="text-align: center; padding: 0.75rem; background: var(--surface); border-radius: 8px;">
+                                        <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary);">${completedToday}</div>
+                                        <div style="font-size: 0.75rem; color: var(--body-text);">今日完成戶數</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 0.75rem; background: var(--surface); border-radius: 8px;">
+                                        <div style="font-size: 1.5rem; font-weight: 600; color: var(--success);">${completedCumulative}</div>
+                                        <div style="font-size: 0.75rem; color: var(--body-text);">累計完成戶數</div>
+                                    </div>
+                                </div>
+                        `;
+                        
+                        // 今日完成戶別列表（帶超連結）
+                        if (completedUnits.length > 0) {
+                            html += `
+                                <div style="margin-bottom: 1rem;">
+                                    <h4 style="color: var(--heading); margin: 0 0 0.5rem 0; font-size: 0.875rem;">今日完成戶別：</h4>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            `;
+                            
+                            completedUnits.forEach(unit => {
+                                const unitDisplay = unit.unit_name || unit.unit_number || unit.unit_id;
+                                const buildingInfo = unit.building_name ? `${unit.building_name} ` : '';
+                                const floorInfo = unit.floor ? `${unit.floor}F ` : '';
+                                const displayText = `${buildingInfo}${floorInfo}${unitDisplay}`;
+                                
+                                html += `
+                                    <a href="javascript:void(0)" 
+                                       onclick="showSiteDetail('${unit.unit_id}')"
+                                       style="background: var(--surface); color: var(--primary); padding: 0.25rem 0.5rem; border-radius: 4px; text-decoration: none; font-size: 0.75rem; border: 1px solid var(--primary); transition: all 0.2s ease;"
+                                       onmouseover="this.style.background='var(--primary)'; this.style.color='white';"
+                                       onmouseout="this.style.background='var(--surface)'; this.style.color='var(--primary)';">
+                                        ${displayText}
+                                    </a>
+                                `;
+                            });
+                            
+                            html += `
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        // 各棟進度統計
+                        if (buildingBreakdown.length > 0) {
+                            html += `
+                                <div>
+                                    <h4 style="color: var(--heading); margin: 0 0 0.75rem 0; font-size: 0.875rem;">各棟進度：</h4>
+                                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                            `;
+                            
+                            buildingBreakdown.forEach(building => {
+                                const progress = building.progress_percentage || 0;
+                                const progressBarWidth = Math.max(5, progress); // 最小寬度 5% 以便顯示
+                                
+                                html += `
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="min-width: 80px; font-size: 0.75rem; color: var(--body-text);">
+                                            ${building.building_name || '未知建物'}
+                                        </div>
+                                        <div style="flex: 1; background: #e5e7eb; border-radius: 10px; height: 20px; position: relative; overflow: hidden;">
+                                            <div style="width: ${progressBarWidth}%; height: 100%; background: linear-gradient(90deg, var(--primary) 0%, var(--success) 100%); border-radius: 10px; transition: width 0.3s ease;"></div>
+                                            <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; color: ${progress > 50 ? 'white' : 'var(--heading)'};">
+                                                ${progress}%
+                                            </div>
+                                        </div>
+                                        <div style="min-width: 60px; font-size: 0.65rem; color: var(--body-text); text-align: right;">
+                                            ${building.completed_count || 0}/${building.total_units || 0}
+                                        </div>
+                                    </div>
+                                `;
+                            });
+                            
+                            html += `
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        html += `</div>`;
+                    });
+                    
+                    html += `</div>`;
+                } else {
+                    // No daily logs
+                    html += `
+                        <div style="background: var(--background); padding: 2rem; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 2rem; margin-bottom: 1rem;">📋</div>
+                            <p style="color: var(--body-text); margin-bottom: 1rem;">目前沒有工作日誌</p>
+                            <p style="color: var(--body-text); font-size: 0.875rem;">點擊「生成今日日誌」開始記錄每日工作進度</p>
+                        </div>
+                    `;
+                }
+                
+                html += `</div>`;
+                gridContent.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading daily logs:', error);
+                gridContent.innerHTML = `
+                    <div style="padding: 2rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h2 style="color: var(--heading);">每日工作日誌</h2>
+                            <button onclick="generateDailyLog()" style="padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer;">
+                                生成今日日誌
+                            </button>
+                        </div>
+                        <div style="background: #fee; color: #c00; padding: 1rem; border-radius: 8px;">
+                            載入工作日誌失敗：${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Generate daily log
+        async function generateDailyLog() {
+            try {
+                const projectId = currentProject.id;
+                const today = new Date().toISOString().split('T')[0];
+                
+                const response = await fetch(
+                    `${WORKER_API_URL}/api/v1/projects/${projectId}/daily-logs/generate`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ date: today })
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to generate daily log');
+                }
+
+                const result = await response.json();
+                
+                // Show success message
+                alert(`日誌生成成功！\n今日完成：${result.data.total_completed_today} 戶\n總進度：${result.data.overall_progress_percentage}%`);
+                
+                // Refresh the logs display
+                loadDailyWorkLogs();
+                
+            } catch (error) {
+                console.error('Error generating daily log:', error);
+                alert('生成日誌失敗：' + error.message);
+            }
+        }
+
+        // Refresh daily logs
+        function refreshDailyLogs() {
+            loadDailyWorkLogs();
+        }
+
+        // Show site detail (for unit links)
+        function showSiteDetail(siteId) {
+            // Find the site in current sites data and show detail modal or navigate
+            const site = allSites.find(s => s.id === siteId);
+            if (site) {
+                // You could implement a modal or navigate to site detail
+                alert(`戶別詳情\n\n戶號：${site.name || site.field_Xzh9z__c}\n建物：${site.building_name || site.field_pTkd0__c}\n樓層：${site.floor || site.field_FMF8H__c}\n施工狀態：${site.construction_completed__c ? '已完成' : '未完成'}`);
+            } else {
+                alert('找不到戶別詳細資訊');
+            }
+        }
+
         // Toggle collapsible sections
         function toggleSection(sectionId) {
             const section = document.getElementById(sectionId);
@@ -6635,6 +6901,14 @@
                     buildingTabs.style.display = 'none';
                     legend.style.display = 'none';
                     loadProgressAnnouncements();
+                    break;
+                    
+                case 'daily-logs':
+                    // Show daily work logs
+                    gridWrapper.style.display = 'block';
+                    buildingTabs.style.display = 'none';
+                    legend.style.display = 'none';
+                    loadDailyWorkLogs();
                     break;
             }
         }
