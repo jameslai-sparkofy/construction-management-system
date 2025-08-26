@@ -882,6 +882,13 @@
                 if (currentUserProjectRole.user_type === 'worker') {
                     // 工班成員/負責人：載入師父列表
                     initialSource = 'workers';
+                    
+                    // 如果是工班負責人，需要過濾工班列表只顯示自己的工班
+                    if (currentUserProjectRole.role === 'leader' && currentUserProjectRole.team_id) {
+                        // 過濾工班列表，只保留自己的工班
+                        teamsList = teamsList.filter(team => team.id === currentUserProjectRole.team_id);
+                        console.log(`工班負責人 ${currentUserData.name} 過濾後的工班:`, teamsList);
+                    }
                 } else if (currentUserProjectRole.user_type === 'owner') {
                     // 業主：載入業主列表
                     initialSource = 'owners';
