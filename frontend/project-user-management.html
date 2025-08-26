@@ -1921,10 +1921,11 @@
                     actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                 } else if (currentUserProjectRole.user_type === 'worker' && currentUserProjectRole.role === 'leader') {
                     // Team Leader: 只能管理自己工班的成員
-                    if (user.team_id === currentUserProjectRole.team_id) {
-                        roleSwitch = createRoleSwitch(user.user_id, role);
-                        actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
-                    }
+                    // 由於工班成員都是在同一個工班容器中顯示，所以工班負責人對所有成員都有操作權限
+                    roleSwitch = createRoleSwitch(user.user_id, role);
+                    actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
+                    // 添加「退回到工地師父」按鈕
+                    actions += `<button class="action-button" onclick="returnToSiteWorker('${user.user_id}')">退回到工地師父</button>`;
                 }
                 // Owner 和 Worker 沒有操作權限，所以 actions 保持為空字符串
             }
@@ -2276,6 +2277,49 @@
                 }
             } catch (error) {
                 console.error('Error demoting user:', error);
+                alert('操作失敗');
+            }
+        }
+
+        // 退回用戶到工地師父
+        async function returnToSiteWorker(userId) {
+            if (!confirm('確定要將此用戶退回到工地師父嗎？')) {
+                return;
+            }
+            try {
+                const response = await fetch(`${API_BASE}/api/v1/projects/${projectId}/users/${userId}/return-to-site`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('退回成功！用戶已回到工地師父列表');
+                    
+                    // 清除所有相關緩存
+                    projectUsersList = [];
+                    
+                    // 清除 localStorage 中的師父緩存
+                    const keys = Object.keys(localStorage);
+                    keys.forEach(key => {
+                        if (key.startsWith('workers_')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                    
+                    await loadProjectUsers();
+                    
+                    // 如果在師父分頁，重新載入可用師父列表
+                    if (currentSource === 'workers') {
+                        await loadAvailableUsers('workers');
+                    }
+                } else {
+                    alert('操作失敗：' + result.error);
+                }
+            } catch (error) {
+                console.error('Error returning user to site:', error);
                 alert('操作失敗');
             }
         }
