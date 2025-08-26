@@ -875,6 +875,21 @@
             // 載入工班列表
             await loadTeams();
             
+            // 檢查用戶權限，工班成員和業主不能進入用戶管理頁面
+            if (currentUserProjectRole) {
+                if (currentUserProjectRole.user_type === 'worker' && currentUserProjectRole.role !== 'leader') {
+                    // 一般工班成員：無法進入用戶管理頁面
+                    alert('您沒有權限進入用戶管理頁面');
+                    window.location.href = `project-detail.html?id=${projectId}`;
+                    return;
+                } else if (currentUserProjectRole.user_type === 'owner') {
+                    // 業主：無法進入用戶管理頁面  
+                    alert('您沒有權限進入用戶管理頁面');
+                    window.location.href = `project-detail.html?id=${projectId}`;
+                    return;
+                }
+            }
+            
             // 根據用戶角色載入對應的初始資料
             let initialSource = 'admins'; // 預設
             
@@ -898,21 +913,6 @@
             
             // 載入對應的用戶列表
             await loadAvailableUsers(initialSource);
-            
-            // 檢查用戶權限，工班成員和業主不能進入用戶管理頁面
-            if (currentUserProjectRole) {
-                if (currentUserProjectRole.user_type === 'worker' && currentUserProjectRole.role !== 'leader') {
-                    // 一般工班成員：無法進入用戶管理頁面
-                    alert('您沒有權限進入用戶管理頁面');
-                    window.location.href = `project-detail.html?id=${projectId}`;
-                    return;
-                } else if (currentUserProjectRole.user_type === 'owner') {
-                    // 業主：無法進入用戶管理頁面  
-                    alert('您沒有權限進入用戶管理頁面');
-                    window.location.href = `project-detail.html?id=${projectId}`;
-                    return;
-                }
-            }
             
             // 載入專案用戶
             await loadProjectUsers();
