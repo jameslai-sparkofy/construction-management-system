@@ -875,8 +875,22 @@
             // 載入工班列表
             await loadTeams();
             
-            // 載入可用用戶
-            await loadAvailableUsers('admins');
+            // 根據用戶角色載入對應的初始資料
+            let initialSource = 'admins'; // 預設
+            
+            if (currentUserProjectRole) {
+                if (currentUserProjectRole.user_type === 'worker') {
+                    // 工班成員/負責人：載入師父列表
+                    initialSource = 'workers';
+                } else if (currentUserProjectRole.user_type === 'owner') {
+                    // 業主：載入業主列表
+                    initialSource = 'owners';
+                }
+                // admin 保持預設的 'admins'
+            }
+            
+            // 載入對應的用戶列表
+            await loadAvailableUsers(initialSource);
             
             // 載入專案用戶
             await loadProjectUsers();
@@ -1014,10 +1028,11 @@
                                 tab.style.display = 'none';
                             }
                         });
-                        // 自動選擇師父標籤
+                        // 確保師父標籤為 active（因為已在 init 中載入師父資料）
                         const workerTab = userSourceTabs.querySelector('[data-source="workers"]');
                         if (workerTab) {
-                            workerTab.click();
+                            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                            workerTab.classList.add('active');
                         }
                     }
                     
