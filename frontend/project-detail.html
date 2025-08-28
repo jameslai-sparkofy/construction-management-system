@@ -5079,28 +5079,31 @@
             }
             
             let items = [];
-            teams.forEach((abbr, name) => {
+            teams.forEach((teamInfo, teamId) => {
+                const teamName = teamInfo.name || '未命名工班';
+                const teamAbbr = teamInfo.abbreviation || teamName.slice(-1);
+                
                 // 如果不是管理員且有特定工班歸屬，只顯示自己的工班
-                if (!isAdmin && userTeams.size > 0 && !userTeams.has(name)) {
+                if (!isAdmin && userTeams.size > 0 && !userTeams.has(teamName)) {
                     return; // 跳過不屬於自己的工班
                 }
                 
                 // 檢查是否顯示成員管理按鈕 - 考慮模擬用戶權限
                 const currentPermissions = getCurrentUserPermissions();
                 const showManageButton = currentPermissions.isAdmin || 
-                                       (currentPermissions.can_manage_members && userTeams.has(name));
+                                       (currentPermissions.can_manage_members && userTeams.has(teamName));
                 
                 items.push(`
                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span class="team-icon">${abbr}</span>
-                        <span>${name}</span>
+                        <span class="team-icon">${teamAbbr}</span>
+                        <span>${teamName}</span>
                         ${showManageButton ? `
-                            <button onclick="openTeamMemberManagement('${name}')" 
+                            <button onclick="openTeamMemberManagement('${teamName}')" 
                                     style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; 
                                            background: #10b981; color: white; 
                                            border: none; border-radius: 4px; 
                                            font-size: 0.75rem; cursor: pointer;"
-                                    title="管理 ${name} 成員">
+                                    title="管理 ${teamName} 成員">
                                 管理成員
                             </button>
                         ` : ''}
