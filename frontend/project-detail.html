@@ -2724,81 +2724,20 @@
             }
         }
 
-        // Load teams for the project (combine site teams with user data)
-        async function loadProjectTeams(projectId) {
+        // Simplified team loading - use existing site data without additional API calls
+        function loadProjectTeams(projectId) {
             try {
-                // Wait for sites to be loaded first
+                // Simply use the data we already have from sites
                 if (!window.projectTeamsFromSites) {
                     console.log('Waiting for sites data...');
                     return;
                 }
                 
-                // Get team members from users table
-                const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${projectId}/teams`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token') || 'dev-token'}`
-                    }
-                });
-                
-                if (!response.ok) {
-                    console.error('Failed to load team members');
-                    // Still display teams even if no members
-                    displayTeamsWithSiteInfo();
-                    return;
-                }
-                
-                const data = await response.json();
-                
-                // Combine site team info with user data
-                const combinedTeams = [];
-                
-                // Process teams from sites (now using team ID as key) - ONLY teams with sites
-                window.projectTeamsFromSites.forEach((teamInfo, teamId) => {
-                    // Only process teams that have sites
-                    if (teamInfo.siteCount > 0) {
-                        // Find matching team from users data using team ID
-                        const teamWithMembers = data.teams?.find(t => {
-                            // Handle URL encoded team IDs
-                            const decodedTeamId = decodeURIComponent(t.id || '');
-                            const decodedTeamName = decodeURIComponent(t.name || '');
-                            
-                            // Match by team ID or decoded name to ID mapping
-                            return t.id === teamId || 
-                                   decodedTeamId === teamId || 
-                                   teamNameToIdMap[decodedTeamName] === teamId;
-                        }) || {
-                            id: teamId,
-                            name: teamInfo.name,
-                            members: [],
-                            leaders: [],
-                            memberCount: 0
-                        };
-                        
-                        // Combine the data
-                        combinedTeams.push({
-                            ...teamWithMembers,
-                            id: teamId,  // Use team ID
-                            name: teamInfo.name || teamWithMembers.name || `工班 ${teamId}`,
-                            abbreviation: teamInfo.abbreviation,
-                            siteCount: teamInfo.siteCount,
-                            completedCount: teamInfo.completedCount,
-                            sites: teamInfo.sites
-                        });
-                    }
-                });
-                
-                // DO NOT add teams from user data that don't have sites
-                // Only show teams that are actually assigned to sites
-                console.log(`顯示 ${combinedTeams.length} 個有案場的工班，${window.unassignedSitesCount || 0} 個未分配案場`);
-                
-                displayTeams(combinedTeams);
-                window.projectTeams = combinedTeams;
-                isTeamsReady = true;
-                console.log('[DEBUG] Teams loaded and ready:', combinedTeams.length);
+                console.log('🔄 Refreshing team display using existing site data');
+                displayTeamsWithSiteInfo();
                 
             } catch (error) {
-                console.error('Error loading teams:', error);
-                // Still display teams from sites even on error
+                console.error('Error refreshing teams:', error);
                 displayTeamsWithSiteInfo();
             }
         }
