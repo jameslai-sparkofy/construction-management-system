@@ -890,9 +890,6 @@
                 }
             }
             
-            // 應用角色基礎的視圖控制（在載入資料前設定UI）
-            applyRoleBasedView();
-            
             // 根據用戶角色載入對應的初始資料
             let initialSource = 'admins'; // 預設
             
@@ -919,6 +916,9 @@
             
             // 載入專案用戶
             await loadProjectUsers();
+            
+            // 應用角色基礎的視圖控制（在載入資料後設定UI）
+            applyRoleBasedView();
             
             // 綁定事件
             bindEvents();
@@ -1050,12 +1050,22 @@
                                 tab.style.display = 'none';
                             }
                         });
-                        // 確保師父標籤為 active
-                        const workerTab = userSourceTabs.querySelector('[data-source="workers"]');
-                        if (workerTab) {
-                            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-                            workerTab.classList.add('active');
-                        }
+                        // 確保師父標籤為 active（增加 DOM 元素檢查和延遲執行）
+                        const setWorkerTabActive = () => {
+                            const workerTab = userSourceTabs.querySelector('[data-source="workers"]');
+                            if (workerTab) {
+                                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                                workerTab.classList.add('active');
+                                console.log('工班負責人分頁已設定為 active');
+                            } else {
+                                console.warn('找不到師父分頁元素');
+                            }
+                        };
+                        
+                        // 使用 requestAnimationFrame 確保 DOM 渲染完成後執行
+                        requestAnimationFrame(() => {
+                            setTimeout(setWorkerTabActive, 0);
+                        });
                     }
                     
                     // 過濾工班資料
@@ -1913,21 +1923,31 @@
             let actions = '';
             let roleSwitch = '';
             
+            // 調試信息：記錄當前用戶權限狀態
+            console.log('createUserCard - currentUserProjectRole:', currentUserProjectRole);
+            console.log('createUserCard - user:', user.name, 'role:', role);
+            
             // 根據當前用戶的角色決定可進行的操作
             if (currentUserProjectRole) {
                 if (currentUserProjectRole.user_type === 'admin') {
                     // Admin: 可以進行所有操作
+                    console.log('createUserCard - Admin 權限，添加操作按鈕');
                     roleSwitch = createRoleSwitch(user.user_id, role);
                     actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                 } else if (currentUserProjectRole.user_type === 'worker' && currentUserProjectRole.role === 'leader') {
                     // Team Leader: 只能管理自己工班的成員
                     // 由於工班成員都是在同一個工班容器中顯示，所以工班負責人對所有成員都有操作權限
+                    console.log('createUserCard - 工班負責人權限，添加操作按鈕');
                     roleSwitch = createRoleSwitch(user.user_id, role);
                     actions += `<button class="action-button remove-button" onclick="removeUser('${user.user_id}')">移除</button>`;
                     // 添加「退回到工地師父」按鈕
                     actions += `<button class="action-button" onclick="returnToSiteWorker('${user.user_id}')">退回到工地師父</button>`;
+                } else {
+                    console.log('createUserCard - 其他權限，不添加操作按鈕');
                 }
                 // Owner 和 Worker 沒有操作權限，所以 actions 保持為空字符串
+            } else {
+                console.warn('createUserCard - currentUserProjectRole 為空，無法判斷權限');
             }
             
             // 決定角色顯示文字
