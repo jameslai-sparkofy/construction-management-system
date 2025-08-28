@@ -890,6 +890,9 @@
                 }
             }
             
+            // 應用角色基礎的視圖控制（在載入資料前設定UI）
+            applyRoleBasedView();
+            
             // 根據用戶角色載入對應的初始資料
             let initialSource = 'admins'; // 預設
             
@@ -916,9 +919,6 @@
             
             // 載入專案用戶
             await loadProjectUsers();
-            
-            // 應用角色基礎的視圖控制
-            applyRoleBasedView();
             
             // 綁定事件
             bindEvents();
@@ -1050,7 +1050,7 @@
                                 tab.style.display = 'none';
                             }
                         });
-                        // 確保師父標籤為 active（因為已在 init 中載入師父資料）
+                        // 確保師父標籤為 active
                         const workerTab = userSourceTabs.querySelector('[data-source="workers"]');
                         if (workerTab) {
                             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
