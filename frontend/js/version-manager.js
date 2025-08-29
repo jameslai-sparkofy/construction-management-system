@@ -15,7 +15,7 @@ class VersionManager {
         this.currentVersion = this.generateVersionString();
         
         this.buildDate = new Date().toISOString().split('T')[0];
-        this.buildTime = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
+        this.buildTime = new Date().toISOString().replace(/[-:.T]/g, '').slice(0, 14);
     }
 
     // 檢測當前環境
