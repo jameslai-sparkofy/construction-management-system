@@ -339,7 +339,9 @@
       "WebFetch(domain:297a7b08.construction-management-frontend-dev.pages.dev)",
       "Read(/tmp/**)",
       "Read(/tmp/**)",
-      "Read(/tmp/**)"
+      "Read(/tmp/**)",
+      "Bash(git rev-parse:*)",
+      "Bash(git cherry-pick:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

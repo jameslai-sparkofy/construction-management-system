@@ -62,7 +62,7 @@ const CONFIG = {
     CRM_API_TOKEN: 'fx-crm-api-secret-2025',
     
     // 備用：原有的分散式 API 配置
-    D1_REST_API_URL: 'https://sync.yes-ceramics.com/api'
+    D1_REST_API_URL: 'https://sync.yes-ceramics.com/api',
     
     // Authentication - 統一處理
     EMERGENCY_LOGIN_ENABLED: !IS_PRODUCTION,
