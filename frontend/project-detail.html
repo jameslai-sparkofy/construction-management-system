@@ -4965,65 +4965,161 @@
             console.log('✅ 工班資料已載入，跳過額外的 loadProjectTeams 調用');
         }
         
-        // Update team legend
+        // Update team legend with progress bars (完全重寫版本)
         async function updateTeamLegend(teams) {
-            // 檢查當前用戶權限 - 使用統一權限系統
-            window.isAdmin = false;
-            window.userTeams = new Set(); // 用戶負責的工班
-            let isAdmin = window.isAdmin;
-            let userTeams = window.userTeams;
+            console.log('🔄 updateTeamLegend called with teams:', teams);
+            
+            const legendTeams = document.getElementById('legendTeams');
+            if (!legendTeams) {
+                console.error('legendTeams element not found');
+                return;
+            }
+            
+            // 清空現有內容
+            legendTeams.innerHTML = '';
+            
+            if (!teams || teams.size === 0) {
+                legendTeams.innerHTML = '<span style="color: #9ca3af;">無工班資料</span>';
+                return;
+            }
+            
+            // 權限檢查
+            let isAdmin = false;
+            let userTeams = new Set();
             
             try {
-                // 使用統一權限系統檢查管理員權限
                 if (window.permissions) {
                     await window.permissions.init();
-                    isAdmin = window.isAdmin = await window.permissions.isAdmin();
-                }
-                
-                // 如果不是管理員，獲取用戶所屬的工班
-                if (!isAdmin && currentProject) {
-                    try {
-                        const response = await fetch(`${WORKER_API_URL}/api/v1/projects/${currentProject.id}/users`, {
-                            headers: AuthUtils.getRequestHeaders()
-                        });
-                        
-                        if (response.ok) {
-                            const responseData = await response.json();
-                            const users = responseData.data?.all || responseData; // 支援新舊API格式
-                            const currentUser = AuthUtils.getUser();
-                            
-                            if (Array.isArray(users)) {
-                                // 找到當前用戶所屬的工班（支援多種匹配方式）
-                                users.forEach(user => {
-                                if ((user.phone === currentUser?.phone) || 
-                                    (user.user_id === currentUser?.id) ||
-                                    (user.user_id === currentUser?.source_id)) {
-                                    if (user.team_name) {
-                                        userTeams.add(user.team_name);
-                                        window.userTeams.add(user.team_name);
-                                        console.log(`找到用戶所屬工班: ${user.team_name}`);
-                                    }
-                                }
-                            });
-                            } else {
-                                console.log('API回應格式不正確，users不是陣列:', typeof users);
-                            }
-                        }
-                    } catch (error) {
-                        console.log('獲取用戶工班失敗:', error);
-                    }
+                    isAdmin = await window.permissions.isAdmin();
                 }
             } catch (error) {
                 console.log('權限檢查錯誤:', error);
             }
             
-            // 權限檢查完成後，重新渲染棟別按鈕以應用過濾
-            if (typeof renderBuildingTabs === 'function') {
-                renderBuildingTabs();
-            }
+            // 創建進度條容器 - 完全按照297a7b08的格式
+            const teamsContainer = document.createElement('div');
+            teamsContainer.style.cssText = 'display: flex; gap: 0.75rem; overflow-x: auto; align-items: center; scroll-behavior: smooth; padding: 0.5rem 0px;';
             
-            // 使用 displayTeamsWithSiteInfo 來顯示進度條版本的工班圖例
-            displayTeamsWithSiteInfo();
+            // 遍歷工班數據並創建進度條
+            teams.forEach((teamInfo, teamId) => {
+                const teamName = teamInfo.name || '未命名工班';
+                const teamAbbr = teamInfo.abbreviation || teamName.slice(-1);
+                const siteCount = teamInfo.siteCount || 0;
+                
+                // 計算完成數量 - 從 sites 數組中計算
+                let completedCount = 0;
+                if (teamInfo.sites && Array.isArray(teamInfo.sites)) {
+                    completedCount = teamInfo.sites.filter(site => site.status === 'completed').length;
+                }
+                
+                const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
+                
+                console.log(`Creating progress bar for ${teamAbbr}: ${completedCount}/${siteCount} (${percentage}%)`);
+                
+                // 創建工班按鈕 - 完全按照297a7b08的樣式
+                const teamButton = document.createElement('div');
+                teamButton.style.cssText = `
+                    padding: 0rem 0.75rem;
+                    height: 40px;
+                    background: linear-gradient(135deg, rgb(132, 199, 208) 0%, rgb(107, 184, 195) 100%);
+                    color: white;
+                    border-radius: 12px;
+                    font-weight: 500;
+                    font-size: 0.875rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    min-width: 140px;
+                    box-shadow: rgba(132, 199, 208, 0.3) 0px 2px 8px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    flex-shrink: 0;
+                `;
+                
+                // 工班名稱
+                const teamNameSpan = document.createElement('span');
+                teamNameSpan.style.cssText = `
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    flex-shrink: 0;
+                `;
+                teamNameSpan.textContent = teamAbbr;
+                
+                // 進度顯示容器
+                const percentageDisplay = document.createElement('div');
+                percentageDisplay.className = 'percentage-display';
+                percentageDisplay.style.cssText = 'display: flex; align-items: center; gap: 0.25rem;';
+                
+                // 完成數量顯示
+                const countDisplay = document.createElement('span');
+                countDisplay.style.cssText = `
+                    font-size: 0.75rem;
+                    color: rgba(255, 255, 255, 0.9);
+                    margin-right: 0.25rem;
+                `;
+                countDisplay.textContent = `${completedCount}/${siteCount}`;
+                
+                // 進度條容器 - 完全按照297a7b08的樣式
+                const progressContainer = document.createElement('div');
+                progressContainer.style.cssText = `
+                    position: relative;
+                    width: 75px;
+                    height: 22px;
+                    background: linear-gradient(rgb(224, 224, 224) 0%, rgb(255, 255, 255) 50%, rgb(224, 224, 224) 100%);
+                    border-radius: 8px;
+                    overflow: hidden;
+                    box-shadow: rgba(0, 0, 0, 0.2) 0px 2px 4px inset, rgba(0, 0, 0, 0.2) 0px -2px 4px inset, rgba(0, 0, 0, 0.15) 2px 0px 4px inset, rgba(0, 0, 0, 0.15) -2px 0px 4px inset;
+                    border: 1px solid rgb(132, 199, 208);
+                `;
+                
+                // 橘色進度條
+                const progressBar = document.createElement('div');
+                progressBar.style.cssText = `
+                    position: absolute;
+                    left: 1px;
+                    top: 1px;
+                    height: calc(100% - 2px);
+                    width: calc(${percentage}% - 2px);
+                    background: linear-gradient(rgb(255, 165, 0) 0%, rgb(255, 140, 0) 50%, rgb(255, 127, 0) 100%);
+                    border-radius: 7px;
+                    transition: width 0.8s ease-in-out;
+                    box-shadow: rgba(255, 140, 0, 0.3) 0px 1px 3px;
+                `;
+                
+                // 百分比文字
+                const percentageText = document.createElement('span');
+                percentageText.style.cssText = `
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: rgb(51, 51, 51);
+                    z-index: 2;
+                    pointer-events: none;
+                `;
+                percentageText.textContent = `${percentage}%`;
+                
+                // 組裝進度條
+                progressContainer.appendChild(progressBar);
+                progressContainer.appendChild(percentageText);
+                
+                // 組裝進度顯示
+                percentageDisplay.appendChild(countDisplay);
+                percentageDisplay.appendChild(progressContainer);
+                
+                // 組裝工班按鈕
+                teamButton.appendChild(teamNameSpan);
+                teamButton.appendChild(percentageDisplay);
+                
+                // 添加到容器
+                teamsContainer.appendChild(teamButton);
+            });
+            
+            // 將完成的容器添加到legendTeams
+            legendTeams.appendChild(teamsContainer);
+            
+            console.log(`✅ 進度條版本工班圖例已創建，共 ${teams.size} 個工班`);
         }
         
         // 開啟工班成員管理頁面
