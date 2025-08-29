@@ -2751,10 +2751,12 @@
         function displayTeamsWithSiteInfo() {
             const teams = [];
             window.projectTeamsFromSites?.forEach((teamInfo, teamId) => {
-                // 計算已完成案場數量
+                // 計算已完成案場數量 - 使用正確的欄位映射邏輯
                 let completedCount = 0;
                 if (teamInfo.sites && Array.isArray(teamInfo.sites)) {
-                    completedCount = teamInfo.sites.filter(site => site.status === 'completed').length;
+                    completedCount = teamInfo.sites.filter(site => {
+                        return site[fieldMapping.completed] || (site.field_iZJ5T__c === '已完工');
+                    }).length;
                 }
                 
                 teams.push({
@@ -5006,10 +5008,12 @@
                 const teamAbbr = teamInfo.abbreviation || teamName.slice(-1);
                 const siteCount = teamInfo.siteCount || 0;
                 
-                // 計算完成數量 - 從 sites 數組中計算
+                // 計算完成數量 - 使用正確的欄位映射邏輯
                 let completedCount = 0;
                 if (teamInfo.sites && Array.isArray(teamInfo.sites)) {
-                    completedCount = teamInfo.sites.filter(site => site.status === 'completed').length;
+                    completedCount = teamInfo.sites.filter(site => {
+                        return site[fieldMapping.completed] || (site.field_iZJ5T__c === '已完工');
+                    }).length;
                 }
                 
                 const percentage = siteCount > 0 ? Math.round((completedCount / siteCount) * 100) : 0;
